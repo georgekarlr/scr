@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { TrendingUp, Users, MoreHorizontal, Trophy, Star, Search, Loader2, X } from 'lucide-react'
+import { TrendingUp, Users, MoreHorizontal, Star, Search, Loader2, X, Lightbulb, Sparkles } from 'lucide-react'
 import { studyService } from '../../services/studyService'
 import { SearchSetResult, SearchUserResult, WhoToFollowUser } from '../../types/study'
 import { Link } from 'react-router-dom'
@@ -73,11 +73,6 @@ const RightSidebar: React.FC = () => {
   }, [searchTerm, searchType])
 
 
-  const leaderboard = [
-    { name: 'John Doe', xp: '12,450', rank: 1, avatar: 'JD' },
-    { name: 'Jane Smith', xp: '10,200', rank: 2, avatar: 'JS' },
-    { name: 'Alice Johnson', xp: '9,800', rank: 3, avatar: 'AJ' },
-  ]
 
   return (
     <aside className="hidden xl:block w-80 p-4 space-y-6 sticky top-0 h-screen overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -241,40 +236,47 @@ const RightSidebar: React.FC = () => {
         </Link>
       </div>
 
-      {/* Leaderboard Section */}
+
+      {/* Study Tips Section */}
       <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
         <h2 className="text-xl font-bold flex items-center mb-4 text-gray-900">
-          <Trophy className="h-5 w-5 mr-2 text-blue-600" />
-          Weekly Leaderboard
+          <Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
+          Study Tips
         </h2>
         <div className="space-y-4">
-          {leaderboard.map((user) => (
-            <div key={user.name} className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border-2 border-white shadow-sm">
-                    {user.avatar}
-                  </div>
-                  <div className={`absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm
-                    ${user.rank === 1 ? 'bg-yellow-500' : user.rank === 2 ? 'bg-gray-400' : 'bg-orange-400'}`}>
-                    {user.rank}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 leading-tight">{user.name}</p>
-                  <p className="text-xs text-gray-500 leading-tight">{user.xp} XP</p>
-                </div>
-              </div>
-              <div className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                Lv. {Math.floor(parseInt(user.xp.replace(',', '')) / 1000)}
-              </div>
-            </div>
-          ))}
+          <div className="flex items-start space-x-3">
+            <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+            <p className="text-sm text-gray-600">The Pomodoro Technique: Study for 25 mins, break for 5.</p>
+          </div>
+          <div className="flex items-start space-x-3">
+            <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+            <p className="text-sm text-gray-600">Active Recall: Test yourself instead of re-reading.</p>
+          </div>
+          <div className="flex items-start space-x-3">
+            <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+            <p className="text-sm text-gray-600">Spaced Repetition: Review at increasing intervals.</p>
+          </div>
         </div>
-        <button className="mt-4 text-blue-600 text-sm font-semibold hover:text-blue-700">
-          Full Leaderboard
-        </button>
       </div>
+
+      {/* Study Inspirations Section */}
+      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+        <h2 className="text-xl font-bold flex items-center mb-4 text-gray-900">
+          <Sparkles className="h-5 w-5 mr-2 text-indigo-500" />
+          Study Inspirations
+        </h2>
+        <div className="space-y-4">
+          <div className="italic text-sm text-gray-600 border-l-2 border-indigo-200 pl-3">
+            "The beautiful thing about learning is that no one can take it away from you."
+            <p className="not-italic font-bold mt-1 text-gray-900">— B.B. King</p>
+          </div>
+          <div className="italic text-sm text-gray-600 border-l-2 border-indigo-200 pl-3">
+            "Education is the most powerful weapon which you can use to change the world."
+            <p className="not-italic font-bold mt-1 text-gray-900">— Nelson Mandela</p>
+          </div>
+        </div>
+      </div>
+
 
       {/* Footer Links */}
       <div className="px-4 text-xs text-gray-500 space-x-3">
