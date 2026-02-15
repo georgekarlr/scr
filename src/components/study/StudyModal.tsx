@@ -1081,8 +1081,12 @@ const StudyModal: React.FC<StudyModalProps> = ({ setId, isOpen, onClose }) => {
         onClose={() => setShowComments(false)}
         targetId={commentTarget?.id || ''}
         targetType={commentTarget?.type || 'set'}
-        title={commentTarget?.title}
         setDetails={commentTarget?.setDetails}
+        itemDetails={commentTarget?.type === 'item' && currentItem ? {
+          type: currentItem.type as any,
+          content: currentItem.content,
+          metadata: currentItem.metadata
+        } : undefined}
       />
 
       {data && (
