@@ -94,13 +94,7 @@ function App() {
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         
                         {/* Catch all */}
-                        <Route path="*" element={
-                            <div style={{ padding: '50px', textAlign: 'center', backgroundColor: '#fee2e2' }}>
-                                <h1 style={{ color: '#dc2626' }}>404 - Page Not Found</h1>
-                                <p>The path <code>{window.location.pathname}</code> does not match any routes.</p>
-                                <a href="/login" style={{ color: '#2563eb', fontWeight: 'bold' }}>Go to Login</a>
-                            </div>
-                        } />
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                 </Router>
                 </NotificationProvider>
