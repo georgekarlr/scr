@@ -9,10 +9,12 @@ import {
   Clock, 
   Lock, 
   Globe,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 import { LibraryContentItem } from '../../types/library';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import CommentsModal from '../study/CommentsModal';
 
 interface LibrarySetCardProps {
   item: LibraryContentItem;
@@ -25,6 +27,7 @@ const LibrarySetCard: React.FC<LibrarySetCardProps> = ({ item, onStudy, onEdit, 
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -146,9 +149,21 @@ const LibrarySetCard: React.FC<LibrarySetCardProps> = ({ item, onStudy, onEdit, 
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-gray-400 text-xs font-medium">
-          <Clock className="h-3 w-3 mr-1" />
-          {new Date(item.created_at).toLocaleDateString()}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center text-gray-400 text-xs font-medium">
+            <Clock className="h-3 w-3 mr-1" />
+            {new Date(item.created_at).toLocaleDateString()}
+          </div>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowComments(true);
+            }}
+            className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span className="text-xs font-bold">Comments</span>
+          </button>
         </div>
         <button 
           className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
@@ -160,6 +175,22 @@ const LibrarySetCard: React.FC<LibrarySetCardProps> = ({ item, onStudy, onEdit, 
           Study Now
         </button>
       </div>
+
+      <CommentsModal
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        targetId={item.id}
+        targetType="set"
+        setDetails={{
+          title: item.title,
+          description: item.description,
+          subject: item.subject?.name || undefined,
+          emoji: item.subject?.emoji,
+          cardsCount: item.cards_count,
+          rating: item.average_rating,
+          tags: [] // LibraryContentItem doesn't have tags yet
+        }}
+      />
     </div>
   );
 };
