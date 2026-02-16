@@ -11,31 +11,59 @@ const ConfirmAuth: React.FC = () => {
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {
+      console.log('ConfirmAuth: Handling confirmation', location.search, location.hash)
       const searchParams = new URLSearchParams(location.search)
       const token_hash = searchParams.get('token_hash')
       const type = searchParams.get('type') as EmailOtpType | null
-      const next = searchParams.get('next') || '/'
+      const next = searchParams.get('next') || '/dashboard'
 
       if (token_hash && type) {
+        console.log('ConfirmAuth: Verifying OTP')
         const { error } = await supabase.auth.verifyOtp({
           token_hash,
           type,
         })
 
         if (!error) {
+          console.log('ConfirmAuth: OTP verified, navigating to', next)
           navigate(next, { replace: true })
         } else {
+          console.error('ConfirmAuth: OTP verification error', error)
           setError(error.message)
         }
       } else {
         // If we don't have token_hash/type, we might be returning from a standard oauth or email link
         // that Supabase handles automatically if we're in the same tab, 
         // but let's check if we have a session now
-        const { data: { session } } = await supabase.auth.getSession()
+        console.log('ConfirmAuth: Checking session')
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         if (session) {
+          console.log('ConfirmAuth: Session found, navigating to', next)
           navigate(next, { replace: true })
+        } else if (sessionError) {
+          console.error('ConfirmAuth: Session error', sessionError)
+          setError(sessionError.message)
         } else {
-          setError('Invalid confirmation link or session expired.')
+          // Check if there is an error in the URL (e.g. from OAuth)
+          const errorDescription = searchParams.get('error_description')
+          const errorCode = searchParams.get('error')
+          if (errorCode || errorDescription) {
+            console.error('ConfirmAuth: OAuth error in URL', errorCode, errorDescription)
+            setError(errorDescription || errorCode || 'Authentication failed')
+          } else {
+            // Give it a small delay as session might still be loading in some edge cases
+            console.log('ConfirmAuth: No session yet, retrying in 1s...')
+            setTimeout(async () => {
+              const { data: { session: retrySession } } = await supabase.auth.getSession()
+              if (retrySession) {
+                console.log('ConfirmAuth: Session found after retry, navigating to', next)
+                navigate(next, { replace: true })
+              } else {
+                console.error('ConfirmAuth: No session found after retry')
+                setError('Invalid confirmation link or session expired.')
+              }
+            }, 1000)
+          }
         }
       }
     }
