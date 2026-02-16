@@ -31,11 +31,28 @@ const ConfirmAuth: React.FC = () => {
         // If we don't have token_hash/type, we might be returning from a standard oauth or email link
         // that Supabase handles automatically if we're in the same tab, 
         // but let's check if we have a session now
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         if (session) {
           navigate(next, { replace: true })
+        } else if (sessionError) {
+          setError(sessionError.message)
         } else {
-          setError('Invalid confirmation link or session expired.')
+          // Check if there is an error in the URL (e.g. from OAuth)
+          const errorDescription = searchParams.get('error_description')
+          const errorCode = searchParams.get('error')
+          if (errorCode || errorDescription) {
+            setError(errorDescription || errorCode || 'Authentication failed')
+          } else {
+            // Give it a small delay as session might still be loading in some edge cases
+            setTimeout(async () => {
+              const { data: { session: retrySession } } = await supabase.auth.getSession()
+              if (retrySession) {
+                navigate(next, { replace: true })
+              } else {
+                setError('Invalid confirmation link or session expired.')
+              }
+            }, 500)
+          }
         }
       }
     }
