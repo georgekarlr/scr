@@ -47,15 +47,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         const count = await messageService.getUnreadMessagesCount();
         setUnreadMessagesCount(count);
       } catch (error) {
-        console.error('Error fetching unread messages count:', error);
+        console.error('Sidebar: Error fetching unread messages count:', error);
       }
     };
 
     if (user) {
       fetchUnreadMessages();
-      // Optional: set up an interval or subscription
-      const interval = setInterval(fetchUnreadMessages, 60000); // every minute
+      const interval = setInterval(fetchUnreadMessages, 60000);
       return () => clearInterval(interval);
+    } else {
+      setUnreadMessagesCount(0);
     }
   }, [user]);
 
