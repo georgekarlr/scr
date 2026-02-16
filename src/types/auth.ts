@@ -20,7 +20,6 @@ export interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: any | null }>
   signIn: (email: string, password: string) => Promise<{ error: any | null }>
   signInWithGoogle: () => Promise<{ error: any | null }>
-  signInWithGoogleIdToken: (token: string, nonce?: string) => Promise<{ error: any | null }>
   resetPassword: (email: string) => Promise<{ error: any | null }>
   updatePassword: (password: string) => Promise<{ error: any | null }>
   signOut: () => Promise<void>

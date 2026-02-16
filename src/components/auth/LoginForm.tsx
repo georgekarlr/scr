@@ -1,14 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react'
-
-declare global {
-  interface Window {
-    handleSignInWithGoogle: (response: any) => Promise<void>;
-    google: any;
-  }
-}
 
 const LoginForm: React.FC = () => {
   console.log('LoginForm rendering')
@@ -17,71 +10,7 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [nonceData, setNonceData] = useState<{ raw: string, hashed: string } | null>(null)
-  const { signIn, signInWithGoogleIdToken, user } = useAuth()
-
-  useEffect(() => {
-    const generateNonce = async () => {
-      const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
-      const encoder = new TextEncoder()
-      const encodedNonce = encoder.encode(nonce)
-      const hashBuffer = await crypto.subtle.digest('SHA-256', encodedNonce)
-      const hashArray = Array.from(new Uint8Array(hashBuffer))
-      const hashed = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
-      
-      setNonceData({ raw: nonce, hashed })
-    }
-
-    generateNonce()
-  }, [])
-
-  useEffect(() => {
-    if (!nonceData) return
-
-    const handleCredentialResponse = async (response: any) => {
-      setLoading(true)
-      setError('')
-      const { error } = await signInWithGoogleIdToken(response.credential, nonceData.raw)
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-      }
-    }
-
-    const initGoogleSignIn = () => {
-      if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse,
-          nonce: nonceData.hashed,
-          auto_select: true,
-          itp_support: true,
-          use_fedcm_for_prompt: true,
-        })
-
-        const buttonElement = document.getElementById('google-signin-button')
-        if (buttonElement) {
-          window.google.accounts.id.renderButton(buttonElement, {
-            type: 'standard',
-            shape: 'pill',
-            theme: 'outline',
-            text: 'signin_with',
-            size: 'large',
-            logo_alignment: 'left',
-            width: 320,
-          })
-        }
-        
-        // Also prompt One Tap
-        window.google.accounts.id.prompt()
-      } else {
-        // Retry after a short delay if script hasn't loaded yet
-        setTimeout(initGoogleSignIn, 100)
-      }
-    }
-
-    initGoogleSignIn()
-  }, [nonceData, signInWithGoogleIdToken])
+  const { signIn, signInWithGoogle, user } = useAuth()
 
   if (user) {
     return <Navigate to="/dashboard" replace />
@@ -99,6 +28,16 @@ const LoginForm: React.FC = () => {
     }
     
     setLoading(false)
+  }
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true)
+    setError('')
+    const { error } = await signInWithGoogle()
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    }
   }
 
   return (
@@ -202,8 +141,19 @@ const LoginForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col items-center">
-              <div id="google-signin-button"></div>
+            <div className="mt-6">
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-95 disabled:opacity-50"
+              >
+                <img
+                  className="h-5 w-5 mr-2"
+                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                  alt="Google"
+                />
+                Google
+              </button>
             </div>
           </div>
 
