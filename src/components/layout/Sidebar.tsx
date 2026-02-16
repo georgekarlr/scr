@@ -6,7 +6,6 @@ import {
   Search,
   Bell,
   MessageSquare,
-  Trophy,
   User,
   Settings,
   X
@@ -31,7 +30,6 @@ const navigation: NavItem[] = [
   { name: 'Library', href: '/library', icon: Library },
   { name: 'Explore', href: '/explore', icon: Search },
   { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'Profile', href: '/profile', icon: User },
   { name: 'Settings', href: '/settings', icon: Settings },
