@@ -38,8 +38,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       fetchUnreadMessages();
       const interval = setInterval(fetchUnreadMessages, 60000);
       return () => clearInterval(interval);
-    } else {
-      setUnreadMessagesCount(0);
     }
   }, [user]);
 
