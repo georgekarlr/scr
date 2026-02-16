@@ -15,9 +15,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const refreshUnreadCount = useCallback(async () => {
     try {
       const count = await notificationService.getUnreadCount();
-      setUnreadCount(count);
+      setUnreadCount(count || 0);
     } catch (error) {
-      console.error('Failed to refresh unread count:', error);
+      console.error('NotificationContext: Failed to refresh unread count:', error);
+      setUnreadCount(0);
     }
   }, []);
 
