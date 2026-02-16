@@ -18,12 +18,10 @@ const RightSidebar: React.FC = () => {
   useEffect(() => {
     const fetchWhoToFollow = async () => {
       try {
-        setIsLoadingWhoToFollow(true)
         const data = await studyService.getWhoToFollow(4)
-        setWhoToFollow(data || [])
+        setWhoToFollow(data)
       } catch (err) {
-        console.error('RightSidebar: Failed to fetch who to follow:', err)
-        setWhoToFollow([])
+        console.error('Failed to fetch who to follow:', err)
       } finally {
         setIsLoadingWhoToFollow(false)
       }
