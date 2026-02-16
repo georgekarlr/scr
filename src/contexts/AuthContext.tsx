@@ -24,10 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('Fetching initial session...')
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session received:', session)
-      if (session) {
-        setSession(session)
-        setUser(session.user)
-      }
+      setSession(session)
+      setUser(session?.user ?? null)
       setLoading(false)
     }).catch(err => {
       console.error('Error getting session:', err)
@@ -38,21 +36,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth change event:', event, session?.user?.email)
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-        if (session) {
-          setSession(session)
-          setUser(session.user)
-        }
-        setLoading(false)
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null)
-        setUser(null)
-        setLoading(false)
-      } else {
-        // Fallback for any other events (MFA_CHALLENGE, etc.)
-        setLoading(false)
-      }
+      console.log('Auth change event:', event, session)
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
@@ -79,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
+        redirectTo: `${window.location.origin}/dashboard`,
       },
     })
     return { error }
