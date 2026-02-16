@@ -20,6 +20,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import MessagesPage from './pages/MessagesPage'
 import ChatPage from './pages/ChatPage'
 import UserConnectionsPage from './pages/UserConnectionsPage'
+import { Trophy } from 'lucide-react'
 
 function App() {
     console.log('App rendering')
@@ -64,6 +65,9 @@ function App() {
                         } />
                         <Route path="/messages/:conversationId" element={
                             <ProtectedRoute><Layout><ChatPage /></Layout></ProtectedRoute>
+                        } />
+                        <Route path="/leaderboard" element={
+                            <ProtectedRoute><Layout><PlaceholderPage title="Leaderboard" description="See how you rank against other learners." icon={Trophy} /></Layout></ProtectedRoute>
                         } />
                         <Route path="/notifications" element={
                             <ProtectedRoute><Layout><NotificationsPage /></Layout></ProtectedRoute>

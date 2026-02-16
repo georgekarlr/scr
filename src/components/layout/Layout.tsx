@@ -4,7 +4,7 @@ import Sidebar from './Sidebar'
 import RightSidebar from './RightSidebar'
 import BottomNav from './BottomNav'
 import CreateSetModal from '../dashboard/CreateSetModal'
-import { Bell, MessageSquare, Settings } from 'lucide-react'
+import { Bell, Trophy, MessageSquare, Settings } from 'lucide-react'
 import { useNotifications } from '../../contexts/NotificationContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { messageService } from '../../services/messageService'
@@ -48,6 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/library') return 'Library';
     if (path === '/messages') return 'Messages';
     if (path.startsWith('/messages/')) return 'Chat';
+    if (path === '/leaderboard') return 'Leaderboard';
     if (path === '/notifications') return 'Notifications';
     if (path === '/profile') return 'Profile';
     if (path === '/settings') return 'Settings';
@@ -89,6 +90,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                     </span>
                   )}
+                </Link>
+                <Link
+                  to="/leaderboard"
+                  className={`p-2 rounded-full transition-colors ${
+                    location.pathname === '/leaderboard' 
+                      ? 'text-blue-600 bg-blue-50' 
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                  aria-label="Leaderboard"
+                >
+                  <Trophy className="h-6 w-6" />
                 </Link>
                 <Link
                   to="/notifications"
