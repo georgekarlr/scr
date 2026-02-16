@@ -38,20 +38,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth change event:', event, session)
+      console.log('Auth change event:', event, session?.user?.email)
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-        setSession(session)
-        setUser(session?.user ?? null)
+        if (session) {
+          setSession(session)
+          setUser(session.user)
+        }
         setLoading(false)
       } else if (event === 'SIGNED_OUT') {
         setSession(null)
         setUser(null)
         setLoading(false)
-      } else if (event === 'MFA_CHALLENGE') {
-        // Handle MFA if needed, for now just ensure loading is false
-        setLoading(false)
       } else {
-        // Fallback for any other events
+        // Fallback for any other events (MFA_CHALLENGE, etc.)
         setLoading(false)
       }
     })
