@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, BookOpen, Bookmark, Plus, Search, Filter, ArrowUpDown, ChevronDown, X } from 'lucide-react';
+import { Loader2, BookOpen, Bookmark, Plus } from 'lucide-react';
 import { libraryService } from '../services/libraryService';
 import { LibraryContentItem, LibraryTabType } from '../types/library';
 import PostCard from '../components/feed/PostCard';
@@ -13,28 +13,17 @@ const LibraryPage: React.FC = () => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<LibraryTabType>('created');
   const [items, setItems] = useState<LibraryContentItem[]>([]);
-  const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [studySetId, setStudySetId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editSetData, setEditSetData] = useState<any>(null);
 
-  // New Filter/Sort state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterSubjectId, setFilterSubjectId] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<string>('newest');
-
   const fetchLibraryContent = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await libraryService.getLibraryContent(
-        activeTab,
-        searchQuery || null,
-        filterSubjectId,
-        sortBy
-      );
+      const data = await libraryService.getLibraryContent(activeTab);
       setItems(data);
     } catch (err) {
       console.error('Failed to fetch library content:', err);
@@ -45,28 +34,8 @@ const LibraryPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        const subs = await studyService.getSubjects();
-        setSubjects(subs);
-      } catch (err) {
-        console.error('Failed to fetch subjects:', err);
-      }
-    };
-    fetchSubjects();
-  }, []);
-
-  useEffect(() => {
     fetchLibraryContent();
-  }, [activeTab, filterSubjectId, sortBy]);
-
-  // Debounced search effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchLibraryContent();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [activeTab]);
 
   const handleCloneSet = async (setId: string, title: string) => {
     try {
@@ -162,7 +131,6 @@ const LibraryPage: React.FC = () => {
     }
 
     if (items.length === 0) {
-      const hasFilters = searchQuery || filterSubjectId || sortBy !== 'newest';
       return (
         <div className="p-12 text-center bg-white border border-dashed border-gray-200 rounded-3xl">
           <div className="mx-auto w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
@@ -173,37 +141,21 @@ const LibraryPage: React.FC = () => {
             )}
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-2">
-            {hasFilters ? "No matching sets found" : (activeTab === 'created' ? "You haven't created any sets yet" : "No bookmarked sets found")}
+            {activeTab === 'created' ? "You haven't created any sets yet" : "No bookmarked sets found"}
           </h3>
           <p className="text-gray-500 mb-6 max-w-xs mx-auto">
-            {hasFilters 
-              ? "Try adjusting your search or filters to find what you're looking for."
-              : (activeTab === 'created' 
-                  ? "Start building your knowledge by creating your first study set." 
-                  : "Explore the community and save sets you want to study later.")
-            }
+            {activeTab === 'created' 
+              ? "Start building your knowledge by creating your first study set." 
+              : "Explore the community and save sets you want to study later."}
           </p>
-          {hasFilters ? (
+          {activeTab === 'created' && (
             <button 
-              onClick={() => {
-                setSearchQuery('');
-                setFilterSubjectId(null);
-                setSortBy('newest');
-              }}
-              className="px-6 py-2.5 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200 transition-colors inline-flex items-center space-x-2"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
             >
-              <span>Clear All Filters</span>
+              <Plus className="h-5 w-5" />
+              <span>Create Your First Set</span>
             </button>
-          ) : (
-            activeTab === 'created' && (
-              <button 
-                onClick={() => setIsCreateModalOpen(true)}
-                className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
-              >
-                <Plus className="h-5 w-5" />
-                <span>Create Your First Set</span>
-              </button>
-            )
           )}
         </div>
       );
@@ -292,76 +244,6 @@ const LibraryPage: React.FC = () => {
         >
           Saved
         </button>
-      </div>
-
-      {/* Filters & Search */}
-      <div className="space-y-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${
-              searchQuery ? 'text-blue-600' : 'text-gray-400'
-            }`} />
-            <input 
-              type="text" 
-              placeholder="Search your library..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="relative min-w-[140px]">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full appearance-none bg-white border border-gray-200 rounded-2xl py-3 pl-10 pr-10 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer font-medium text-gray-700"
-            >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="a-z">A-Z</option>
-            </select>
-            <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Subject Filter Chips */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-          <button
-            onClick={() => setFilterSubjectId(null)}
-            className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              filterSubjectId === null
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
-            }`}
-          >
-            All Subjects
-          </button>
-          {subjects.map((subject) => (
-            <button
-              key={subject.id}
-              onClick={() => setFilterSubjectId(subject.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-                filterSubjectId === subject.id
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
-              }`}
-            >
-              <span>{subject.emoji}</span>
-              <span>{subject.name}</span>
-            </button>
-          ))}
-        </div>
       </div>
 
       {renderContent()}

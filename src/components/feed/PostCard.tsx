@@ -241,42 +241,40 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
           {renderContent()}
 
-          <CommentsModal
-            isOpen={showComments}
-            onClose={() => setShowComments(false)}
-            targetId={post.id}
-            targetType={post.type === 'study_set' ? 'set' : 'item'}
-            setDetails={post.type === 'study_set' ? {
-              title: post.metadata?.title || 'Study Set',
-              description: post.content,
-              subject: post.metadata?.subject?.name,
-              emoji: post.metadata?.subject?.emoji,
-              cardsCount: post.metadata?.cards_count,
-              rating: ratingStats.average,
-              tags: post.metadata?.tags
-            } : undefined}
-            itemDetails={post.type !== 'study_set' ? {
-              type: post.type as any,
-              content: post.content,
-              metadata: post.metadata
-            } : undefined}
-          />
+          {/* Comments modal for study sets */}
           {post.type === 'study_set' && (
-            <RateSetModal
-              isOpen={showRateModal}
-              onClose={() => setShowRateModal(false)}
-              setId={post.id}
-              initialAverage={ratingStats.average}
-              onRated={(newAverage, newTotal) => {
-                setRatingStats({ average: newAverage, total: newTotal });
-                showToast('Thanks for your rating!', 'success');
-              }}
-            />
+            <>
+              <CommentsModal
+                isOpen={showComments}
+                onClose={() => setShowComments(false)}
+                targetId={post.id}
+                targetType={'set'}
+                title={`Comments on ${post.metadata?.title || 'Study Set'}`}
+                setDetails={{
+                  title: post.metadata?.title || 'Study Set',
+                  description: post.content,
+                  subject: post.metadata?.subject?.name,
+                  emoji: post.metadata?.subject?.emoji,
+                  cardsCount: post.metadata?.cards_count,
+                  rating: ratingStats.average
+                }}
+              />
+              <RateSetModal
+                isOpen={showRateModal}
+                onClose={() => setShowRateModal(false)}
+                setId={post.id}
+                initialAverage={ratingStats.average}
+                onRated={(newAverage, newTotal) => {
+                  setRatingStats({ average: newAverage, total: newTotal });
+                  showToast('Thanks for your rating!', 'success');
+                }}
+              />
+            </>
           )}
 
           {/* Interactions */}
           <div className="mt-3 flex items-center justify-between text-gray-500" onClick={(e) => e.stopPropagation()}>
-          <button className="flex items-center space-x-1 sm:space-x-2 group transition-colors hover:text-blue-500" onClick={() => setShowComments(true)}>
+            <button className="flex items-center space-x-1 sm:space-x-2 group transition-colors hover:text-blue-500" onClick={() => post.type === 'study_set' && setShowComments(true)}>
               <div className="p-1.5 sm:p-2 rounded-full group-hover:bg-blue-50 transition-colors">
                 <MessageSquare className="h-[20px] w-[20px] sm:h-[22px] sm:w-[22px]" />
               </div>
