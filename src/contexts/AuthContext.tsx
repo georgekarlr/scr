@@ -24,10 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('Fetching initial session...')
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session received:', session)
-      if (session) {
-        setSession(session)
-        setUser(session.user)
-      }
+      setSession(session)
+      setUser(session?.user ?? null)
       setLoading(false)
     }).catch(err => {
       console.error('Error getting session:', err)
@@ -39,15 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth change event:', event, session)
-      
-      if (session) {
-        setSession(session)
-        setUser(session.user)
-      } else {
-        setSession(null)
-        setUser(null)
-      }
-      
+      setSession(session)
+      setUser(session?.user ?? null)
       setLoading(false)
     })
 
@@ -64,32 +55,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signIn = async (email: string, password: string) => {
-    console.log('Initiating Sign-In with email:', email)
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    if (error) {
-      console.error('Sign-In Error:', error)
-    } else {
-      console.log('Sign-In initiated successfully')
-    }
     return { error }
   }
 
   const signInWithGoogle = async () => {
-    console.log('Initiating Google Sign-In, redirectTo:', `${window.location.origin}/auth/confirm`)
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/confirm`,
-      },
+        redirectTo: `${window.location.origin}/dashboard`,      },
     })
-    if (error) {
-      console.error('Google Sign-In Error:', error)
-    } else {
-      console.log('Google Sign-In initiated successfully:', data)
-    }
+    return { error }
+  }
+
+  const signInWithGoogleIdToken = async (token: string, nonce?: string) => {
+    const { error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token,
+      nonce,
+    })
     return { error }
   }
 
@@ -115,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     signInWithGoogle,
+    signInWithGoogleIdToken,
     resetPassword,
     updatePassword,
     signOut,
