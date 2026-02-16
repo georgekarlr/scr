@@ -33,9 +33,17 @@ const LoginForm: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true)
     setError('')
-    const { error } = await signInWithGoogle()
-    if (error) {
-      setError(error.message)
+    try {
+      const { error } = await signInWithGoogle()
+      if (error) {
+        console.error('handleGoogleSignIn error:', error)
+        setError(error.message)
+        setLoading(false)
+      }
+      // If no error, the page will redirect to Google's OAuth page
+    } catch (err: any) {
+      console.error('handleGoogleSignIn exception:', err)
+      setError(err.message || 'An unexpected error occurred')
       setLoading(false)
     }
   }

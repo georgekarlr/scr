@@ -43,9 +43,16 @@ const SignupForm: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setStatus('loading')
     setMessage('')
-    const { error } = await signInWithGoogle()
-    if (error) {
-      setMessage(error.message)
+    try {
+      const { error } = await signInWithGoogle()
+      if (error) {
+        console.error('handleGoogleSignIn error:', error)
+        setMessage(error.message)
+        setStatus('error')
+      }
+    } catch (err: any) {
+      console.error('handleGoogleSignIn exception:', err)
+      setMessage(err.message || 'An unexpected error occurred')
       setStatus('error')
     }
   }
