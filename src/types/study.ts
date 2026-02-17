@@ -259,6 +259,40 @@ export interface GetSetForPlayResponse {
   items: StudyItemPlay[];
 }
 
+export interface GetSetDetailsResponse {
+  set: {
+    id: string;
+    title: string;
+    description: string | null;
+    tags: string[];
+    is_public: boolean;
+    average_rating: number;
+    total_ratings: number;
+    created_at: string;
+    is_owner: boolean;
+    is_official: boolean;
+    is_bookmarked: boolean;
+    cards_count: number;
+    comments_count: number;
+    creator: {
+      id: string;
+      username: string;
+      avatar_url: string | null;
+    };
+    subject: {
+      id: number;
+      name: string;
+      emoji: string | null;
+    } | null;
+  };
+  items: {
+    id: string;
+    type: StudyItemType;
+    position: number;
+    content: StudyItemContent;
+  }[];
+}
+
 export interface StudySessionResult {
   item_id: string;
   is_correct: boolean;

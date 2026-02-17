@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2, BookOpen, Bookmark, Plus, Search, Filter, ArrowUpDown, ChevronDown, X } from 'lucide-react';
 import { libraryService } from '../services/libraryService';
 import { LibraryContentItem, LibraryTabType } from '../types/library';
@@ -11,6 +12,7 @@ import { studyService } from '../services/studyService';
 
 const LibraryPage: React.FC = () => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<LibraryTabType>('created');
   const [items, setItems] = useState<LibraryContentItem[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -217,7 +219,7 @@ const LibraryPage: React.FC = () => {
               <LibrarySetCard 
                 key={item.id} 
                 item={item} 
-                onStudy={(id) => setStudySetId(id)}
+                onStudy={(id) => navigate(`/p/${id}`)}
                 onEdit={handleEditSet}
                 onDelete={handleDeleteSet}
               />

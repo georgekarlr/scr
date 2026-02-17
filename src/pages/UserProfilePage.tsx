@@ -5,7 +5,6 @@ import { messageService } from '../services/messageService';
 import { GetUserProfileResponse, PublicSetSummary } from '../types/study';
 import { supabase } from '../lib/supabase';
 import { Loader2, Users, BookOpen, Star, UserPlus, UserMinus, FileText, ArrowRight, ChevronLeft, MessageSquare } from 'lucide-react';
-import StudyModal from '../components/study/StudyModal';
 import { useToast } from '../contexts/ToastContext';
 
 const UserProfilePage: React.FC = () => {
@@ -18,7 +17,6 @@ const UserProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
   const [messageLoading, setMessageLoading] = useState(false);
-  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<GetUserProfileResponse | null>(null);
 
@@ -228,7 +226,7 @@ const UserProfilePage: React.FC = () => {
                 {sets.map((s) => (
                     <div
                         key={s.id}
-                        onClick={() => setSelectedSetId(s.id)}
+                        onClick={() => navigate(`/p/${s.id}`)}
                         className="border border-gray-100 rounded-xl p-3 sm:p-4 hover:border-blue-300 transition-all bg-white cursor-pointer hover:shadow-md group flex flex-col h-full"
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -269,11 +267,7 @@ const UserProfilePage: React.FC = () => {
           </Link>
         </div>
 
-        <StudyModal
-            setId={selectedSetId}
-            isOpen={!!selectedSetId}
-            onClose={() => setSelectedSetId(null)}
-        />
+        {/* No StudyModal here anymore, navigating to PostPage */}
       </div>
   );
 };

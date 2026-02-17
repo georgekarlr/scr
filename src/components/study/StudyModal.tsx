@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight, Brain, CheckSquare, FileText, Heart, MessageSquare, Loader2, Sparkles, Copy, Star } from 'lucide-react';
 import { studyService } from '../../services/studyService';
 import { GetSetForPlayResponse, StudyItemPlay, FlashcardContent, QuizQuestionContent, NoteContent, StudySessionResult, FinishStudySessionResponse, ItemLiker, MatchingPairsContent, OrderSequenceContent, CheckboxQuestionContent, WrittenAnswerContent } from '../../types/study';
@@ -18,6 +19,7 @@ interface StudyModalProps {
 const StudyModal: React.FC<StudyModalProps> = ({ setId, isOpen, onClose }) => {
   const { showToast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [cloning, setCloning] = useState(false);
   const [data, setData] = useState<GetSetForPlayResponse | null>(null);
@@ -854,10 +856,17 @@ const StudyModal: React.FC<StudyModalProps> = ({ setId, isOpen, onClose }) => {
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg sm:text-xl flex-shrink-0">
               {data?.set.emoji || '📚'}
             </div>
-            <div className="min-w-0">
+            <Link 
+              to={data ? `/p/${data.set.id}` : '#'} 
+              onClick={(e) => {
+                if (!data) e.preventDefault();
+                else onClose();
+              }}
+              className="min-w-0 hover:opacity-75 transition-opacity"
+            >
               <h3 className="font-bold text-gray-900 line-clamp-1 text-base">{data?.set.title || 'Loading...'}</h3>
               <p className="text-xs text-gray-500">{data?.set.subject || 'Study Set'}</p>
-            </div>
+            </Link>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-2">
             <button 

@@ -3,7 +3,7 @@ import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface StatusMessageProps {
   status: 'success' | 'error' | 'loading' | 'idle';
-  message?: string;
+  message?: React.ReactNode;
   className?: string;
 }
 

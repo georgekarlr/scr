@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import { 
   Loader2, 
   Flame, 
@@ -15,19 +15,18 @@ import { profileService } from '../services/profileService';
 import { MyProfileResponse } from '../types/profile';
 import { useToast } from '../contexts/ToastContext';
 import LibrarySetCard from '../components/library/LibrarySetCard';
-import StudyModal from '../components/study/StudyModal';
 import CreateSetModal from '../components/dashboard/CreateSetModal';
 import EditProfileModal from '../components/profile/EditProfileModal';
 import { studyService } from '../services/studyService';
 import { LibraryContentItem } from '../types/library';
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MyProfileResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editSetData, setEditSetData] = useState<any>(null);
@@ -267,8 +266,8 @@ const ProfilePage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {sets.map((set) => {
+          <div className="space-y-6">
+            {sets.map((set: any) => {
               // Map MySet to LibraryContentItem for reuse of LibrarySetCard
               const item: LibraryContentItem = {
                 id: set.id,
@@ -276,10 +275,10 @@ const ProfilePage: React.FC = () => {
                 description: set.description,
                 is_public: set.is_public,
                 average_rating: set.average_rating || 0,
-                total_ratings: 0,
+                total_ratings: set.total_ratings || 0,
                 created_at: set.created_at,
                 cards_count: set.cards_count,
-                subject: null,
+                subject: set.subject || null,
                 creator: {
                    username: profile.username,
                    avatar_url: profile.avatar_url
@@ -290,7 +289,7 @@ const ProfilePage: React.FC = () => {
                 <LibrarySetCard 
                   key={set.id}
                   item={item}
-                  onStudy={(id) => setSelectedSetId(id)}
+                  onStudy={(id) => navigate(`/p/${id}`)}
                   onEdit={handleEditSet}
                   onDelete={handleDeleteSet}
                 />
@@ -300,11 +299,7 @@ const ProfilePage: React.FC = () => {
         )}
       </div>
 
-      <StudyModal 
-        setId={selectedSetId}
-        isOpen={!!selectedSetId}
-        onClose={() => setSelectedSetId(null)}
-      />
+      {/* No StudyModal here anymore, navigating to PostPage */}
 
       <CreateSetModal 
         isOpen={isCreateModalOpen}
