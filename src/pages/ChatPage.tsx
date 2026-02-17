@@ -45,8 +45,15 @@ const ChatPage: React.FC = () => {
         )
         .subscribe();
 
+      // Set up polling interval to refresh data every 2 seconds
+      const interval = setInterval(() => {
+        fetchConversation(false);
+        fetchMessages(false);
+      }, 2000);
+
       return () => {
         supabase.removeChannel(channel);
+        clearInterval(interval);
       };
     }
   }, [conversationId]);
@@ -55,21 +62,21 @@ const ChatPage: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const fetchConversation = async () => {
+  const fetchConversation = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const conversations = await messageService.getConversations();
       const found = conversations.find(c => c.id === conversationId);
       if (found) {
         setConversation(found);
-      } else {
+      } else if (showLoading) {
         showToast('Conversation not found', 'error');
         navigate('/messages');
       }
     } catch (error) {
       console.error('Failed to fetch conversation:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -81,7 +88,7 @@ const ChatPage: React.FC = () => {
       setMessages([...data].reverse());
     } catch (error) {
       console.error('Failed to fetch messages:', error);
-      showToast('Failed to load messages', 'error');
+      if (showLoading) showToast('Failed to load messages', 'error');
     } finally {
       if (showLoading) setLoadingMessages(false);
     }
