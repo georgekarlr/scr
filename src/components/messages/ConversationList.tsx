@@ -26,9 +26,9 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const { showToast } = useToast();
 
   useEffect(() => {
-    const fetchConversations = async () => {
+    const fetchConversations = async (showLoading = true) => {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         const data = await messageService.getConversations();
         setConversations(data);
         
@@ -41,14 +41,21 @@ const ConversationList: React.FC<ConversationListProps> = ({
         }
       } catch (error) {
         console.error('Failed to fetch conversations:', error);
-        showToast('Failed to load conversations', 'error');
+        if (showLoading) showToast('Failed to load conversations', 'error');
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     };
 
     fetchConversations();
-  }, [showToast, initialConversationId, refreshKey]);
+
+    // Set up polling interval to refresh data every 2 seconds
+    const interval = setInterval(() => {
+      fetchConversations(false);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [showToast, initialConversationId, refreshKey, onSelectConversation]);
 
   const filteredConversations = conversations.filter((c) =>
     c.other_user.username.toLowerCase().includes(searchQuery.toLowerCase())
