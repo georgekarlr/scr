@@ -18,7 +18,7 @@ const SignupForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState<React.ReactNode>('')
   const [nonceData, setNonceData] = useState<{ raw: string, hashed: string } | null>(null)
   const { signUp, signInWithGoogleIdToken, user } = useAuth()
 
@@ -106,7 +106,11 @@ const SignupForm: React.FC = () => {
       setMessage(error.message)
       setStatus('error')
     } else {
-      setMessage('Account created successfully! Please check your email to verify your account.')
+      setMessage(
+        <span>
+          Account created successfully! Please check your email to verify your account. If you can't find the email, look for it in the <span className="font-bold underline">spam folder</span>.
+        </span>
+      )
       setStatus('success')
     }
   }
