@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { HomeDashboardResponse, StudySet, CreateFullSetParams, UpdateFullSetParams, Subject, GetSetForPlayResponse, FinishStudySessionParams, FinishStudySessionResponse, ItemLiker, StudyComment, RateSetParams, RateSetResponse, GetUserProfileResponse, ContinueStudyingSet, ContinueStudyingItem, ExploreInitialResponse, SearchUserResult, SearchSetResult, WhoToFollowUser, UserConnection } from '../types/study';
+import { HomeDashboardResponse, StudySet, CreateFullSetParams, UpdateFullSetParams, Subject, GetSetForPlayResponse, GetSetDetailsResponse, FinishStudySessionParams, FinishStudySessionResponse, ItemLiker, StudyComment, RateSetParams, RateSetResponse, GetUserProfileResponse, ContinueStudyingSet, ContinueStudyingItem, ExploreInitialResponse, SearchUserResult, SearchSetResult, WhoToFollowUser, UserConnection } from '../types/study';
 
 export interface ToggleReactionResponse {
   is_liked: boolean;
@@ -7,6 +7,22 @@ export interface ToggleReactionResponse {
 }
 
 export const studyService = {
+  /**
+   * Fetches the full details of a study set including its items.
+   */
+  async getSetDetails(setId: string): Promise<GetSetDetailsResponse | null> {
+    const { data, error } = await supabase.rpc('c_get_set_details', {
+      target_set_id: setId,
+    });
+
+    if (error) {
+      console.error('Error fetching set details:', error);
+      throw error;
+    }
+
+    return data as GetSetDetailsResponse;
+  },
+
   /**
    * Fetches a study set and its items for the study player.
    */

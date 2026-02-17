@@ -20,6 +20,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import MessagesPage from './pages/MessagesPage'
 import ChatPage from './pages/ChatPage'
 import UserConnectionsPage from './pages/UserConnectionsPage'
+import PostPage from './pages/PostPage'
 
 function App() {
     console.log('App rendering')
@@ -88,6 +89,11 @@ function App() {
                         } />
                         <Route path="/settings" element={
                             <ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>
+                        } />
+
+                        {/* Study Set Post Page */}
+                        <Route path="/p/:setId" element={
+                            <ProtectedRoute><Layout><PostPage /></Layout></ProtectedRoute>
                         } />
 
                         {/* Redirect root to dashboard */}

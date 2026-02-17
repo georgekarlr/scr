@@ -9,7 +9,7 @@ import RecommendationCard from '../components/dashboard/RecommendationCard'
 import UserStats from '../components/dashboard/UserStats'
 import CreateSetModal from '../components/dashboard/CreateSetModal'
 import StudyModal from '../components/study/StudyModal'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 
 const FeedPage: React.FC = () => {

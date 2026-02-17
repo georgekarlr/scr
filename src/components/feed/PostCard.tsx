@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { MessageSquare, Share2, MoreHorizontal, Brain, CheckSquare, FileText, Bookmark, Copy, Loader2, Star } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { MessageSquare, MoreHorizontal, Brain, CheckSquare, FileText, Bookmark, Copy, Loader2, Star } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
 import CommentsModal from '../study/CommentsModal'
 import RateSetModal from '../study/RateSetModal'
 import { useToast } from '../../contexts/ToastContext'
@@ -29,6 +29,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [cloning, setCloning] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -79,9 +80,16 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
             </div>
-            <p className="text-xs sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4 leading-snug">{post.content}</p>
-            <button className="text-sm font-bold text-blue-600 hover:text-blue-700 underline decoration-2 underline-offset-4 transition-colors">
-              Flip to see back
+            <p className="text-xs sm:text-lg font-medium text-gray-900 mb-4 sm:mb-6 leading-snug">{post.content}</p>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                post.onStudyNow?.();
+              }}
+              className="w-full bg-blue-600 text-white text-sm sm:text-base font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center"
+            >
+              <Brain className="h-5 w-5 mr-2" />
+              Study Now
             </button>
           </div>
         )
@@ -93,7 +101,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
               <span className="text-sm font-bold">Quick Quiz</span>
             </div>
             <p className="text-[15px] font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">{post.content}</p>
-            <div className="space-y-1.5 sm:space-y-2">
+            <div className="space-y-1.5 sm:space-y-2 mb-4">
               {['A', 'B', 'C', 'D'].map((opt) => (
                 <button key={opt} className="w-full text-left p-2.5 sm:p-3 rounded-xl border border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all text-sm font-medium text-gray-700">
                   <span className="font-bold mr-2 text-blue-600">{opt}.</span>
@@ -101,6 +109,16 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 </button>
               ))}
             </div>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                post.onStudyNow?.();
+              }}
+              className="w-full bg-blue-600 text-white text-sm sm:text-base font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center"
+            >
+              <Brain className="h-5 w-5 mr-2" />
+              Take Quiz Now
+            </button>
           </div>
         )
       case 'study_set':
@@ -159,9 +177,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     e.stopPropagation();
                     post.onStudyNow?.();
                   }}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                  className="bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center"
                 >
-                  Study Now →
+                  <Brain className="h-4 w-4 mr-2" />
+                  Study Now
                 </button>
               </div>
             </div>
@@ -189,13 +208,35 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 <img src={post.image} alt="Post content" className="w-full h-auto object-cover max-h-[400px] sm:max-h-[500px]" />
               </div>
             )}
+            <div className="mt-4">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  post.onStudyNow?.();
+                }}
+                className="w-full bg-blue-600 text-white text-sm sm:text-base font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center"
+              >
+                <Brain className="h-5 w-5 mr-2" />
+                Study Now
+              </button>
+            </div>
           </>
         )
     }
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If it's a study set, navigating to the post page is fine
+    // But we should be careful about clicking buttons inside
+    if (post.type === 'study_set') {
+      navigate(`/p/${post.id}`);
+    } else {
+      post.onStudyNow?.();
+    }
+  };
+
   return (
-    <div className="bg-white border-b border-gray-100 p-3 sm:p-4 hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={post.onStudyNow}>
+    <div className="bg-white border-b border-gray-100 p-3 sm:p-4 hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={handleCardClick}>
       <div className="flex space-x-2 sm:space-x-3">
         {/* Avatar */}
         <div className="flex-shrink-0">
@@ -298,14 +339,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 </div>
                 <span className="text-sm hidden sm:inline">Clone</span>
               </button>
-            ) : (
-              <button className="flex items-center space-x-1 sm:space-x-2 group transition-colors hover:text-green-500">
-                <div className="p-1.5 sm:p-2 rounded-full group-hover:bg-green-50 transition-colors">
-                  <Share2 className="h-[20px] w-[20px] sm:h-[22px] sm:w-[22px]" />
-                </div>
-                <span className="text-sm">{post.shares}</span>
-              </button>
-            )}
+            ) : null}
             {post.type === 'study_set' && (
               <button 
                 onClick={() => setShowRateModal(true)}
