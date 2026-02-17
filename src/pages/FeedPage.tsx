@@ -12,7 +12,11 @@ import StudyModal from '../components/study/StudyModal'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 
+import { useNavigate } from 'react-router-dom'
+import { Plus, Users } from 'lucide-react'
+
 const FeedPage: React.FC = () => {
+  const navigate = useNavigate()
   const { showToast } = useToast()
   const [dashboardData, setDashboardData] = useState<HomeDashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -171,6 +175,18 @@ const FeedPage: React.FC = () => {
           {dashboardData?.feed_content.length === 0 && (
             <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl">
               <p>Nothing to show here yet. Start following people to see their activity!</p>
+            </div>
+          )}
+
+          {dashboardData?.feed_type !== 'following' && dashboardData?.feed_content.some(item => item.type !== 'feed') && (
+            <div className="p-4 pt-1 flex justify-center">
+              <button 
+                onClick={() => navigate('/who-to-follow')}
+                className="flex items-center space-x-2 px-6 py-2 bg-white border border-gray-200 rounded-full text-blue-600 font-bold hover:bg-gray-50 transition-colors shadow-sm text-sm"
+              >
+                <Users className="h-4 w-4" />
+                <span>Show more people</span>
+              </button>
             </div>
           )}
         </div>

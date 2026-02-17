@@ -17,6 +17,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
+import WhoToFollowPage from './pages/WhoToFollowPage'
 import MessagesPage from './pages/MessagesPage'
 import ChatPage from './pages/ChatPage'
 import UserConnectionsPage from './pages/UserConnectionsPage'
@@ -68,6 +69,9 @@ function App() {
                         } />
                         <Route path="/notifications" element={
                             <ProtectedRoute><Layout><NotificationsPage /></Layout></ProtectedRoute>
+                        } />
+                        <Route path="/who-to-follow" element={
+                            <ProtectedRoute><Layout><WhoToFollowPage /></Layout></ProtectedRoute>
                         } />
                         <Route path="/profile" element={
                             <ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>

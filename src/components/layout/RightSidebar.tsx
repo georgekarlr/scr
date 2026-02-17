@@ -231,7 +231,7 @@ const RightSidebar: React.FC = () => {
             <p className="text-sm text-gray-500 text-center py-2">No recommendations found</p>
           )}
         </div>
-        <Link to="/explore" className="mt-4 block text-blue-600 text-sm font-semibold hover:text-blue-700">
+        <Link to="/who-to-follow" className="mt-4 block text-blue-600 text-sm font-semibold hover:text-blue-700">
           Show more
         </Link>
       </div>
