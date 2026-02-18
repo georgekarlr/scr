@@ -5,7 +5,6 @@ import { Conversation, ChatMessage } from '../types/message';
 import { messageService } from '../services/messageService';
 import MessageBubble from '../components/messages/MessageBubble';
 import { useToast } from '../contexts/ToastContext';
-import { supabase } from '../lib/supabase';
 
 const ChatPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -28,23 +27,6 @@ const ChatPage: React.FC = () => {
       fetchConversation();
       fetchMessages();
 
-      // Subscribe to new messages for this conversation
-      const channel = supabase
-        .channel(`messages:${conversationId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'c_messages',
-            filter: `conversation_id=eq.${conversationId}`,
-          },
-          () => {
-            fetchMessages(false);
-          }
-        )
-        .subscribe();
-
       // Set up polling interval to refresh data every 2 seconds
       const interval = setInterval(() => {
         fetchConversation(false);
@@ -52,7 +34,6 @@ const ChatPage: React.FC = () => {
       }, 2000);
 
       return () => {
-        supabase.removeChannel(channel);
         clearInterval(interval);
       };
     }
