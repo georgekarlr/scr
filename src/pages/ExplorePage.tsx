@@ -3,16 +3,15 @@ import { Loader2, Search, TrendingUp, Grid, Star, Users, X } from 'lucide-react'
 import { studyService } from '../services/studyService';
 import { ExploreInitialResponse, ExploreTrendingSet, SearchUserResult, SearchSetResult } from '../types/study';
 import PostCard from '../components/feed/PostCard';
-import StudyModal from '../components/study/StudyModal';
 import { useToast } from '../contexts/ToastContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ExplorePage: React.FC = () => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [data, setData] = useState<ExploreInitialResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [studySetId, setStudySetId] = useState<string | null>(null);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState<'trending' | 'newest' | 'top_rated'>('trending');
 
@@ -241,7 +240,7 @@ const ExplorePage: React.FC = () => {
                                     <button
                                         key={set.id}
                                         onClick={() => {
-                                          setStudySetId(set.id);
+                                          navigate(`/study/${set.id}`);
                                           setShowResults(false);
                                         }}
                                         className="w-full flex items-center space-x-3 p-2 hover:bg-orange-50 rounded-xl transition-colors text-left group"
@@ -382,7 +381,7 @@ const ExplorePage: React.FC = () => {
                   rating: set.average_rating,
                   total_ratings: set.total_ratings
                 },
-                onStudyNow: () => setStudySetId(set.id),
+                onStudyNow: () => navigate(`/study/${set.id}`),
                 onClone: () => handleCloneSet(set.id, set.title)
               };
               return <PostCard key={set.id} post={post} />;
@@ -410,11 +409,6 @@ const ExplorePage: React.FC = () => {
           </div>
         </section>
 
-        <StudyModal
-            setId={studySetId}
-            isOpen={!!studySetId}
-            onClose={() => setStudySetId(null)}
-        />
       </div>
   );
 };

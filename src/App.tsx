@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { NavigationProvider } from './contexts/NavigationContext'
 import LoginForm from './components/auth/LoginForm'
 import SignupForm from './components/auth/SignupForm'
 import ForgotPasswordForm from './components/auth/ForgotPasswordForm'
@@ -22,6 +23,9 @@ import MessagesPage from './pages/MessagesPage'
 import ChatPage from './pages/ChatPage'
 import UserConnectionsPage from './pages/UserConnectionsPage'
 import PostPage from './pages/PostPage'
+import GamesPage from './pages/GamesPage'
+import StudyPage from './pages/StudyPage'
+import PlayingPage from './pages/PlayingPage'
 
 function App() {
     console.log('App rendering')
@@ -29,7 +33,8 @@ function App() {
         <AuthProvider>
             <ToastProvider>
                 <NotificationProvider>
-                    <Router>
+                    <NavigationProvider>
+                        <Router>
                         <Routes>
                         {/* Public routes */}
                         <Route path="/login" element={<LoginForm />} />
@@ -60,6 +65,9 @@ function App() {
                         } />
                         <Route path="/explore" element={
                             <ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>
+                        } />
+                        <Route path="/games" element={
+                            <ProtectedRoute><Layout><GamesPage /></Layout></ProtectedRoute>
                         } />
                         <Route path="/messages" element={
                             <ProtectedRoute><Layout><MessagesPage /></Layout></ProtectedRoute>
@@ -95,6 +103,16 @@ function App() {
                             <ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>
                         } />
 
+                        {/* Study Page */}
+                        <Route path="/study/:id" element={
+                            <ProtectedRoute><Layout><StudyPage /></Layout></ProtectedRoute>
+                        } />
+
+                        {/* Playing Page */}
+                        <Route path="/study/:id/playing/:gameId" element={
+                            <ProtectedRoute><PlayingPage /></ProtectedRoute>
+                        } />
+
                         {/* Study Set Post Page */}
                         <Route path="/p/:setId" element={
                             <ProtectedRoute><Layout><PostPage /></Layout></ProtectedRoute>
@@ -113,6 +131,7 @@ function App() {
                         } />
                     </Routes>
                 </Router>
+                    </NavigationProvider>
                 </NotificationProvider>
             </ToastProvider>
         </AuthProvider>

@@ -3,12 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, MessageSquare, Bookmark, Copy, 
   Loader2, Star, Brain, CheckSquare, FileText, 
-  Send, X, Play, CornerDownRight
+  Send, X, Play, Zap, CornerDownRight
 } from 'lucide-react';
 import { studyService } from '../services/studyService';
 import { GetSetDetailsResponse, StudyItemType, StudyComment, CommentReply } from '../types/study';
 import { useToast } from '../contexts/ToastContext';
-import StudyModal from '../components/study/StudyModal';
 import RateSetModal from '../components/study/RateSetModal';
 
 const PostPage: React.FC = () => {
@@ -21,7 +20,6 @@ const PostPage: React.FC = () => {
   const [cloning, setCloning] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [showStudyModal, setShowStudyModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
   const [ratingStats, setRatingStats] = useState({ average: 0, total: 0 });
@@ -265,14 +263,23 @@ const PostPage: React.FC = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
               <button 
-                onClick={() => setShowStudyModal(true)}
+                onClick={() => navigate(`/study/${setId}`)}
                 className="flex items-center justify-center gap-2 bg-blue-600 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:scale-95"
               >
                 <Play className="h-5 w-5 fill-current" />
                 <span className="text-sm">Study Now</span>
               </button>
+              
+              <button 
+                onClick={() => navigate(`/games`)}
+                className="flex items-center justify-center gap-2 bg-indigo-600 text-white font-black py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:scale-95"
+              >
+                <Zap className="h-5 w-5 fill-current" />
+                <span className="text-sm">Play Game</span>
+              </button>
+
               <button 
                 onClick={handleClone}
                 disabled={cloning}
@@ -527,12 +534,6 @@ const PostPage: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <StudyModal 
-        isOpen={showStudyModal}
-        onClose={() => setShowStudyModal(false)}
-        setId={setId || null}
-      />
-
       <RateSetModal 
         isOpen={showRateModal}
         onClose={() => setShowRateModal(false)}

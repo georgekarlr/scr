@@ -5,7 +5,6 @@ import { libraryService } from '../services/libraryService';
 import { LibraryContentItem, LibraryTabType } from '../types/library';
 import PostCard from '../components/feed/PostCard';
 import LibrarySetCard from '../components/library/LibrarySetCard';
-import StudyModal from '../components/study/StudyModal';
 import CreateSetModal from '../components/dashboard/CreateSetModal';
 import { useToast } from '../contexts/ToastContext';
 import { studyService } from '../services/studyService';
@@ -18,7 +17,6 @@ const LibraryPage: React.FC = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [studySetId, setStudySetId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editSetData, setEditSetData] = useState<any>(null);
 
@@ -112,13 +110,13 @@ const LibraryPage: React.FC = () => {
         // Maybe I should fetch subjects first and match by name.
         const subjects = await studyService.getSubjects();
         const subject = subjects.find(s => s.name === item.subject?.name);
-        
+
         setEditSetData((prev: any) => ({
           ...prev,
           subject_id: subject?.id || 0,
           tags: [] // Still missing tags, but RPC c_get_library_content doesn't return them.
         }));
-        
+
         setIsCreateModalOpen(true);
       }
     } catch (err) {
@@ -153,7 +151,7 @@ const LibraryPage: React.FC = () => {
       return (
         <div className="p-8 text-center">
           <p className="text-red-500 font-medium">{error}</p>
-          <button 
+          <button
             onClick={() => fetchLibraryContent()}
             className="mt-4 text-blue-600 font-bold hover:underline"
           >
@@ -178,15 +176,15 @@ const LibraryPage: React.FC = () => {
             {hasFilters ? "No matching sets found" : (activeTab === 'created' ? "You haven't created any sets yet" : "No bookmarked sets found")}
           </h3>
           <p className="text-gray-500 mb-6 max-w-xs mx-auto">
-            {hasFilters 
+            {hasFilters
               ? "Try adjusting your search or filters to find what you're looking for."
-              : (activeTab === 'created' 
-                  ? "Start building your knowledge by creating your first study set." 
+              : (activeTab === 'created'
+                  ? "Start building your knowledge by creating your first study set."
                   : "Explore the community and save sets you want to study later.")
             }
           </p>
           {hasFilters ? (
-            <button 
+            <button
               onClick={() => {
                 setSearchQuery('');
                 setFilterSubjectId(null);
@@ -198,7 +196,7 @@ const LibraryPage: React.FC = () => {
             </button>
           ) : (
             activeTab === 'created' && (
-              <button 
+              <button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
               >
@@ -216,9 +214,9 @@ const LibraryPage: React.FC = () => {
         {items.map((item) => {
           if (activeTab === 'created') {
             return (
-              <LibrarySetCard 
-                key={item.id} 
-                item={item} 
+              <LibrarySetCard
+                key={item.id}
+                item={item}
                 onStudy={(id) => navigate(`/p/${id}`)}
                 onEdit={handleEditSet}
                 onDelete={handleDeleteSet}
@@ -246,7 +244,7 @@ const LibraryPage: React.FC = () => {
               rating: item.average_rating,
               total_ratings: item.total_ratings
             },
-            onStudyNow: () => setStudySetId(item.id),
+            onStudyNow: () => navigate(`/study/${item.id}`),
             onClone: () => handleCloneSet(item.id, item.title),
             is_bookmarked: activeTab === 'saved'
           };
@@ -304,15 +302,15 @@ const LibraryPage: React.FC = () => {
             <Search className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${
               searchQuery ? 'text-blue-600' : 'text-gray-400'
             }`} />
-            <input 
-              type="text" 
-              placeholder="Search your library..." 
+            <input
+              type="text"
+              placeholder="Search your library..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
             />
             {searchQuery && (
-              <button 
+              <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
@@ -368,17 +366,12 @@ const LibraryPage: React.FC = () => {
 
       {renderContent()}
 
-      <StudyModal 
-        setId={studySetId} 
-        isOpen={!!studySetId} 
-        onClose={() => setStudySetId(null)} 
-      />
-      <CreateSetModal 
-        isOpen={isCreateModalOpen} 
+      <CreateSetModal
+        isOpen={isCreateModalOpen}
         onClose={() => {
           setIsCreateModalOpen(false);
           setEditSetData(null);
-        }} 
+        }}
         mode={editSetData ? 'edit' : 'create'}
         initialData={editSetData}
         onSuccess={() => {
