@@ -3,6 +3,7 @@ import { RecommendedUser } from '../../types/study';
 import { UserPlus, UserCheck, Loader2, MoreHorizontal } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { studyService } from '../../services/studyService';
+import { useNavigate } from 'react-router-dom';
 
 interface RecommendationCardProps {
   user: RecommendedUser;
@@ -10,6 +11,7 @@ interface RecommendationCardProps {
 
 const RecommendationCard: React.FC<RecommendationCardProps> = ({ user }) => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [followed, setFollowed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -47,16 +49,19 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ user }) => {
 
   return (
     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 mb-3 relative">
-      <div className="flex items-center space-x-3">
+      <div 
+        className="flex items-center space-x-3 cursor-pointer group/user"
+        onClick={() => navigate(`/u/${user.username}`)}
+      >
         {user.avatar ? (
-          <img src={user.avatar} alt={user.username || 'User'} className="h-12 w-12 rounded-full object-cover" />
+          <img src={user.avatar} alt={user.username || 'User'} className="h-12 w-12 rounded-full object-cover group-hover/user:opacity-80 transition-opacity" />
         ) : (
-          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg group-hover/user:bg-blue-200 transition-colors">
             {(user.username || 'User').substring(0, 2).toUpperCase()}
           </div>
         )}
         <div>
-          <p className="font-bold text-gray-900">{user.username || 'Anonymous'}</p>
+          <p className="font-bold text-gray-900 group-hover/user:text-blue-600 transition-colors">{user.username || 'Anonymous'}</p>
           <p className="text-xs text-gray-500">{user.xp.toLocaleString()} XP • Suggested for you</p>
           {user.bio && (
             <p className="text-xs text-gray-600 mt-1 line-clamp-1 italic">
