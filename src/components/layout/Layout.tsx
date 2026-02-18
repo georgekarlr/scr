@@ -4,10 +4,11 @@ import Sidebar from './Sidebar'
 import RightSidebar from './RightSidebar'
 import BottomNav from './BottomNav'
 import CreateSetModal from '../dashboard/CreateSetModal'
-import { Bell, MessageSquare, Settings } from 'lucide-react'
+import { Bell, MessageSquare, Settings, Gamepad2 } from 'lucide-react'
 import { useNotifications } from '../../contexts/NotificationContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { messageService } from '../../services/messageService'
+import { useNavigation } from '../../contexts/NavigationContext'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -18,11 +19,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { unreadCount } = useNotifications()
   const { user } = useAuth()
+  const { isBottomNavVisible, isTopBarVisible } = useNavigation()
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
   const location = useLocation()
   const isMessagesPage = location.pathname === '/messages'
   const isChatPage = location.pathname.startsWith('/messages/')
-  const hideBottomNav = isChatPage
+  const isGamesPage = location.pathname === '/games'
+  const hideBottomNav = isChatPage || (isGamesPage && !isBottomNavVisible)
+  const hideTopBar = isChatPage || (isGamesPage && !isTopBarVisible)
 
   useEffect(() => {
     const fetchUnreadMessages = async () => {
@@ -46,6 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/dashboard') return 'Home';
     if (path === '/explore') return 'Explore';
     if (path === '/library') return 'Library';
+    if (path === '/games') return 'Games';
     if (path === '/messages') return 'Messages';
     if (path.startsWith('/messages/')) return 'Chat';
     if (path === '/notifications') return 'Notifications';
@@ -64,7 +69,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main Content Area */}
         <div className={`flex-1 flex flex-col min-h-screen border-r border-gray-100 ${hideBottomNav ? 'h-screen' : 'pb-28 lg:pb-0'} min-w-0`}>
           {/* Mobile Top Bar */}
-          {!isChatPage && (
+          {!hideTopBar && (
             <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -74,6 +79,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-sm font-bold text-gray-900">{pageTitle}</span>
               </div>
               <div className="flex items-center space-x-1">
+                <Link
+                  to="/games"
+                  className={`p-2 rounded-full transition-colors ${
+                    location.pathname === '/games' 
+                      ? 'text-blue-600 bg-blue-50' 
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                  aria-label="Games"
+                >
+                  <Gamepad2 className="h-6 w-6" />
+                </Link>
                 <Link
                   to="/messages"
                   className={`relative p-2 rounded-full transition-colors ${

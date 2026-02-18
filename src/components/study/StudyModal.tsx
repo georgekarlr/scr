@@ -2,7 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight, Brain, CheckSquare, FileText, Heart, MessageSquare, Loader2, Sparkles, Copy, Star } from 'lucide-react';
 import { studyService } from '../../services/studyService';
-import { GetSetForPlayResponse, StudyItemPlay, FlashcardContent, QuizQuestionContent, NoteContent, StudySessionResult, FinishStudySessionResponse, ItemLiker, MatchingPairsContent, OrderSequenceContent, CheckboxQuestionContent, WrittenAnswerContent } from '../../types/study';
+import {
+  GetSetForPlayResponse,
+  FlashcardContent,
+  QuizQuestionContent,
+  NoteContent,
+  StudySessionResult,
+  FinishStudySessionResponse,
+  ItemLiker,
+  MatchingPairsContent,
+  OrderSequenceContent,
+  CheckboxQuestionContent,
+  WrittenAnswerContent,
+  QuizQuestionOption, CheckboxOption
+} from '../../types/study';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import LikersModal from './LikersModal';
@@ -19,7 +32,6 @@ interface StudyModalProps {
 const StudyModal: React.FC<StudyModalProps> = ({ setId, isOpen, onClose }) => {
   const { showToast } = useToast();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [cloning, setCloning] = useState(false);
   const [data, setData] = useState<GetSetForPlayResponse | null>(null);
@@ -801,7 +813,7 @@ const StudyModal: React.FC<StudyModalProps> = ({ setId, isOpen, onClose }) => {
             className={`w-full p-3 sm:p-4 rounded-2xl border-2 transition-all font-medium focus:outline-none text-sm sm:text-base ${
               isAnswered 
                 ? (isCorrect ? 'border-green-500 bg-green-50 text-green-700' : 'border-red-500 bg-red-50 text-red-700')
-                : 'border-gray-50 bg-gray-50 focus:border-pink-500 focus:bg-pink-50'
+                : 'border-gray-50 bg-gray-50 text-gray-900 focus:border-pink-500 focus:bg-pink-50'
             }`}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && writtenAnswer.trim() && !isAnswered) {

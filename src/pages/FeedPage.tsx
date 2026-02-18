@@ -8,7 +8,6 @@ import ContinueStudyingModal from '../components/dashboard/ContinueStudyingModal
 import RecommendationCard from '../components/dashboard/RecommendationCard'
 import UserStats from '../components/dashboard/UserStats'
 import CreateSetModal from '../components/dashboard/CreateSetModal'
-import StudyModal from '../components/study/StudyModal'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 
@@ -23,7 +22,6 @@ const FeedPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isContinueModalOpen, setIsContinueModalOpen] = useState(false)
-  const [studySetId, setStudySetId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -91,26 +89,21 @@ const FeedPage: React.FC = () => {
 
       {dashboardData?.user_stats && <UserStats stats={dashboardData.user_stats} />}
 
-      {dashboardData?.daily_pick && <DailyPick pick={dashboardData.daily_pick} onStudyNow={(id) => setStudySetId(id)} />}
+      {dashboardData?.daily_pick && <DailyPick pick={dashboardData.daily_pick} onStudyNow={(id) => navigate(`/study/${id}`)} />}
 
 
       <CreateSetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      <StudyModal 
-        setId={studySetId} 
-        isOpen={!!studySetId} 
-        onClose={() => setStudySetId(null)} 
-      />
       <ContinueStudyingModal 
         isOpen={isContinueModalOpen}
         onClose={() => setIsContinueModalOpen(false)}
         onPlay={(id) => {
           setIsContinueModalOpen(false)
-          setStudySetId(id)
+          navigate(`/study/${id}`)
         }}
       />
       
       {dashboardData?.continue_studying && dashboardData.continue_studying.length > 0 && (
-        <ContinueStudying items={dashboardData.continue_studying} onPlay={(id) => setStudySetId(id)} onSeeAll={() => setIsContinueModalOpen(true)} />
+        <ContinueStudying items={dashboardData.continue_studying} onPlay={(id) => navigate(`/study/${id}`)} onSeeAll={() => setIsContinueModalOpen(true)} />
       )}
 
         {/* Trigger for the new modal */}
@@ -162,7 +155,7 @@ const FeedPage: React.FC = () => {
                   cards_count: feedItem.stats.cards_count,
                   rating: feedItem.stats.average_rating
                 },
-                onStudyNow: () => setStudySetId(feedItem.set_id),
+                onStudyNow: () => navigate(`/study/${feedItem.set_id}`),
                 onClone: () => handleCloneSet(feedItem.set_id, feedItem.title),
                 is_bookmarked: feedItem.is_bookmarked
               };
