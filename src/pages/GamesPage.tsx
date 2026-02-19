@@ -29,9 +29,9 @@ interface GameItem {
 
 const dummyGames: Game[] = [
   { id: 'rush-break', name: 'Rush Break', description: 'Race against the clock to answer as many items as possible', icon: Zap, color: 'from-yellow-400 to-orange-500' },
-  /*{ id: 'quiz-battle', name: 'Quiz Battle', description: 'Test your knowledge with multiple choice questions', icon: Brain, color: 'from-purple-500 to-indigo-600' },
-  { id: 'speed-match', name: 'Speed Match', description: 'Match terms with their definitions before time runs out', icon: Clock, color: 'from-green-400 to-emerald-600' },
-  { id: 'scatter', name: 'Scatter', description: 'Drag and drop terms to their matching definitions', icon: Shuffle, color: 'from-pink-500 to-rose-600' },
+  { id: 'time-battle', name: 'Time Battle', description: 'Answer as many questions as you can in the time limit', icon: Brain, color: 'from-purple-500 to-indigo-600' },
+  { id: 'speed-march', name: 'Speed March', description: 'Answer quickly as fast as you can', icon: Clock, color: 'from-green-400 to-emerald-600' },
+  /*{ id: 'scatter', name: 'Scatter', description: 'Drag and drop terms to their matching definitions', icon: Shuffle, color: 'from-pink-500 to-rose-600' },
   { id: 'target-practice', name: 'Target Practice', description: 'Type the correct answer as fast as you can', icon: Target, color: 'from-blue-500 to-cyan-600' },
   { id: 'survival', name: 'Survival', description: 'Answer correctly to stay alive — one wrong and it\'s over', icon: Trophy, color: 'from-red-500 to-orange-600' },*/
 ]

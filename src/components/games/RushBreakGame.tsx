@@ -42,7 +42,7 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
   } = useRushBreakGame({ setId, selectedItemIds });
 
   // Duration options in seconds
-  const durationOptions = [30, 60, 120, 180, 300];
+  const durationOptions = [30, 60, 120];
 
   const handleSideClick = (side: 'left' | 'right', text: string) => {
     if (isAnswered) return;
@@ -373,6 +373,15 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
     );
   };
 
+  const handleDurationChange = (val: string) => {
+    const num = parseInt(val);
+    if (!isNaN(num)) {
+      setDuration(Math.max(1, Math.min(3600, num)));
+    } else if (val === '') {
+      setDuration(0); // Temporary state for empty input
+    }
+  };
+
   const renderConfig = () => (
     <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl text-gray-900 animate-in fade-in zoom-in duration-300">
       <div className="flex items-center justify-center mb-6">
@@ -383,14 +392,32 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
       <h2 className="text-3xl font-black text-center mb-2">Rush Break</h2>
       <p className="text-gray-500 text-center mb-8">Race against the clock! Answer as many questions as you can before time runs out.</p>
       <div className="space-y-4 mb-8">
-        <label className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Game Duration</label>
+        <label className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1 flex justify-between items-center">
+          <span>Game Duration</span>
+          <span className="text-blue-600 normal-case font-black">{duration}s</span>
+        </label>
         <div className="grid grid-cols-3 gap-3">
           {durationOptions.map(opt => (
             <button key={opt} onClick={() => setDuration(opt)} className={`py-3 rounded-xl font-bold transition-all ${duration === opt ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>{opt}s</button>
           ))}
+          <div className="relative group col-span-1">
+            <input 
+              type="number" 
+              min="1" 
+              max="3600"
+              value={durationOptions.includes(duration) ? '' : duration || ''}
+              onChange={(e) => handleDurationChange(e.target.value)}
+              placeholder="Custom"
+              className={`w-full py-3 px-3 rounded-xl font-bold transition-all outline-none text-center ${!durationOptions.includes(duration) && duration > 0 ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 focus:bg-white focus:ring-2 focus:ring-blue-100'}`}
+            />
+          </div>
         </div>
       </div>
-      <button onClick={fetchItems} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-100 transition-all flex items-center justify-center space-x-2 group">
+      <button 
+        onClick={fetchItems} 
+        disabled={duration <= 0}
+        className={`w-full font-bold py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center space-x-2 group ${duration <= 0 ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100'}`}
+      >
         <span>Start Game</span>
         <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
       </button>
