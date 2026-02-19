@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
 import RushBreakGame from '../components/games/RushBreakGame';
+import TimeBattleGame from '../components/games/TimeBattleGame';
+import SpeedMarchGame from '../components/games/SpeedMarchGame';
 
 const PlayingPage: React.FC = () => {
     const { id: setId, gameId } = useParams<{ id: string; gameId: string }>();
@@ -21,6 +23,10 @@ const PlayingPage: React.FC = () => {
             
             {gameId === 'rush-break' && setId ? (
                 <RushBreakGame setId={setId} selectedItemIds={selectedItemIds} />
+            ) : gameId === 'time-battle' && setId ? (
+                <TimeBattleGame setId={setId} selectedItemIds={selectedItemIds} />
+            ) : gameId === 'speed-march' && setId ? (
+                <SpeedMarchGame setId={setId} selectedItemIds={selectedItemIds} />
             ) : (
                 <div className="text-center p-4">
                     <h1 className="text-3xl font-black mb-2">Playing Page</h1>

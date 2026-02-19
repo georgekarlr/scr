@@ -2,14 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Clock, Trophy, RefreshCw, ChevronRight, CheckCircle2, XCircle, Loader2, GitMerge, ListOrdered, CheckSquare as CheckSquareIcon, Type, Brain, CheckSquare, FileText, ChevronLeft } from 'lucide-react';
 import { FlashcardContent, QuizQuestionContent, NoteContent, WrittenAnswerContent, CheckboxQuestionContent, MatchingPairsContent, OrderSequenceContent } from '../../types/study';
-import { useRushBreakGame } from './useRushBreakGame';
+import { useTimeBattleGame } from './useTimeBattleGame';
 
-interface RushBreakGameProps {
+interface TimeBattleGameProps {
   setId: string;
   selectedItemIds?: string[];
 }
 
-const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds }) => {
+const TimeBattleGame: React.FC<TimeBattleGameProps> = ({ setId, selectedItemIds }) => {
   const navigate = useNavigate();
   const {
     gameState,
@@ -39,7 +39,7 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
     shuffledCheckboxOptions,
     shuffledMatchingLeft,
     shuffledMatchingRight,
-  } = useRushBreakGame({ setId, selectedItemIds });
+  } = useTimeBattleGame({ setId, selectedItemIds });
 
   // Duration options in seconds
   const durationOptions = [30, 60, 120];
@@ -385,12 +385,12 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
   const renderConfig = () => (
     <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl text-gray-900 animate-in fade-in zoom-in duration-300">
       <div className="flex items-center justify-center mb-6">
-        <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center">
-          <Zap className="h-10 w-10 text-yellow-600" />
+        <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center">
+          <Brain className="h-10 w-10 text-purple-600" />
         </div>
       </div>
-      <h2 className="text-3xl font-black text-center mb-2">Rush Break</h2>
-      <p className="text-gray-500 text-center mb-8">Race against the clock! Answer as many questions as you can before time runs out.</p>
+      <h2 className="text-3xl font-black text-center mb-2">Time Battle</h2>
+      <p className="text-gray-500 text-center mb-8">Answer as many questions as you can in the time limit. The game ends if you finish all items!</p>
       <div className="space-y-4 mb-8">
         <label className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1 flex justify-between items-center">
           <span>Game Duration</span>
@@ -476,9 +476,15 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
   const renderGameOver = () => (
     <div className="w-full max-w-xl bg-white rounded-3xl p-10 shadow-2xl text-gray-900 animate-in zoom-in duration-300">
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-3xl mb-6">{gameEndedReason === 'no-items' ? <FileText className="h-12 w-12 text-yellow-600" /> : <Trophy className="h-12 w-12 text-yellow-600" />}</div>
-        <h2 className="text-4xl font-black mb-2">{gameEndedReason === 'no-items' ? 'No Items Found' : "Time's Up!"}</h2>
-        <p className="text-gray-500 mb-8">{gameEndedReason === 'no-items' ? "This study set doesn't have any compatible items for Rush Break." : "Great job! Here's how you did:"}</p>
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-100 rounded-3xl mb-6">{gameEndedReason === 'no-items' ? <FileText className="h-12 w-12 text-purple-600" /> : <Trophy className="h-12 w-12 text-yellow-600" />}</div>
+        <h2 className="text-4xl font-black mb-2">
+          {gameEndedReason === 'no-items' ? 'No Items Found' : 
+           gameEndedReason === 'completed' ? 'Set Completed!' : "Time's Up!"}
+        </h2>
+        <p className="text-gray-500 mb-8">
+          {gameEndedReason === 'no-items' ? "This study set doesn't have any compatible items for Time Battle." : 
+           gameEndedReason === 'completed' ? "Incredible! You've finished all the items in the set." : "Great job! Here's how you did:"}
+        </p>
         {gameEndedReason !== 'no-items' && (
           <>
             <div className="bg-gray-50 rounded-2xl p-6 mb-6">
@@ -495,6 +501,15 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
                 <span className="text-red-700 font-bold">Mistakes: {totalMistakes}</span>
               </div>
             </div>
+            {gameEndedReason === 'completed' && (
+              <div className="bg-blue-50 rounded-2xl p-4 mb-8 flex items-center justify-between border border-blue-100">
+                <div className="flex items-center space-x-3">
+                  <Clock className="h-6 w-6 text-blue-600" />
+                  <span className="font-bold text-blue-900">Seconds Left</span>
+                </div>
+                <span className="text-2xl font-black text-blue-600">{timeLeft}s</span>
+              </div>
+            )}
             {Object.keys(itemStats).length > 0 && (
               <div className="text-left mb-8">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Per-Item Performance</p>
@@ -537,11 +552,11 @@ const RushBreakGame: React.FC<RushBreakGameProps> = ({ setId, selectedItemIds })
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full">
       {gameState === 'config' && renderConfig()}
-      {gameState === 'loading' && <div className="flex flex-col items-center"><Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" /><p className="text-gray-400 font-bold">Preparing your rush...</p></div>}
+      {gameState === 'loading' && <div className="flex flex-col items-center"><Loader2 className="h-12 w-12 text-purple-500 animate-spin mb-4" /><p className="text-gray-400 font-bold">Preparing your battle...</p></div>}
       {gameState === 'playing' && renderPlaying()}
       {gameState === 'game-over' && renderGameOver()}
     </div>
   );
 };
 
-export default RushBreakGame;
+export default TimeBattleGame;

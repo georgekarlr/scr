@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 
 import { useNavigate } from 'react-router-dom'
-import { Plus, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 
 const FeedPage: React.FC = () => {
   const navigate = useNavigate()
