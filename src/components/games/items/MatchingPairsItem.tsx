@@ -167,8 +167,8 @@ const MatchingPairsItem: React.FC<MatchingPairsItemProps> = ({
     }, [isPlaying, isAnswered, isOverlayOpen]);
 
     const bindControl = (dir: keyof typeof keys.current) => ({
-        onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); keys.current[dir] = true; },
-        onPointerUp: (e: React.PointerEvent) => { e.preventDefault(); keys.current[dir] = false; },
+        onPointerDown: (e: React.PointerEvent) => { keys.current[dir] = true; },
+        onPointerUp: (e: React.PointerEvent) => { keys.current[dir] = false; },
         onPointerLeave: () => { keys.current[dir] = false; }
     });
 
@@ -208,7 +208,7 @@ const MatchingPairsItem: React.FC<MatchingPairsItemProps> = ({
             {/* The Driving Arena */}
             <div
                 ref={arenaRef}
-                className="relative w-full h-[600px] sm:h-[750px] bg-slate-900 overflow-hidden touch-none"
+                className="relative w-full h-[600px] sm:h-[750px] bg-slate-900"
             >
                 {/* Visible Floor Grid */}
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgwem0yMCAyMGgtdjIwSDB6IiBmaWxsPSIjMWUyOTNiIiBmaWxsLW9wYWNpdHk9IjAuNSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+')] opacity-50"></div>
@@ -385,7 +385,7 @@ const MatchingPairsItem: React.FC<MatchingPairsItemProps> = ({
             </div>
 
             {/* Pro Mobile Controls & Action Buttons */}
-            <div className="bg-slate-950 p-4 border-t-2 border-slate-800 touch-none select-none relative z-10">
+            <div className="bg-slate-950 p-4 border-t-2 border-slate-800 select-none relative z-10">
 
                 {/* Driving Controls (Hidden if game is over or modal is open) */}
                 {!isAnswered && (
