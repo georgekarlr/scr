@@ -132,8 +132,8 @@ const FlashcardItem: React.FC<FlashcardItemProps> = ({ content, flipped, onFlip,
     }, [isPlaying, flipped]);
 
     const bindControl = (dir: keyof typeof keys.current) => ({
-        onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); keys.current[dir] = true; },
-        onPointerUp: (e: React.PointerEvent) => { e.preventDefault(); keys.current[dir] = false; },
+        onPointerDown: (e: React.PointerEvent) => { keys.current[dir] = true; },
+        onPointerUp: (e: React.PointerEvent) => { keys.current[dir] = false; },
         onPointerLeave: () => { keys.current[dir] = false; }
     });
 
@@ -157,7 +157,7 @@ const FlashcardItem: React.FC<FlashcardItemProps> = ({ content, flipped, onFlip,
                     {/* =======================
               FRONT (The Driving Game)
               ======================= */}
-                    <div className="absolute inset-0 backface-hidden bg-slate-900 border-x-4 border-b-4 border-slate-700 rounded-b-3xl overflow-hidden flex flex-col items-center select-none touch-none">
+                    <div className="absolute inset-0 backface-hidden bg-slate-900 border-x-4 border-b-4 border-slate-700 rounded-b-3xl flex flex-col items-center select-none">
 
                         {/* Grid Texture */}
                         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgwem0yMCAyMGgtdjIwSDB6IiBmaWxsPSIjMWUyOTNiIiBmaWxsLW9wYWNpdHk9IjAuNCIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+')] opacity-50 z-0"></div>
@@ -258,7 +258,7 @@ const FlashcardItem: React.FC<FlashcardItemProps> = ({ content, flipped, onFlip,
             </div>
 
             {/* Pro Mobile Controls (Only visible on front face) */}
-            <div className={`w-full bg-slate-950 p-4 border-x-4 border-b-4 border-slate-800 rounded-b-3xl touch-none select-none transition-all duration-300 ${flipped ? 'opacity-0 h-0 p-0 border-0 overflow-hidden' : 'opacity-100'}`}>
+            <div className={`w-full bg-slate-950 p-4 border-x-4 border-b-4 border-slate-800 rounded-b-3xl select-none transition-all duration-300 ${flipped ? 'opacity-0 h-0 p-0 border-0 overflow-hidden' : 'opacity-100'}`}>
                 <div className="flex justify-between items-center gap-4 lg:hidden">
 
                     {/* Steering */}

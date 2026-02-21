@@ -151,8 +151,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }, [isPlaying, isAnswered, isOverlayOpen]);
 
     const bindControl = (dir: keyof typeof keys.current) => ({
-        onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); keys.current[dir] = true; },
-        onPointerUp: (e: React.PointerEvent) => { e.preventDefault(); keys.current[dir] = false; },
+        onPointerDown: (e: React.PointerEvent) => { keys.current[dir] = true; },
+        onPointerUp: (e: React.PointerEvent) => { keys.current[dir] = false; },
         onPointerLeave: () => { keys.current[dir] = false; }
     });
 
@@ -191,7 +191,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             {/* The Driving Arena */}
             <div
                 ref={arenaRef}
-                className="relative w-full h-[450px] sm:h-[600px] bg-slate-900 overflow-hidden touch-none"
+                className="relative w-full h-[450px] sm:h-[600px] bg-slate-900"
             >
                 {/* Road Texture */}
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMzMzMiLz48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNDQ0Ii8+PC9zdmc+')] opacity-50 mix-blend-overlay"></div>
@@ -382,7 +382,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             </div>
 
             {/* Pro Mobile Controls (Hidden when game is over or modal is open) */}
-            <div className="bg-slate-950 p-4 border-t-2 border-slate-800 touch-none select-none relative z-10">
+            <div className="bg-slate-950 p-4 border-t-2 border-slate-800 select-none relative z-10">
                 <div className={`flex justify-between items-center gap-4 lg:hidden transition-opacity ${isOverlayOpen || isAnswered ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
 
                     {/* Steering */}
