@@ -10,7 +10,7 @@ interface FlashcardItemProps {
 
 const FlashcardItem: React.FC<FlashcardItemProps> = ({ content, flipped, onFlip }) => {
   return (
-    <div 
+    <div
       onClick={onFlip}
       className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[4/3] max-h-[60vh] cursor-pointer perspective-1000 group"
     >

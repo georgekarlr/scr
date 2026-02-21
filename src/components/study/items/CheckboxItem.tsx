@@ -30,9 +30,9 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({
         {shuffledOptions.map((opt) => {
           const isSelected = selectedOptionIds.includes(opt.id);
           const isCorrect = content.correct_option_ids.includes(opt.id);
-          
+
           let buttonClass = "w-full text-left p-3 sm:p-4 rounded-2xl border-2 transition-all text-sm sm:text-base font-medium flex items-center justify-between group ";
-          
+
           if (isAnswered) {
             if (isCorrect) {
               buttonClass += "border-green-500 bg-green-50 text-green-700";
@@ -42,13 +42,13 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({
               buttonClass += "border-gray-50 text-gray-400 opacity-50 bg-white";
             }
           } else {
-            buttonClass += isSelected 
-              ? "border-indigo-500 bg-indigo-50 text-indigo-700" 
+            buttonClass += isSelected
+              ? "border-indigo-500 bg-indigo-50 text-indigo-700"
               : "border-gray-50 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700";
           }
 
           return (
-            <button 
+            <button
               key={opt.id}
               disabled={isAnswered}
               onClick={() => onToggle(opt.id)}
