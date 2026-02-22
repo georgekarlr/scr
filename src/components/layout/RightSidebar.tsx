@@ -279,11 +279,11 @@ const RightSidebar: React.FC = () => {
 
 
       {/* Footer Links */}
-      <div className="px-4 text-xs text-gray-500 space-x-3">
-        <a href="#" className="hover:underline">Terms of Service</a>
-        <a href="#" className="hover:underline">Privacy Policy</a>
-        <a href="#" className="hover:underline">Cookie Policy</a>
-        <p className="mt-2">© 2026 Ceintelly, Inc.</p>
+      <div className="px-4 text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-2">
+        <Link to="/tos" className="hover:underline">Terms of Service</Link>
+        <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+        <Link to="/cookies" className="hover:underline">Cookie Policy</Link>
+        <p className="w-full mt-2">© 2026 Ceintelly, Inc.</p>
       </div>
     </aside>
   )

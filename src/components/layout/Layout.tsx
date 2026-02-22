@@ -56,6 +56,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/notifications') return 'Notifications';
     if (path === '/profile') return 'Profile';
     if (path === '/settings') return 'Settings';
+    if (path === '/tos') return 'Terms of Service';
+    if (path === '/privacy') return 'Privacy Policy';
+    if (path === '/cookies') return 'Cookie Policy';
     if (path.startsWith('/u/')) return 'User Profile';
     return 'Ceintelly';
   }, [location.pathname]);
