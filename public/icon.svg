@@ -1,15 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#0ea5e9"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#g)"/>
-  <g fill="#fff">
-    <circle cx="256" cy="256" r="140" fill="none" stroke="#fff" stroke-width="28"/>
-    <circle cx="256" cy="256" r="80" fill="#fff" opacity="0.9"/>
-    <circle cx="306" cy="206" r="18" fill="#fff"/>
-    <rect x="170" y="120" width="172" height="24" rx="12"/>
-  </g>
+<svg width="516" height="517" viewBox="0 0 516 517" fill="none" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="227.939" cy="253.301" rx="196.573" ry="222.419" fill="url(#paint0_linear_9_8)"/>
+<ellipse cx="283.544" cy="253.301" rx="196.573" ry="222.419" fill="url(#paint1_linear_9_8)"/>
+<rect width="332.552" height="330.232" transform="matrix(0.625944 -0.779868 0.655525 0.755174 0 262.617)" fill="url(#paint2_linear_9_8)"/>
+<g filter="url(#filter0_d_9_8)">
+<rect width="332.552" height="330.232" transform="matrix(0.625944 -0.779868 0.655525 0.755174 87.3656 259.346)" fill="url(#paint3_linear_9_8)"/>
+<rect x="0.640735" y="-0.0123471" width="331.552" height="329.232" transform="matrix(0.625944 -0.779868 0.655525 0.755174 87.6134 259.843)" stroke="#225365"/>
+</g>
+<defs>
+<filter id="filter0_d_9_8" x="83.3656" y="3.05176e-05" width="432.634" height="516.729" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_9_8"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_9_8" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_9_8" x1="227.939" y1="30.8825" x2="227.939" y2="475.72" gradientUnits="userSpaceOnUse">
+<stop stop-color="#129CFF"/>
+<stop offset="1" stop-color="#D329D0"/>
+</linearGradient>
+<linearGradient id="paint1_linear_9_8" x1="283.544" y1="30.8825" x2="283.544" y2="475.72" gradientUnits="userSpaceOnUse">
+<stop stop-color="#129CFF"/>
+<stop offset="1" stop-color="#D329D0"/>
+</linearGradient>
+<linearGradient id="paint2_linear_9_8" x1="332.552" y1="165.116" x2="0" y2="165.116" gradientUnits="userSpaceOnUse">
+<stop stop-color="#3BC7FC"/>
+<stop offset="1" stop-color="#DB91F8"/>
+</linearGradient>
+<linearGradient id="paint3_linear_9_8" x1="332.552" y1="165.116" x2="0" y2="165.116" gradientUnits="userSpaceOnUse">
+<stop stop-color="#39C8FD"/>
+<stop offset="1" stop-color="#DB91F8"/>
+</linearGradient>
+</defs>
 </svg>
