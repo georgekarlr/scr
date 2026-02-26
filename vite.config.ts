@@ -1,11 +1,30 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import Sitemap from 'vite-plugin-sitemap';
 
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
         react(),
+        Sitemap({
+            hostname: 'https://ceintelly.org',
+            dynamicRoutes: [
+                '/login',
+                '/signup',
+                '/forgot-password',
+                '/tos',
+                '/privacy',
+                '/cookies',
+                '/explore',
+                '/dashboard',
+                '/library',
+                '/games',
+                '/notifications',
+                '/profile',
+                '/settings'
+            ]
+        }),
         VitePWA({
             registerType: 'autoUpdate',
             injectRegister: 'auto',
