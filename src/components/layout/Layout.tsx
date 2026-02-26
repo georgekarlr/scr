@@ -6,8 +6,7 @@ import BottomNav from './BottomNav'
 import CreateSetModal from '../dashboard/CreateSetModal'
 import { Bell, MessageSquare, Settings, Gamepad2 } from 'lucide-react'
 import { useNotifications } from '../../contexts/NotificationContext'
-import { useAuth } from '../../contexts/AuthContext'
-import { messageService } from '../../services/messageService'
+import { useMessages } from '../../contexts/MessageContext'
 import { useNavigation } from '../../contexts/NavigationContext'
 
 interface LayoutProps {
@@ -18,32 +17,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   console.log('Layout rendering')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { unreadCount } = useNotifications()
-  const { user } = useAuth()
+  const { unreadMessagesCount } = useMessages()
   const { isBottomNavVisible, isTopBarVisible } = useNavigation()
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
   const location = useLocation()
   const isMessagesPage = location.pathname === '/messages'
   const isChatPage = location.pathname.startsWith('/messages/')
   const isGamesPage = location.pathname === '/games'
   const hideBottomNav = isChatPage || (isGamesPage && !isBottomNavVisible)
   const hideTopBar = isChatPage || (isGamesPage && !isTopBarVisible)
-
-  useEffect(() => {
-    const fetchUnreadMessages = async () => {
-      try {
-        const count = await messageService.getUnreadMessagesCount();
-        setUnreadMessagesCount(count);
-      } catch (error) {
-        console.error('Error fetching unread messages count:', error);
-      }
-    };
-
-    if (user) {
-      fetchUnreadMessages();
-      const interval = setInterval(fetchUnreadMessages, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
 
   const pageTitle = useMemo(() => {
     const path = location.pathname;
@@ -56,6 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/notifications') return 'Notifications';
     if (path === '/profile') return 'Profile';
     if (path === '/settings') return 'Settings';
+    if (path === '/about') return 'About';
     if (path === '/tos') return 'Terms of Service';
     if (path === '/privacy') return 'Privacy Policy';
     if (path === '/cookies') return 'Cookie Policy';

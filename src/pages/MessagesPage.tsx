@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ConversationList from '../components/messages/ConversationList';
 import NewMessageModal from '../components/messages/NewMessageModal';
@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import { messageService } from '../services/messageService';
 import { supabase } from '../lib/supabase';
 import { SearchUserResult } from '../types/study';
+import { Conversation } from '../types/message';
 
 const MessagesPage: React.FC = () => {
   const location = useLocation();
@@ -14,6 +15,17 @@ const MessagesPage: React.FC = () => {
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const markMessagesChecked = async () => {
+      try {
+        await messageService.markTabChecked('messages');
+      } catch (error) {
+        console.error('Failed to mark messages as checked:', error);
+      }
+    };
+    markMessagesChecked();
+  }, []);
 
   const handleSelectUser = async (user: SearchUserResult) => {
     try {

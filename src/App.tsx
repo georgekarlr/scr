@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { MessageProvider } from './contexts/MessageContext'
 import { NavigationProvider } from './contexts/NavigationContext'
 import LoginForm from './components/auth/LoginForm'
 import SignupForm from './components/auth/SignupForm'
@@ -29,6 +30,7 @@ import PlayingPage from './pages/PlayingPage'
 import TermsOfServicePage from './pages/legal/TermsOfServicePage'
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
 import CookiePolicyPage from './pages/legal/CookiePolicyPage'
+import AboutPage from './pages/AboutPage'
 
 function App() {
     console.log('App rendering, current path:', window.location.pathname)
@@ -37,9 +39,11 @@ function App() {
             <AuthProvider>
                 <ToastProvider>
                     <NotificationProvider>
-                        <NavigationProvider>
+                        <MessageProvider>
+                            <NavigationProvider>
                             <Routes>
                         {/* Legal Pages - Publicly accessible */}
+                        <Route path="/about" element={<Layout><AboutPage /></Layout>} />
                         <Route path="/tos" element={<Layout><TermsOfServicePage /></Layout>} />
                         <Route path="/privacy" element={<Layout><PrivacyPolicyPage /></Layout>} />
                         <Route path="/cookies" element={<Layout><CookiePolicyPage /></Layout>} />
@@ -86,6 +90,7 @@ function App() {
                                 } />
                             </Routes>
                         </NavigationProvider>
+                        </MessageProvider>
                     </NotificationProvider>
                 </ToastProvider>
             </AuthProvider>
