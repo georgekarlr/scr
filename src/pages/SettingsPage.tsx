@@ -6,10 +6,12 @@ import {
   ChevronRight, 
   Shield, 
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import LogoutConfirmationModal from '../components/ui/LogoutConfirmationModal'
+import { Link } from 'react-router-dom'
 
 const SettingsPage: React.FC = () => {
   const { signOut, user } = useAuth()
@@ -30,10 +32,11 @@ const SettingsPage: React.FC = () => {
     {
       title: 'Support',
       items: [
-        { name: 'Help Center', icon: HelpCircle, description: 'Get help with using Ceintelly' },
-        { name: 'FAQ', icon: MessageCircle, description: 'Frequently asked questions' },
-        { name: 'Terms of Service', icon: FileText, description: 'Read our terms and conditions' },
-        { name: 'Privacy Policy', icon: Shield, description: 'How we handle your data' },
+        { name: 'About Us', icon: Info, description: 'Learn about our mission and story', href: '/about' },
+        { name: 'Help Center', icon: HelpCircle, description: 'Get help with using Ceintelly', href: '#' },
+        { name: 'FAQ', icon: MessageCircle, description: 'Frequently asked questions', href: '#' },
+        { name: 'Terms of Service', icon: FileText, description: 'Read our terms and conditions', href: '/tos' },
+        { name: 'Privacy Policy', icon: Shield, description: 'How we handle your data', href: '/privacy' },
       ]
     }
   ]
@@ -96,8 +99,9 @@ const SettingsPage: React.FC = () => {
             {section.items.map((item, itemIdx) => {
               const Icon = item.icon
               return (
-                <button
+                <Link
                   key={itemIdx}
+                  to={item.href}
                   className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors group text-left"
                 >
                   <div className="flex items-center">
@@ -109,8 +113,8 @@ const SettingsPage: React.FC = () => {
                       <p className="text-xs text-gray-500">{item.description}</p>
                     </div>
                   </div>
-                  <ExternalLink className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
-                </button>
+                  <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                </Link>
               )
             })}
           </div>

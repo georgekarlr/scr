@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotifications } from '../../contexts/NotificationContext'
-import { messageService } from '../../services/messageService'
+import { useMessages } from '../../contexts/MessageContext'
 
 interface SidebarProps {
   isOpen: boolean
@@ -41,25 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation()
   const { user } = useAuth()
   const { unreadCount } = useNotifications()
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
-
-  useEffect(() => {
-    const fetchUnreadMessages = async () => {
-      try {
-        const count = await messageService.getUnreadMessagesCount();
-        setUnreadMessagesCount(count);
-      } catch (error) {
-        console.error('Error fetching unread messages count:', error);
-      }
-    };
-
-    if (user) {
-      fetchUnreadMessages();
-      // Optional: set up an interval or subscription
-      const interval = setInterval(fetchUnreadMessages, 60000); // every minute
-      return () => clearInterval(interval);
-    }
-  }, [user]);
+  const { unreadMessagesCount } = useMessages()
 
   return (
       <>

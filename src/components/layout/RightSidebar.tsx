@@ -280,6 +280,7 @@ const RightSidebar: React.FC = () => {
 
       {/* Footer Links */}
       <div className="px-4 text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-2">
+        <Link to="/about" className="hover:underline">About</Link>
         <Link to="/tos" className="hover:underline">Terms of Service</Link>
         <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
         <Link to="/cookies" className="hover:underline">Cookie Policy</Link>

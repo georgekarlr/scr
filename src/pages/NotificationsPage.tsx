@@ -19,6 +19,10 @@ const NotificationsPage: React.FC = () => {
       setLoading(true);
       const data = await notificationService.getNotifications(50);
       setNotifications(data);
+      
+      // Mark notifications tab as checked
+      await notificationService.markTabChecked('notifications');
+      
       // Also refresh the global count when we open the page
       refreshUnreadCount();
     } catch (error) {

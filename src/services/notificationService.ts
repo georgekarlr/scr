@@ -47,4 +47,17 @@ export const notificationService = {
       throw error;
     }
   },
+  /**
+   * Mark a tab (notifications or messages) as checked
+   */
+  async markTabChecked(tab_name: 'notifications' | 'messages'): Promise<void> {
+    const { error } = await supabase.rpc('c_mark_tab_checked', {
+      tab_name,
+    });
+
+    if (error) {
+      console.error(`Error marking ${tab_name} tab checked:`, error);
+      throw error;
+    }
+  },
 };

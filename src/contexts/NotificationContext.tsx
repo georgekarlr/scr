@@ -33,6 +33,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   useEffect(() => {
     refreshUnreadCount();
+    const interval = setInterval(refreshUnreadCount, 60000);
+    return () => clearInterval(interval);
   }, [refreshUnreadCount]);
 
   return (
