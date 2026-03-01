@@ -9,7 +9,8 @@ import {
   User,
   Settings,
   X,
-  Gamepad2
+  Gamepad2,
+  Users
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotifications } from '../../contexts/NotificationContext'
@@ -30,6 +31,7 @@ const navigation: NavItem[] = [
   { name: 'Home', href: '/dashboard', icon: Home },
   { name: 'Library', href: '/library', icon: Library },
   { name: 'Explore', href: '/explore', icon: Search },
+  { name: 'Groups', href: '/groups', icon: Users },
   { name: 'Games', href: '/games', icon: Gamepad2 },
   { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Notifications', href: '/notifications', icon: Bell },

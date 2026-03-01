@@ -274,6 +274,8 @@ export interface GetSetDetailsResponse {
     is_bookmarked: boolean;
     cards_count: number;
     comments_count: number;
+    emoji?: string | null;
+    subject_name?: string;
     creator: {
       id: string;
       username: string;
