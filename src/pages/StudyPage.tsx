@@ -13,6 +13,7 @@ import RateSetModal from '../components/study/RateSetModal';
 import StudyHeader from '../components/study/StudyHeader';
 import StudyContent from '../components/study/StudyContent';
 import StudyFooter from '../components/study/StudyFooter';
+import WordExportModal from '../components/study/WordExportModal';
 import { useStudySession } from '../hooks/useStudySession';
 
 const StudyPage: React.FC = () => {
@@ -38,6 +39,7 @@ const StudyPage: React.FC = () => {
     }
   } | null>(null);
   const [showRateModal, setShowRateModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const onSessionFinish = useCallback((summary: FinishStudySessionResponse | null, _resultsMap: Record<string, boolean>) => {
     setSessionSummary(summary);
@@ -95,6 +97,7 @@ const StudyPage: React.FC = () => {
           onClose={onClose}
           onClone={handleClone}
           onShowRateModal={() => setShowRateModal(true)}
+          onShowExportModal={() => setShowExportModal(true)}
           onShowSetComments={() => {
             if (data) {
               setCommentTarget({
@@ -260,6 +263,13 @@ const StudyPage: React.FC = () => {
             setData(prev => prev ? { ...prev, set: { ...prev.set, average_rating: newAverage, total_ratings: newTotal } } : prev);
             showToast('Thanks for your rating!', 'success');
           }}
+        />
+      )}
+
+      {data && showExportModal && (
+        <WordExportModal 
+          data={data}
+          onClose={() => setShowExportModal(false)}
         />
       )}
     </div>

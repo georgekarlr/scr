@@ -9,6 +9,7 @@ import { studyService } from '../services/studyService';
 import { GetSetDetailsResponse, StudyItemType, StudyComment, CommentReply } from '../types/study';
 import { useToast } from '../contexts/ToastContext';
 import RateSetModal from '../components/study/RateSetModal';
+import WordExportModal from '../components/study/WordExportModal';
 
 const PostPage: React.FC = () => {
   const { setId } = useParams<{ setId: string }>();
@@ -22,6 +23,7 @@ const PostPage: React.FC = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [ratingStats, setRatingStats] = useState({ average: 0, total: 0 });
   
   // Comments state
@@ -263,7 +265,7 @@ const PostPage: React.FC = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               <button 
                 onClick={() => navigate(`/study/${setId}`)}
                 className="flex items-center justify-center gap-2 bg-blue-600 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:scale-95"
@@ -287,6 +289,14 @@ const PostPage: React.FC = () => {
               >
                 {cloning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Copy className="h-5 w-5" />}
                 <span className="text-sm">Clone Now</span>
+              </button>
+
+              <button 
+                onClick={() => setShowExportModal(true)}
+                className="flex items-center justify-center gap-2 bg-white border-2 border-gray-100 text-gray-900 font-black py-3 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 transition-all active:scale-95"
+              >
+                <FileText className="h-5 w-5" />
+                <span className="text-sm">Export Word</span>
               </button>
             </div>
 
@@ -544,6 +554,13 @@ const PostPage: React.FC = () => {
           showToast('Thanks for your rating!', 'success');
         }}
       />
+
+      {data && showExportModal && (
+        <WordExportModal 
+          data={data}
+          onClose={() => setShowExportModal(false)}
+        />
+      )}
     </div>
   );
 };

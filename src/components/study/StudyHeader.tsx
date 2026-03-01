@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X, MessageSquare, Loader2, Copy, Star } from 'lucide-react';
+import { X, MessageSquare, Loader2, Copy, Star, FileText } from 'lucide-react';
 import { GetSetForPlayResponse } from '../../types/study';
 
 interface StudyHeaderProps {
@@ -10,6 +10,7 @@ interface StudyHeaderProps {
   onClone: () => void;
   onShowSetComments: () => void;
   onShowRateModal: () => void;
+  onShowExportModal: () => void;
 }
 
 const StudyHeader: React.FC<StudyHeaderProps> = ({
@@ -18,7 +19,8 @@ const StudyHeader: React.FC<StudyHeaderProps> = ({
   onClose,
   onClone,
   onShowSetComments,
-  onShowRateModal
+  onShowRateModal,
+  onShowExportModal
 }) => {
   return (
     <div className="p-4 sm:p-6 flex items-center justify-between bg-white border-b border-gray-100">
@@ -66,6 +68,14 @@ const StudyHeader: React.FC<StudyHeaderProps> = ({
         >
           <Star className="h-5 w-5" />
           <span className="text-xs sm:text-sm font-bold">Rate</span>
+        </button>
+        <button
+          onClick={onShowExportModal}
+          disabled={!data}
+          className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-blue-600 disabled:opacity-50"
+          title="Export to Word"
+        >
+          <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
         <button 
           onClick={onClose}

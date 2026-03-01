@@ -31,6 +31,7 @@ import TermsOfServicePage from './pages/legal/TermsOfServicePage'
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
 import CookiePolicyPage from './pages/legal/CookiePolicyPage'
 import AboutPage from './pages/AboutPage'
+import GroupsPage from './pages/GroupsPage'
 
 function App() {
     console.log('App rendering, current path:', window.location.pathname)
@@ -64,6 +65,7 @@ function App() {
                                 <Route path="/dashboard" element={<ProtectedRoute><Layout><FeedPage /></Layout></ProtectedRoute>} />
                                 <Route path="/library" element={<ProtectedRoute><Layout><LibraryPage /></Layout></ProtectedRoute>} />
                                 <Route path="/explore" element={<ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>} />
+                                <Route path="/groups" element={<ProtectedRoute><Layout><GroupsPage /></Layout></ProtectedRoute>} />
                                 <Route path="/games" element={<ProtectedRoute><Layout><GamesPage /></Layout></ProtectedRoute>} />
                                 <Route path="/messages" element={<ProtectedRoute><Layout><MessagesPage /></Layout></ProtectedRoute>} />
                                 <Route path="/messages/:conversationId" element={<ProtectedRoute><Layout><ChatPage /></Layout></ProtectedRoute>} />

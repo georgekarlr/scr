@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import RightSidebar from './RightSidebar'
 import BottomNav from './BottomNav'
 import CreateSetModal from '../dashboard/CreateSetModal'
-import { Bell, MessageSquare, Settings, Gamepad2 } from 'lucide-react'
+import { Bell, MessageSquare, Settings, Gamepad2, Users } from 'lucide-react'
 import { useNotifications } from '../../contexts/NotificationContext'
 import { useMessages } from '../../contexts/MessageContext'
 import { useNavigation } from '../../contexts/NavigationContext'
@@ -20,17 +20,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { unreadMessagesCount } = useMessages()
   const { isBottomNavVisible, isTopBarVisible } = useNavigation()
   const location = useLocation()
-  const isMessagesPage = location.pathname === '/messages'
   const isChatPage = location.pathname.startsWith('/messages/')
   const isGamesPage = location.pathname === '/games'
   const hideBottomNav = isChatPage || (isGamesPage && !isBottomNavVisible)
   const hideTopBar = isChatPage || (isGamesPage && !isTopBarVisible)
-
-  const pageTitle = useMemo(() => {
+  useMemo(() => {
     const path = location.pathname;
     if (path === '/dashboard') return 'Home';
     if (path === '/explore') return 'Explore';
     if (path === '/library') return 'Library';
+    if (path === '/groups') return 'Groups';
     if (path === '/games') return 'Games';
     if (path === '/messages') return 'Messages';
     if (path.startsWith('/messages/')) return 'Chat';
@@ -44,7 +43,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path.startsWith('/u/')) return 'User Profile';
     return 'Ceintelly';
   }, [location.pathname]);
-
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto flex items-start">
@@ -60,10 +58,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Ceintelly
                 </h2>
-                <div className="h-4 w-[1px] bg-gray-200 mx-1" />
-                <span className="text-sm font-bold text-gray-900">{pageTitle}</span>
               </div>
               <div className="flex items-center space-x-1">
+                <Link
+                  to="/groups"
+                  className={`p-2 rounded-full transition-colors ${
+                    location.pathname === '/groups' 
+                      ? 'text-blue-600 bg-blue-50' 
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                  aria-label="Groups"
+                >
+                  <Users className="h-6 w-6" />
+                </Link>
                 <Link
                   to="/games"
                   className={`p-2 rounded-full transition-colors ${
