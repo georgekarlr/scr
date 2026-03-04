@@ -31,6 +31,8 @@ import TermsOfServicePage from './pages/legal/TermsOfServicePage'
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
 import CookiePolicyPage from './pages/legal/CookiePolicyPage'
 import AboutPage from './pages/AboutPage'
+import PresentationPage from './pages/PresentationPage'
+import HowToPage from './pages/HowToPage'
 import GroupsPage from './pages/GroupsPage'
 
 function App() {
@@ -45,6 +47,8 @@ function App() {
                             <Routes>
                         {/* Legal Pages - Publicly accessible */}
                         <Route path="/about" element={<Layout><AboutPage /></Layout>} />
+                        <Route path="/presentation" element={<Layout><PresentationPage /></Layout>} />
+                        <Route path="/how-to" element={<Layout><HowToPage /></Layout>} />
                         <Route path="/tos" element={<Layout><TermsOfServicePage /></Layout>} />
                         <Route path="/privacy" element={<Layout><PrivacyPolicyPage /></Layout>} />
                         <Route path="/cookies" element={<Layout><CookiePolicyPage /></Layout>} />

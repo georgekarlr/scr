@@ -4,7 +4,7 @@ import Sidebar from './Sidebar'
 import RightSidebar from './RightSidebar'
 import BottomNav from './BottomNav'
 import CreateSetModal from '../dashboard/CreateSetModal'
-import { Bell, MessageSquare, Settings, Gamepad2, Users } from 'lucide-react'
+import { Bell, MessageSquare, Settings, Gamepad2, Users, ArrowLeft } from 'lucide-react'
 import { useNotifications } from '../../contexts/NotificationContext'
 import { useMessages } from '../../contexts/MessageContext'
 import { useNavigation } from '../../contexts/NavigationContext'
@@ -20,10 +20,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { unreadMessagesCount } = useMessages()
   const { isBottomNavVisible, isTopBarVisible } = useNavigation()
   const location = useLocation()
+  const publicPaths = ['/about', '/presentation', '/how-to', '/tos', '/privacy', '/cookies']
+  const isPublicPage = publicPaths.includes(location.pathname)
   const isChatPage = location.pathname.startsWith('/messages/')
   const isGamesPage = location.pathname === '/games'
-  const hideBottomNav = isChatPage || (isGamesPage && !isBottomNavVisible)
-  const hideTopBar = isChatPage || (isGamesPage && !isTopBarVisible)
+  const hideBottomNav = isChatPage || (isGamesPage && !isBottomNavVisible) || isPublicPage
+  const hideTopBar = isChatPage || (isGamesPage && !isTopBarVisible) || isPublicPage
+  const hideSidebar = isPublicPage
+  const hideRightSidebar = isPublicPage
   useMemo(() => {
     const path = location.pathname;
     if (path === '/dashboard') return 'Home';
@@ -36,6 +40,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/notifications') return 'Notifications';
     if (path === '/profile') return 'Profile';
     if (path === '/settings') return 'Settings';
+    if (path === '/presentation') return 'Presentation';
+    if (path === '/how-to') return 'How-To Guide';
     if (path === '/about') return 'About';
     if (path === '/tos') return 'Terms of Service';
     if (path === '/privacy') return 'Privacy Policy';
@@ -45,20 +51,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [location.pathname]);
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto flex items-start">
+      <div className={`mx-auto flex items-start ${isPublicPage ? 'max-w-none' : 'max-w-7xl'}`}>
         {/* Left Sidebar */}
-        <Sidebar isOpen={false} onClose={() => {}} />
+        {!hideSidebar && <Sidebar isOpen={false} onClose={() => {}} />}
         
         {/* Main Content Area */}
-        <div className={`flex-1 flex flex-col min-h-screen border-r border-gray-100 ${hideBottomNav ? 'h-screen' : 'pb-28 lg:pb-0'} min-w-0`}>
+        <div className={`flex-1 flex flex-col min-h-screen ${!isPublicPage ? 'border-r border-gray-100' : ''} ${hideBottomNav ? 'h-screen' : 'pb-28 lg:pb-0'} min-w-0`}>
           {/* Mobile Top Bar */}
           {!hideTopBar && (
             <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4">
-              <div className="flex items-center gap-2">
+              <Link to="/dashboard" className="flex items-center gap-2">
+                <img src="/icon.svg" alt="Ceintelly" className="h-8 w-8" />
                 <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Ceintelly
                 </h2>
-              </div>
+              </Link>
               <div className="flex items-center space-x-1">
                 <Link
                   to="/groups"
@@ -128,6 +135,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
           )}
+
+          {/* Public Page Navigation */}
+          {isPublicPage && (
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4 lg:px-8">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 group transition-all"
+              >
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+                  <ArrowLeft className="h-5 w-5" />
+                </div>
+                <span className="font-medium text-gray-600 group-hover:text-blue-600 transition-colors">
+                  Back to Dashboard
+                </span>
+              </Link>
+              <Link to="/dashboard" className="flex items-center gap-2">
+                <img src="/icon.svg" alt="Ceintelly" className="h-8 w-8" />
+                <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Ceintelly
+                </h2>
+              </Link>
+            </div>
+          )}
           
           {/* Page content */}
           <main className="flex-1 relative focus:outline-none">
@@ -136,7 +166,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         {/* Right Sidebar - Desktop Only */}
-        <RightSidebar />
+        {!hideRightSidebar && <RightSidebar />}
       </div>
 
       {/* Mobile Bottom Navigation */}
