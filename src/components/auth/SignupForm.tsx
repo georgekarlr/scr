@@ -119,9 +119,12 @@ const SignupForm: React.FC = () => {
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-8 sm:py-12">
         <div className="max-w-md w-full">
           <div className="text-center mb-6 sm:mb-10">
-            <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2 sm:mb-4">
-              Ceintelly
-            </h1>
+            <div className="flex flex-col items-center justify-center gap-4 mb-4">
+              <img src="/icon.svg" alt="Ceintelly" className="h-16 w-16 sm:h-20 sm:w-20" />
+              <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Ceintelly
+              </h1>
+            </div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Join the community</h2>
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 px-4">Start your social learning journey today.</p>
           </div>

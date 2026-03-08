@@ -69,9 +69,12 @@ const UpdatePasswordForm: React.FC = () => {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Ceintelly
-          </h1>
+          <div className="flex flex-col items-center justify-center gap-4 mb-4">
+            <img src="/icon.svg" alt="Ceintelly" className="h-16 w-16 sm:h-20 sm:w-20" />
+            <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Ceintelly
+            </h1>
+          </div>
           <h2 className="text-2xl font-bold text-gray-900">Update your password</h2>
           <p className="mt-2 text-gray-600">Enter a new password for your account.</p>
         </div>

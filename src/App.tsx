@@ -31,7 +31,10 @@ import TermsOfServicePage from './pages/legal/TermsOfServicePage'
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
 import CookiePolicyPage from './pages/legal/CookiePolicyPage'
 import AboutPage from './pages/AboutPage'
+import PresentationPage from './pages/PresentationPage'
+import HowToPage from './pages/HowToPage'
 import GroupsPage from './pages/GroupsPage'
+import GroupDetailsPage from './pages/GroupDetailsPage'
 
 function App() {
     console.log('App rendering, current path:', window.location.pathname)
@@ -45,6 +48,8 @@ function App() {
                             <Routes>
                         {/* Legal Pages - Publicly accessible */}
                         <Route path="/about" element={<Layout><AboutPage /></Layout>} />
+                        <Route path="/presentation" element={<Layout><PresentationPage /></Layout>} />
+                        <Route path="/how-to" element={<Layout><HowToPage /></Layout>} />
                         <Route path="/tos" element={<Layout><TermsOfServicePage /></Layout>} />
                         <Route path="/privacy" element={<Layout><PrivacyPolicyPage /></Layout>} />
                         <Route path="/cookies" element={<Layout><CookiePolicyPage /></Layout>} />
@@ -66,6 +71,7 @@ function App() {
                                 <Route path="/library" element={<ProtectedRoute><Layout><LibraryPage /></Layout></ProtectedRoute>} />
                                 <Route path="/explore" element={<ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>} />
                                 <Route path="/groups" element={<ProtectedRoute><Layout><GroupsPage /></Layout></ProtectedRoute>} />
+                                <Route path="/groups/:groupId" element={<ProtectedRoute><GroupDetailsPage /></ProtectedRoute>} />
                                 <Route path="/games" element={<ProtectedRoute><Layout><GamesPage /></Layout></ProtectedRoute>} />
                                 <Route path="/messages" element={<ProtectedRoute><Layout><MessagesPage /></Layout></ProtectedRoute>} />
                                 <Route path="/messages/:conversationId" element={<ProtectedRoute><Layout><ChatPage /></Layout></ProtectedRoute>} />

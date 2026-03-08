@@ -1,13 +1,11 @@
 import React from 'react'
-import { Info, Target, Users, Zap, Clock, Rocket } from 'lucide-react'
+import { Target, Users, Zap, Clock, Rocket } from 'lucide-react'
 
 const AboutPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
       <div className="flex items-center gap-4 mb-8">
-        <div className="p-4 bg-blue-100 rounded-2xl shadow-sm">
-          <Info className="h-10 w-10 text-blue-600" />
-        </div>
+        <img src="/icon.svg" alt="Ceintelly" className="h-16 w-16 sm:h-20 sm:w-20 drop-shadow-sm" />
         <div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight">About Ceintelly</h1>
           <p className="text-lg text-gray-500 font-medium">Empowering the next generation of learners.</p>

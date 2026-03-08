@@ -7,7 +7,9 @@ import {
   Shield, 
   MessageCircle,
   ExternalLink,
-  Info
+  Info,
+  Presentation,
+  BookOpen
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import LogoutConfirmationModal from '../components/ui/LogoutConfirmationModal'
@@ -33,6 +35,8 @@ const SettingsPage: React.FC = () => {
       title: 'Support',
       items: [
         { name: 'About Us', icon: Info, description: 'Learn about our mission and story', href: '/about' },
+        { name: 'How-To Guide', icon: BookOpen, description: 'Master Ceintelly step-by-step', href: '/how-to' },
+        { name: 'Presentation', icon: Presentation, description: 'View the product presentation', href: '/presentation' },
         { name: 'Help Center', icon: HelpCircle, description: 'Get help with using Ceintelly', href: '#' },
         { name: 'FAQ', icon: MessageCircle, description: 'Frequently asked questions', href: '#' },
         { name: 'Terms of Service', icon: FileText, description: 'Read our terms and conditions', href: '/tos' },

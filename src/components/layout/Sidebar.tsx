@@ -63,7 +63,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className="flex flex-col h-full">
             {/* Header - Mobile only close button */}
             <div className="flex items-center justify-between h-16 px-6 lg:hidden border-b border-gray-100">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Ceintelly</h1>
+              <Link to="/dashboard" className="flex items-center gap-2" onClick={onClose}>
+                <img src="/icon.svg" alt="Ceintelly" className="h-8 w-8" />
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Ceintelly</h1>
+              </Link>
               <button
                   onClick={onClose}
                   className="p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors"
@@ -75,7 +78,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
             {/* Logo - Desktop */}
             <div className="hidden lg:flex items-center h-16 px-6">
-              <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Ceintelly</h1>
+              <Link to="/dashboard" className="flex items-center gap-3">
+                <img src="/icon.svg" alt="Ceintelly" className="h-10 w-10" />
+                <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Ceintelly</h1>
+              </Link>
             </div>
 
             {/* Navigation */}

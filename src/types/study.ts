@@ -334,16 +334,19 @@ export interface FinishStudySessionParams {
   set_id: string;
   duration_seconds: number;
   results: StudySessionResult[];
+  game_mode?: string;
+  game_data?: any;
 }
 
 export interface FinishStudySessionResponse {
   xp_earned: number;
-  total_xp: number;
   new_streak: number;
-  streak_increased: boolean;
-  cards_reviewed: number;
-  correct_count: number;
-  accuracy: number;
+  // Optional fields for backward compatibility/UI
+  total_xp?: number;
+  streak_increased?: boolean;
+  cards_reviewed?: number;
+  correct_count?: number;
+  accuracy?: number;
 }
 
 export interface HomeDashboardResponse {

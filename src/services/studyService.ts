@@ -311,6 +311,8 @@ export const studyService = {
       p_set_id: params.set_id,
       p_duration_seconds: params.duration_seconds,
       p_results: params.results,
+      p_game_mode: params.game_mode || 'standard',
+      p_game_data: params.game_data || null,
     });
 
     if (error) {
