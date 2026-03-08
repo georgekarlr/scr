@@ -102,7 +102,7 @@ export const useStudySession = (setId: string | undefined, onFinish: (summary: F
     }
   }, [setId, resetItemState, shuffleItem]);
 
-  const handleFinish = async () => {
+  const handleFinish = async (gameMode: string = 'standard', gameData: any = null) => {
     if (!data || !startTime || isFinishing) return;
 
     try {
@@ -126,7 +126,9 @@ export const useStudySession = (setId: string | undefined, onFinish: (summary: F
         summary = await studyService.finishStudySession({
           set_id: data.set.id,
           duration_seconds: Math.max(durationSeconds, 1),
-          results: resultsArray
+          results: resultsArray,
+          game_mode: gameMode,
+          game_data: gameData
         });
         showToast('Study session saved!', 'success');
       }

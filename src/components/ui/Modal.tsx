@@ -30,7 +30,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-xl shadow-2xl transform transition-all flex flex-col h-[92vh] sm:h-auto sm:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-xl shadow-2xl transform transition-all flex flex-col h-[92dvh] sm:h-auto sm:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <h3 className="text-lg font-bold text-gray-900">{title}</h3>
                     <button
