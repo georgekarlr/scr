@@ -316,29 +316,31 @@ const GroupDetailsPage: React.FC = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b border-gray-100 sticky top-16 bg-white z-10 px-4 lg:px-10">
-        <div className="max-w-6xl mx-auto flex items-center space-x-10">
-          {[
-            { id: 'content', label: 'Study Content', icon: BookOpen },
-            { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-            { id: 'members', label: 'Members', icon: Users },
-            { id: 'activity', label: 'Activity', icon: Clock },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'content' | 'leaderboard' | 'members' | 'activity')}
-              className={`
-                relative py-6 flex items-center gap-2 font-black text-sm transition-all
-                ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}
-              `}
-            >
-              <tab.icon size={18} />
-              {tab.label}
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
-              )}
-            </button>
-          ))}
+      <div className="border-b border-gray-100 sticky top-16 bg-white z-10">
+        <div className="max-w-6xl mx-auto px-4 lg:px-10 overflow-x-auto no-scrollbar">
+          <div className="flex items-center space-x-10 whitespace-nowrap min-w-max">
+            {[
+              { id: 'content', label: 'Study Content', icon: BookOpen },
+              { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+              { id: 'members', label: 'Members', icon: Users },
+              { id: 'activity', label: 'Activity', icon: Clock },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as 'content' | 'leaderboard' | 'members' | 'activity')}
+                className={`
+                  relative py-6 flex items-center gap-2 font-black text-sm transition-all
+                  ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}
+                `}
+              >
+                <tab.icon size={18} />
+                {tab.label}
+                {activeTab === tab.id && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
