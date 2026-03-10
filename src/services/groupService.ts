@@ -8,7 +8,11 @@ import {
   GroupContentItem,
   GroupFullDetails,
   GroupActivityLog,
-  AddSetToGroupParams
+  AddSetToGroupParams,
+  UpdateGroupSettingsParams,
+  InviteUserToGroupParams,
+  ResetInviteCodeParams,
+  ResetInviteCodeResponse
 } from '../types/groups';
 
 export const groupService = {
@@ -33,8 +37,8 @@ export const groupService = {
   /**
    * Joins a group using an invite code.
    */
-  async joinGroupByCode(inviteCode: string): Promise<{ success: boolean; group_id: string }> {
-    const { data, error } = await supabase.rpc('c_join_group', {
+  async joinGroupByCode(inviteCode: string): Promise<{ success: boolean; group_id: string; group_name: string }> {
+    const { data, error } = await supabase.rpc('c_join_group_by_code', {
       p_invite_code: inviteCode,
     });
 
@@ -43,7 +47,7 @@ export const groupService = {
       throw error;
     }
 
-    return data as { success: boolean; group_id: string };
+    return data as { success: boolean; group_id: string; group_name: string };
   },
 
   /**
@@ -145,24 +149,8 @@ export const groupService = {
   /**
    * Updates group settings.
    */
-  async updateGroupSettings(
-    groupId: string,
-    name: string,
-    description: string | null,
-    isPrivate: boolean,
-    allowCreation: boolean,
-    showLeaderboard: boolean,
-    showLogs: boolean
-  ): Promise<void> {
-    const { error } = await supabase.rpc('c_update_group_settings', {
-      p_group_id: groupId,
-      p_name: name,
-      p_description: description,
-      p_is_private: isPrivate,
-      p_allow_creation: allowCreation,
-      p_show_leaderboard: showLeaderboard,
-      p_show_logs: showLogs,
-    });
+  async updateGroupSettings(params: UpdateGroupSettingsParams): Promise<void> {
+    const { error } = await supabase.rpc('c_update_group_settings', params);
 
     if (error) {
       console.error('Error updating group settings:', error);
@@ -200,4 +188,32 @@ export const groupService = {
 
     return data as string;
   },
+
+  /**
+   * Invites a user to a group.
+   */
+  async inviteUserToGroup(params: InviteUserToGroupParams): Promise<{ success?: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc('c_invite_user_to_group', params);
+
+    if (error) {
+      console.error('Error inviting user to group:', error);
+      throw error;
+    }
+
+    return data as { success?: boolean; error?: string };
+  },
+
+  /**
+   * Resets the invite code for a group.
+   */
+  async resetInviteCode(params: ResetInviteCodeParams): Promise<ResetInviteCodeResponse> {
+    const { data, error } = await supabase.rpc('c_reset_invite_code', params);
+
+    if (error) {
+      console.error('Error resetting invite code:', error);
+      throw error;
+    }
+
+    return data as ResetInviteCodeResponse;
+  }
 };
