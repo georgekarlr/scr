@@ -10,14 +10,15 @@ import {
 } from '../types/groups';
 import AddContentModal from '../components/groups/AddContentModal';
 import GroupSettingsModal from '../components/groups/GroupSettingsModal';
+import InviteUserModal from '../components/groups/InviteUserModal';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
 import { useToast } from '../contexts/ToastContext';
 import { 
   Users, 
   Trophy, 
   BookOpen, 
   Settings, 
-  ChevronLeft, 
-  Loader2, 
+  Loader2,
   Plus, 
   Globe, 
   Lock,
@@ -25,7 +26,12 @@ import {
   Star,
   Clock,
   User,
-  ArrowLeft
+  ArrowLeft,
+  Copy,
+  Check,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const GroupDetailsPage: React.FC = () => {
@@ -42,6 +48,9 @@ const GroupDetailsPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [isAddContentOpen, setIsAddContentOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isResetCodeConfirmOpen, setIsResetCodeConfirmOpen] = useState(false);
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
 
   const fetchData = useCallback(async () => {
     if (!groupId) return;
@@ -88,6 +97,42 @@ const GroupDetailsPage: React.FC = () => {
       showToast('Action failed', 'error');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const [copied, setCopied] = useState(false);
+  const copyInviteCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    showToast('Invite code copied!', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const [resettingCode, setResettingCode] = useState(false);
+  const handleResetInviteCode = async () => {
+    if (!groupId || !isAdmin || resettingCode) return;
+    
+    setResettingCode(true);
+    try {
+      const result = await groupService.resetInviteCode({ p_group_id: groupId });
+      if (result.success && result.new_code) {
+        showToast('Invite code reset successfully!', 'success');
+        setDetails(prev => prev ? {
+          ...prev,
+          group: {
+            ...prev.group,
+            invite_code: result.new_code
+          }
+        } : null);
+      } else {
+        showToast(result.error || 'Failed to reset invite code', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('An error occurred while resetting the invite code', 'error');
+    } finally {
+      setResettingCode(false);
+      setIsResetCodeConfirmOpen(false);
     }
   };
 
@@ -153,12 +198,15 @@ const GroupDetailsPage: React.FC = () => {
       </div>
 
       {/* Hero Header */}
-      <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white overflow-hidden transition-all duration-300">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]" />
-        <div className="relative max-w-6xl mx-auto px-4 py-8 sm:py-12 lg:px-10">
+        
+        <div className={`relative max-w-6xl mx-auto px-4 lg:px-10 transition-all duration-500 ease-in-out ${
+          isHeaderExpanded ? 'py-8 sm:py-12 opacity-100 max-h-[1000px]' : 'py-3 opacity-0 max-h-0 pointer-events-none'
+        }`}>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="flex items-start gap-6">
-              <div className="h-24 w-24 sm:h-32 sm:w-32 bg-white/10 backdrop-blur-md rounded-[2.5rem] flex items-center justify-center text-4xl font-black border-2 border-white/20 shadow-2xl overflow-hidden">
+              <div className="h-24 w-24 sm:h-32 sm:w-32 bg-white/10 backdrop-blur-md rounded-[2.5rem] flex items-center justify-center text-4xl font-black border-2 border-white/20 shadow-2xl overflow-hidden shrink-0">
                 {group.avatar_url ? (
                   <img src={group.avatar_url} alt={group.name} className="h-full w-full object-cover" />
                 ) : (
@@ -178,6 +226,30 @@ const GroupDetailsPage: React.FC = () => {
                     <Users size={18} className="text-blue-200" />
                     <span className="font-bold">{group.member_count} Members</span>
                   </div>
+                  {isMember && group.invite_code && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 group">
+                      <button 
+                        onClick={() => copyInviteCode(group.invite_code!)}
+                        className="flex items-center gap-2 hover:opacity-80 transition-all"
+                        title="Click to copy invite code"
+                      >
+                        <span className="text-blue-200 text-xs font-bold uppercase tracking-widest">Invite Code:</span>
+                        <span className="font-mono font-bold">{group.invite_code}</span>
+                        {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} className="text-blue-200 transition-colors" />}
+                      </button>
+                      
+                      {isAdmin && (
+                        <button
+                          onClick={() => setIsResetCodeConfirmOpen(true)}
+                          disabled={resettingCode}
+                          className="ml-2 p-1.5 hover:bg-white/20 rounded-lg transition-colors text-blue-200 hover:text-white"
+                          title="Reset invite code"
+                        >
+                          <RefreshCw size={14} className={resettingCode ? 'animate-spin' : ''} />
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {isMember && (
                     <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-orange-300">
                       <Trophy size={18} />
@@ -218,6 +290,28 @@ const GroupDetailsPage: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Header Toggle Bar */}
+        <div className="relative border-t border-white/10 bg-black/10 hover:bg-black/20 transition-colors group/toggle">
+          <button
+            onClick={() => setIsHeaderExpanded(!isHeaderExpanded)}
+            className="w-full h-8 flex items-center justify-center gap-2 text-blue-100/60 group-hover/toggle:text-white transition-all"
+            title={isHeaderExpanded ? "Collapse header" : "Expand header"}
+          >
+            {!isHeaderExpanded && (
+              <span className="text-xs font-bold uppercase tracking-wider animate-in fade-in slide-in-from-bottom-1">
+                Show Community Details ({group.name})
+              </span>
+            )}
+            <div className="p-1 rounded-full bg-white/5 border border-white/5">
+              {isHeaderExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </div>
+          </button>
         </div>
       </div>
 
@@ -386,7 +480,18 @@ const GroupDetailsPage: React.FC = () => {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-black text-gray-900">Community Members</h2>
-              <p className="text-sm text-gray-500 font-bold">{group.member_count} total</p>
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-gray-500 font-bold">{group.member_count} total</p>
+                {isAdmin && (
+                  <button 
+                    onClick={() => setIsInviteOpen(true)}
+                    className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition-all text-xs"
+                  >
+                    <Plus size={16} className="mr-1.5" />
+                    Invite
+                  </button>
+                )}
+              </div>
             </div>
             
             {access_denied ? (
@@ -507,6 +612,25 @@ const GroupDetailsPage: React.FC = () => {
           onUpdate={fetchData}
         />
       )}
+
+      {isInviteOpen && groupId && (
+        <InviteUserModal 
+          isOpen={isInviteOpen}
+          onClose={() => setIsInviteOpen(false)}
+          groupId={groupId}
+        />
+      )}
+
+      <ConfirmationModal
+        isOpen={isResetCodeConfirmOpen}
+        onClose={() => setIsResetCodeConfirmOpen(false)}
+        onConfirm={handleResetInviteCode}
+        title="Reset Invite Code"
+        message="Are you sure you want to reset the invite code? The old code will no longer work and you will need to share the new one with potential members."
+        confirmText="Reset Code"
+        variant="warning"
+        loading={resettingCode}
+      />
     </div>
   );
 };

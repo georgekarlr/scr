@@ -1,3 +1,5 @@
+import { CreateStudyItem } from './study';
+
 export type GroupRole = 'admin' | 'tutor' | 'student';
 export type GroupMemberStatus = 'active' | 'invited' | 'requested' | 'banned';
 
@@ -120,5 +122,30 @@ export interface AddSetToGroupParams {
   p_description?: string | null;
   p_subject_id?: number | null;
   p_tags?: string[] | null;
-  p_items?: any; // jsonb in SQL, can be CreateStudyItem[]
+  p_items?: CreateStudyItem[] | null;
+}
+
+export interface UpdateGroupSettingsParams {
+  p_group_id: string;
+  p_name: string;
+  p_description: string | null;
+  p_is_private: boolean;
+  p_allow_creation: boolean;
+  p_show_leaderboard: boolean;
+  p_show_logs: boolean;
+}
+
+export interface InviteUserToGroupParams {
+  p_group_id: string;
+  p_target_user_id: string;
+}
+
+export interface ResetInviteCodeParams {
+  p_group_id: string;
+}
+
+export interface ResetInviteCodeResponse {
+  success: boolean;
+  new_code?: string;
+  error?: string;
 }

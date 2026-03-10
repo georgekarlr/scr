@@ -22,7 +22,8 @@ import {
   Check, 
   X as CloseIcon,
   LogOut,
-  Clock
+  Clock,
+  Ticket
 } from 'lucide-react'
 import CreateGroupModal from '../components/groups/CreateGroupModal'
 
@@ -216,6 +217,9 @@ const GroupsPage: React.FC = () => {
   const [explore, setExplore] = useState<GroupExploreItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isJoinByCodeOpen, setIsJoinByCodeOpen] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -255,6 +259,31 @@ const GroupsPage: React.FC = () => {
       showToast('Action failed', 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleJoinByCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteCode.trim() || isJoining) return;
+
+    setIsJoining(true);
+    try {
+      const result = await groupService.joinGroupByCode(inviteCode.trim());
+      if (result.success) {
+        showToast(`Successfully joined ${result.group_name}!`, 'success');
+        setIsJoinByCodeOpen(false);
+        setInviteCode('');
+        fetchData();
+        // Optionally navigate to the new group
+        navigate(`/groups/${result.group_id}`);
+      } else if ((result as any).error) {
+        showToast((result as any).error, 'error');
+      }
+    } catch (error: any) {
+      const message = error.message || 'Failed to join group';
+      showToast(message, 'error');
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -410,13 +439,22 @@ const GroupsPage: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Groups</h1>
             <p className="text-gray-500 mt-1 font-medium">Join or create study communities</p>
           </div>
-          <button 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center justify-center px-6 py-3.5 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-sm"
-          >
-            <Plus className="h-5 w-5 mr-2 stroke-[3px]" />
-            Create New Group
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button 
+              onClick={() => setIsJoinByCodeOpen(true)}
+              className="inline-flex items-center justify-center px-6 py-3.5 bg-white text-gray-900 font-black rounded-2xl border-2 border-gray-100 hover:bg-gray-50 hover:scale-[1.02] active:scale-95 transition-all text-sm"
+            >
+              <Ticket className="h-5 w-5 mr-2 text-blue-600 stroke-[2.5px]" />
+              Join by Code
+            </button>
+            <button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center justify-center px-6 py-3.5 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-sm"
+            >
+              <Plus className="h-5 w-5 mr-2 stroke-[3px]" />
+              Create New Group
+            </button>
+          </div>
         </div>
         
         {/* Navigation Tabs */}
@@ -464,6 +502,70 @@ const GroupsPage: React.FC = () => {
           setActiveTab('my-groups');
         }}
       />
+
+      {/* Join by Code Modal */}
+      {isJoinByCodeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                    <Ticket className="h-6 w-6" />
+                  </div>
+                  <h2 className="text-2xl font-black text-gray-900">Join Community</h2>
+                </div>
+                <button 
+                  onClick={() => setIsJoinByCodeOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400"
+                >
+                  <CloseIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              <p className="text-gray-500 mb-8 font-medium">
+                Enter the unique invite code shared with you to join a private or public study community.
+              </p>
+
+              <form onSubmit={handleJoinByCode}>
+                <div className="mb-6">
+                  <label htmlFor="inviteCode" className="block text-sm font-black text-gray-700 uppercase tracking-widest mb-2 px-1">
+                    Invite Code
+                  </label>
+                  <input
+                    autoFocus
+                    id="inviteCode"
+                    type="text"
+                    placeholder="E.g. CEIN-1234"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white rounded-2xl font-mono text-lg font-bold transition-all outline-none text-center tracking-[0.2em]"
+                    maxLength={15}
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsJoinByCodeOpen(false)}
+                    className="flex-1 py-4 px-6 bg-gray-50 text-gray-900 font-bold rounded-2xl hover:bg-gray-100 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isJoining || !inviteCode.trim()}
+                    className="flex-[2] py-4 px-6 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 disabled:opacity-50 disabled:scale-100 active:scale-95 transition-all flex items-center justify-center"
+                  >
+                    {isJoining ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Join Group'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
