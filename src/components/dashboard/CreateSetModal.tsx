@@ -73,7 +73,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({ isOpen, onClose, onSa
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[1010] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-md">
       <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 h-[95vh] sm:h-auto sm:max-h-[85vh] mb-[env(safe-area-inset-bottom)] pb-[env(safe-area-inset-bottom)] sm:mb-0 sm:pb-0">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900">

@@ -13,7 +13,7 @@ const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, likers, load
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1010] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[60vh]">
         {/* Header */}
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
