@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { studyService } from '../../services/studyService'
+import { groupService } from '../../services/groupService'
 import { Subject, CreateStudyItem, UpdateStudyItem, StudyItemType, FlashcardContent, QuizQuestionContent, NoteContent, MatchingPairsContent, OrderSequenceContent, CheckboxQuestionContent, WrittenAnswerContent } from '../../types/study'
 import { Loader2, Plus, X, Brain, CheckSquare, FileText, Trash2, Edit2, GitMerge, ListOrdered, Type, CheckCircle2 } from 'lucide-react'
 import { useToast } from '../../contexts/ToastContext'
@@ -8,6 +9,7 @@ interface CreateSetModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: () => void
+  groupId?: string
   mode?: 'create' | 'edit'
   initialData?: {
     id: string
@@ -635,7 +637,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({ isOpen, onClose, onSa
   )
 }
 
-const CreateSetModal: React.FC<CreateSetModalProps> = ({ isOpen, onClose, onSuccess, mode = 'create', initialData }) => {
+const CreateSetModal: React.FC<CreateSetModalProps> = ({ isOpen, onClose, onSuccess, mode = 'create', initialData, groupId }) => {
   const { showToast } = useToast()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -729,16 +731,30 @@ const CreateSetModal: React.FC<CreateSetModalProps> = ({ isOpen, onClose, onSucc
     try {
       setLoading(true)
       if (mode === 'edit' && initialData) {
-        await studyService.updateFullSet({
-          set_id: initialData.id,
-          title: title.trim(),
-          description: description.trim(),
-          subject_id: Number(subjectId),
-          is_public: isPublic,
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-          items: items
-        })
-        showToast('Study set updated successfully!', 'success')
+        if (groupId) {
+          await groupService.updateGroupSet({
+            p_group_id: groupId,
+            p_set_id: initialData.id,
+            p_title: title.trim(),
+            p_description: description.trim(),
+            p_subject_id: Number(subjectId),
+            p_is_public: isPublic,
+            p_tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+            p_items: items
+          })
+          showToast('Study set updated in group context!', 'success')
+        } else {
+          await studyService.updateFullSet({
+            set_id: initialData.id,
+            title: title.trim(),
+            description: description.trim(),
+            subject_id: Number(subjectId),
+            is_public: isPublic,
+            tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+            items: items
+          })
+          showToast('Study set updated successfully!', 'success')
+        }
       } else {
         await studyService.createFullSet({
           title: title.trim(),

@@ -188,6 +188,12 @@ export const useCarParkGame = ({ setId, selectedItemIds }: UseCarParkGameProps) 
     }, delay);
   };
 
+  useEffect(() => {
+    if (selectedItemIds && selectedItemIds.length > 0 && gameState === 'config') {
+      fetchItems();
+    }
+  }, [selectedItemIds, gameState, fetchItems]);
+
   return {
     gameState,
     setGameState,

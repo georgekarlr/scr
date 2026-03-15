@@ -7,9 +7,10 @@ import { useTimeBattleGame } from './useTimeBattleGame';
 interface TimeBattleGameProps {
   setId: string;
   selectedItemIds?: string[];
+  duration?: number;
 }
 
-const TimeBattleGame: React.FC<TimeBattleGameProps> = ({ setId, selectedItemIds }) => {
+const TimeBattleGame: React.FC<TimeBattleGameProps> = ({ setId, selectedItemIds, duration: initialDuration }) => {
   const navigate = useNavigate();
   const {
     gameState,
@@ -26,6 +27,8 @@ const TimeBattleGame: React.FC<TimeBattleGameProps> = ({ setId, selectedItemIds 
     isAnswered,
     isCorrect,
     gameEndedReason,
+    isFinishing,
+    sessionSummary,
     fetchItems,
     handleAnswer,
     flipped, setFlipped,
@@ -39,7 +42,7 @@ const TimeBattleGame: React.FC<TimeBattleGameProps> = ({ setId, selectedItemIds 
     shuffledCheckboxOptions,
     shuffledMatchingLeft,
     shuffledMatchingRight,
-  } = useTimeBattleGame({ setId, selectedItemIds });
+  } = useTimeBattleGame({ setId, selectedItemIds, initialDuration });
 
   // Duration options in seconds
   const durationOptions = [30, 60, 120];
@@ -487,9 +490,24 @@ const TimeBattleGame: React.FC<TimeBattleGameProps> = ({ setId, selectedItemIds 
         </p>
         {gameEndedReason !== 'no-items' && (
           <>
-            <div className="bg-gray-50 rounded-2xl p-6 mb-6">
-              <span className="text-gray-400 font-bold uppercase tracking-widest text-sm mb-1 block">Final Score</span>
-              <span className="text-6xl font-black text-blue-600">{score}</span>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <span className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-1 block">Final Score</span>
+                <span className="text-4xl font-black text-purple-600">{score}</span>
+              </div>
+              <div className="bg-purple-50 rounded-2xl p-6 relative overflow-hidden group">
+                <div className="absolute -right-2 -bottom-2 text-purple-100 group-hover:scale-110 transition-transform duration-500">
+                  <Brain size={64} fill="currentColor" />
+                </div>
+                <span className="text-purple-400 font-bold uppercase tracking-widest text-xs mb-1 block relative z-10">XP Earned</span>
+                {isFinishing ? (
+                  <Loader2 className="h-8 w-8 text-purple-600 animate-spin relative z-10" />
+                ) : (
+                  <span className="text-4xl font-black text-purple-700 relative z-10">
+                    +{sessionSummary?.xp_earned || 0}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-8">
               <div className="flex items-center justify-center space-x-2 p-3 rounded-2xl bg-green-50 border border-green-200">

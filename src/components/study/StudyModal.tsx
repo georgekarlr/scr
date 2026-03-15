@@ -158,7 +158,8 @@ const StudyModal: React.FC<StudyModalProps> = ({ setId, isOpen, onClose }) => {
         const summary = await studyService.finishStudySession({
           set_id: data.set.id,
           duration_seconds: Math.max(durationSeconds, 1),
-          results: resultsArray
+          results: resultsArray,
+          game_mode: 'standard'
         });
         setSessionSummary(summary);
         showToast('Study session saved!', 'success');

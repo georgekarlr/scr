@@ -6,7 +6,8 @@ import {
   GroupLeaderboardEntry, 
   GroupContentItem,
   GroupAction,
-  GroupActivityLog
+  GroupActivityLog,
+  ItemGameStatistics
 } from '../types/groups';
 import AddContentModal from '../components/groups/AddContentModal';
 import GroupSettingsModal from '../components/groups/GroupSettingsModal';
@@ -31,26 +32,81 @@ import {
   Check,
   RefreshCw,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  BarChart2,
+  AlertCircle,
+  Filter
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { studyService } from '../services/studyService';
+import { GetSetDetailsResponse } from '../types/study';
+import WordExportModal from '../components/study/WordExportModal';
+import CreateSetModal from '../components/dashboard/CreateSetModal';
+import StudyModeModal from '../components/groups/StudyModeModal';
 
 const GroupDetailsPage: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'content' | 'leaderboard' | 'members' | 'activity'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'leaderboard' | 'members' | 'activity' | 'statistics'>('content');
   const [details, setDetails] = useState<GroupFullDetails | null>(null);
   const [leaderboard, setLeaderboard] = useState<GroupLeaderboardEntry[]>([]);
   const [content, setContent] = useState<GroupContentItem[]>([]);
   const [activity, setActivity] = useState<GroupActivityLog[]>([]);
+  const [stats, setStats] = useState<ItemGameStatistics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [isAddContentOpen, setIsAddContentOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isResetCodeConfirmOpen, setIsResetCodeConfirmOpen] = useState(false);
   const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
+
+  // Statistics filters
+  const [statsUserFilter, setStatsUserFilter] = useState<string>('all');
+  const [statsSetFilter, setStatsSetFilter] = useState<string>('all');
+  
+  // Menu and Modals state
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [isWordExportOpen, setIsWordExportOpen] = useState(false);
+  const [selectedSetForExport, setSelectedSetForExport] = useState<GetSetDetailsResponse | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [setToDelete, setSetToDelete] = useState<GroupContentItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [editSetData, setEditSetData] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isStudyModeOpen, setIsStudyModeOpen] = useState(false);
+  const [selectedSetForStudy, setSelectedSetForStudy] = useState<GroupContentItem | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    if (!groupId) return;
+    setStatsLoading(true);
+    try {
+      const statsData = await groupService.getItemGameStatistics({ 
+        p_group_id: groupId,
+        p_user_id: statsUserFilter === 'all' ? null : (statsUserFilter === 'me' ? user?.id : statsUserFilter),
+        p_set_id: statsSetFilter === 'all' ? null : statsSetFilter
+      });
+      setStats(statsData);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to load statistics', 'error');
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [groupId, showToast, statsUserFilter, statsSetFilter, user?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'statistics') {
+      fetchStats();
+    }
+  }, [activeTab, fetchStats]);
 
   const fetchData = useCallback(async () => {
     if (!groupId) return;
@@ -133,6 +189,65 @@ const GroupDetailsPage: React.FC = () => {
     } finally {
       setResettingCode(false);
       setIsResetCodeConfirmOpen(false);
+    }
+  };
+
+  const handleEditSet = async (item: GroupContentItem) => {
+    try {
+      const details = await studyService.getSetDetails(item.id);
+      if (!details) {
+        showToast('Set details not found', 'error');
+        return;
+      }
+      setEditSetData({
+        id: details.set.id,
+        title: details.set.title,
+        description: details.set.description || '',
+        subject_id: details.set.subject?.id || 0,
+        is_public: details.set.is_public,
+        tags: details.set.tags || [],
+        items: details.items.map(i => ({
+          id: i.id,
+          type: i.type,
+          content: i.content
+        }))
+      });
+      setIsEditModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to load set details', 'error');
+    }
+  };
+
+  const handleDeleteSet = async () => {
+    if (!setToDelete || !groupId) return;
+    setDeleting(true);
+    try {
+      await groupService.removeSetFromGroup({
+        p_group_id: groupId,
+        p_set_id: setToDelete.id,
+        p_delete_entirely: false // Default to only unlinking from group
+      });
+      showToast('Set removed from group successfully', 'success');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to remove set from group', 'error');
+    } finally {
+      setDeleting(false);
+      setIsDeleteConfirmOpen(false);
+      setSetToDelete(null);
+    }
+  };
+
+  const handleGenerateWord = async (item: GroupContentItem) => {
+    try {
+      const details = await studyService.getSetDetails(item.id);
+      setSelectedSetForExport(details);
+      setIsWordExportOpen(true);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to load set details for export', 'error');
     }
   };
 
@@ -324,10 +439,11 @@ const GroupDetailsPage: React.FC = () => {
               { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
               { id: 'members', label: 'Members', icon: Users },
               { id: 'activity', label: 'Activity', icon: Clock },
+              { id: 'statistics', label: 'Statistics', icon: BarChart2 },
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'content' | 'leaderboard' | 'members' | 'activity')}
+                onClick={() => setActiveTab(tab.id as 'content' | 'leaderboard' | 'members' | 'activity' | 'statistics')}
                 className={`
                   relative py-6 flex items-center gap-2 font-black text-sm transition-all
                   ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}
@@ -378,21 +494,95 @@ const GroupDetailsPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {content.map((item) => (
-                  <Link 
+                  <div 
                     key={item.id} 
-                    to={`/study/${item.id}`}
-                    className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group"
+                    className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="h-14 w-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
                         {item.subject?.emoji || '📚'}
                       </div>
                       <div className="flex flex-col items-end">
-                        <div className="flex items-center text-yellow-500 font-black text-sm mb-1">
-                          <Star size={14} className="fill-current mr-1" />
-                          {item.average_rating ? item.average_rating.toFixed(1) : "N/A"}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center text-yellow-500 font-black text-sm">
+                            <Star size={14} className="fill-current mr-1" />
+                            {item.average_rating ? item.average_rating.toFixed(1) : "N/A"}
+                          </div>
+                          
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuId(activeMenuId === item.id ? null : item.id);
+                              }}
+                              className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600"
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+
+                            {activeMenuId === item.id && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-10" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuId(null);
+                                  }}
+                                />
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-100">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedSetForStudy(item);
+                                      setIsStudyModeOpen(true);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                  >
+                                    <BookOpen className="h-4 w-4 mr-3" />
+                                    Study Now
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditSet(item);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                  >
+                                    <Edit2 className="h-4 w-4 mr-3" />
+                                    Edit Set
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleGenerateWord(item);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                  >
+                                    <FileText className="h-4 w-4 mr-3" />
+                                    Generate Word
+                                  </button>
+                                  <div className="my-1 border-t border-gray-50" />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSetToDelete(item);
+                                      setIsDeleteConfirmOpen(true);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-3" />
+                                    Remove from Group
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                           {item.cards_count} Cards
                         </div>
                       </div>
@@ -404,11 +594,18 @@ const GroupDetailsPage: React.FC = () => {
                         <User size={12} className="mr-1.5" />
                         Added by @{item.creator.username}
                       </div>
-                      <button className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSetForStudy(item);
+                          setIsStudyModeOpen(true);
+                        }}
+                        className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"
+                      >
                         <BookOpen size={18} />
                       </button>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}
@@ -595,6 +792,256 @@ const GroupDetailsPage: React.FC = () => {
             </div>
           </div>
         )}
+        {activeTab === 'statistics' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900">Learning Analytics</h2>
+                <p className="text-gray-500 text-sm font-medium mt-1">
+                  Performance insights across games and study sets
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={fetchStats}
+                  disabled={statsLoading}
+                  className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition-all text-xs disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={`mr-1.5 ${statsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-gray-50/50 border border-gray-100 rounded-[2rem] p-6 mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter size={16} className="text-blue-600" />
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Filter Data</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* User Filter */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Member</label>
+                  <select
+                    value={statsUserFilter}
+                    onChange={(e) => setStatsUserFilter(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">Everyone in Group</option>
+                    <option value="me">My Personal Stats</option>
+                    {leaderboard
+                      .filter(m => m.user_id !== user?.id)
+                      .map(member => (
+                        <option key={member.user_id} value={member.user_id}>
+                          {member.username}'s Stats
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
+
+                {/* Set Filter */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Study Set</label>
+                  <select
+                    value={statsSetFilter}
+                    onChange={(e) => setStatsSetFilter(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">All Study Sets</option>
+                    {content.map(set => (
+                      <option key={set.id} value={set.id}>
+                        {set.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {statsLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-500 mb-4" />
+                <p className="text-gray-500 font-bold">Calculating insights...</p>
+              </div>
+            ) : !stats || (stats.rush_break.length === 0 && stats.time_battle.length === 0 && stats.speed_march.length === 0) ? (
+              <div className="text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
+                <div className="h-20 w-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6 text-gray-300">
+                  <BarChart2 size={40} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No analytics available</h3>
+                <p className="text-gray-500 max-w-xs mx-auto">Play some games to generate detailed item-level performance statistics.</p>
+              </div>
+            ) : (
+              <div className="space-y-12">
+                {/* Rush Break Section */}
+                {stats.rush_break.length > 0 && (
+                  <section>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                        <Trophy size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">Rush Break Performance</h3>
+                        <p className="text-sm text-gray-500 font-medium">Top missed questions and average speed</p>
+                      </div>
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Question / Item</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Correct</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Wrong</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Avg Duration</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {stats.rush_break.map((s, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-bold text-gray-900 line-clamp-1 group-hover:line-clamp-none transition-all">{s.question}</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mt-0.5">{s.item_type}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700">
+                                    {s.total_correct}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${s.total_wrong > 0 ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-400'}`}>
+                                    {s.total_wrong}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <span className="text-sm font-bold text-gray-600">{s.avg_duration_seconds}s</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* Time Battle Section */}
+                {stats.time_battle.length > 0 && (
+                  <section>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <Clock size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">Time Battle Analytics</h3>
+                        <p className="text-sm text-gray-500 font-medium">How much time is left when answering correctly</p>
+                      </div>
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Question / Item</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Correct</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Wrong</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Avg Time Left</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {stats.time_battle.map((s, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-bold text-gray-900 line-clamp-1 group-hover:line-clamp-none transition-all">{s.question}</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mt-0.5">{s.item_type}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700">
+                                    {s.times_correct}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${s.times_wrong > 0 ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-400'}`}>
+                                    {s.times_wrong}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <span className="text-sm font-bold text-blue-600">{s.avg_time_left_seconds}s</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* Speed March Section */}
+                {stats.speed_march.length > 0 && (
+                  <section>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <Users size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">Speed March Insights</h3>
+                        <p className="text-sm text-gray-500 font-medium">Slowest questions that need more practice</p>
+                      </div>
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Question / Item</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Correct</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Wrong</th>
+                              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Avg Duration</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {stats.speed_march.map((s, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-bold text-gray-900 line-clamp-1 group-hover:line-clamp-none transition-all">{s.question}</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mt-0.5">{s.item_type}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700">
+                                    {s.times_correct}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${s.times_wrong > 0 ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-400'}`}>
+                                    {s.times_wrong}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <span className={`text-sm font-bold ${s.avg_duration_seconds > 5 ? 'text-orange-600' : 'text-gray-600'}`}>
+                                    {s.avg_duration_seconds}s
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {groupId && (
@@ -633,6 +1080,59 @@ const GroupDetailsPage: React.FC = () => {
         variant="warning"
         loading={resettingCode}
       />
+
+      <ConfirmationModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setSetToDelete(null);
+        }}
+        onConfirm={handleDeleteSet}
+        title="Remove Study Set"
+        message={`Are you sure you want to remove "${setToDelete?.title}" from this group?`}
+        confirmText="Remove"
+        variant="danger"
+        loading={deleting}
+      />
+
+      {isWordExportOpen && selectedSetForExport && (
+        <WordExportModal
+          data={selectedSetForExport}
+          onClose={() => {
+            setIsWordExportOpen(false);
+            setSelectedSetForExport(null);
+          }}
+        />
+      )}
+
+      {isEditModalOpen && (
+        <CreateSetModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditSetData(null);
+          }}
+          mode="edit"
+          groupId={groupId}
+          initialData={editSetData}
+          onSuccess={() => {
+            fetchData();
+            setIsEditModalOpen(false);
+            setEditSetData(null);
+          }}
+        />
+      )}
+      {selectedSetForStudy && (
+        <StudyModeModal
+          isOpen={isStudyModeOpen}
+          onClose={() => {
+            setIsStudyModeOpen(false);
+            setSelectedSetForStudy(null);
+          }}
+          setId={selectedSetForStudy.id}
+          setTitle={selectedSetForStudy.title}
+        />
+      )}
     </div>
   );
 };

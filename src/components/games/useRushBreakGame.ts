@@ -13,12 +13,13 @@ export type GameState = 'config' | 'loading' | 'playing' | 'game-over';
 interface UseRushBreakGameProps {
   setId: string;
   selectedItemIds?: string[];
+  initialDuration?: number;
 }
 
-export const useRushBreakGame = ({ setId, selectedItemIds }: UseRushBreakGameProps) => {
+export const useRushBreakGame = ({ setId, selectedItemIds, initialDuration }: UseRushBreakGameProps) => {
   const [gameState, setGameState] = useState<GameState>('config');
-  const [duration, setDuration] = useState(60);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [duration, setDuration] = useState(initialDuration || 60);
+  const [timeLeft, setTimeLeft] = useState(initialDuration || 60);
   const [score, setScore] = useState(0);
   const [totalCorrect, setTotalCorrect] = useState(0);
   const [totalMistakes, setTotalMistakes] = useState(0);
@@ -28,6 +29,9 @@ export const useRushBreakGame = ({ setId, selectedItemIds }: UseRushBreakGamePro
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [gameEndedReason, setGameEndedReason] = useState<'timeout' | 'no-items' | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<any>(null);
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   // Item-specific states
   const [flipped, setFlipped] = useState(false);
@@ -100,6 +104,7 @@ export const useRushBreakGame = ({ setId, selectedItemIds }: UseRushBreakGamePro
         setItemStats({});
         setCurrentIndex(0);
         setTimeLeft(duration);
+        setStartTime(Date.now());
         setGameEndedReason(null);
         setGameState('playing');
         prepareItem(shuffled[0]);
@@ -190,6 +195,55 @@ export const useRushBreakGame = ({ setId, selectedItemIds }: UseRushBreakGamePro
     }, delay);
   };
 
+  const finishGame = useCallback(async () => {
+    if (isFinishing || !startTime) return;
+    setIsFinishing(true);
+    try {
+      const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Standard results for spaced repetition
+      const results = Object.entries(itemStats).map(([itemId, stats]) => ({
+        item_id: itemId,
+        is_correct: stats.mistakes === 0
+      }));
+
+      // Detailed game data for logs
+      const gameData = Object.entries(itemStats).map(([itemId, stats]) => ({
+        item_id: itemId,
+        type: stats.type,
+        question: stats.content.question || stats.content.front || '',
+        correct: stats.correct,
+        wrong: stats.mistakes,
+        duration: durationSeconds / Object.keys(itemStats).length // Approximate per item
+      }));
+
+      const summary = await studyService.finishStudySession({
+        set_id: setId,
+        duration_seconds: Math.max(durationSeconds, 1),
+        results,
+        game_mode: 'rush_break',
+        game_data: gameData
+      });
+      setSessionSummary(summary);
+    } catch (error) {
+      console.error('Failed to finish game session:', error);
+    } finally {
+      setIsFinishing(false);
+    }
+  }, [setId, startTime, itemStats, isFinishing]);
+
+  useEffect(() => {
+    if (gameState === 'game-over' && gameEndedReason !== 'no-items' && !sessionSummary && !isFinishing) {
+      finishGame();
+    }
+  }, [gameState, gameEndedReason, sessionSummary, isFinishing, finishGame]);
+
+  useEffect(() => {
+    if (selectedItemIds && selectedItemIds.length > 0 && gameState === 'config') {
+      fetchItems();
+    }
+  }, [selectedItemIds, gameState, fetchItems]);
+
   return {
     gameState,
     setGameState,
@@ -205,8 +259,11 @@ export const useRushBreakGame = ({ setId, selectedItemIds }: UseRushBreakGamePro
     isAnswered,
     isCorrect,
     gameEndedReason,
-    fetchItems,
+    isFinishing,
+    sessionSummary,
+    finishGame,
     handleAnswer,
+    startGame: fetchItems,
     // Item-specific states
     flipped, setFlipped,
     selectedOptionId, setSelectedOptionId,

@@ -1,4 +1,4 @@
-import { CreateStudyItem } from './study';
+import { CreateStudyItem, UpdateStudyItem } from './study';
 
 export type GroupRole = 'admin' | 'tutor' | 'student';
 export type GroupMemberStatus = 'active' | 'invited' | 'requested' | 'banned';
@@ -19,6 +19,23 @@ export interface Group {
   my_status: GroupMemberStatus | null;
   member_count: number;
   sets_count: number;
+}
+
+export interface UpdateGroupSetParams {
+  p_group_id: string;
+  p_set_id: string;
+  p_title: string;
+  p_description: string;
+  p_subject_id: number;
+  p_is_public: boolean;
+  p_tags: string[];
+  p_items: UpdateStudyItem[];
+}
+
+export interface RemoveSetFromGroupParams {
+  p_group_id: string;
+  p_set_id: string;
+  p_delete_entirely?: boolean;
 }
 
 export interface GroupDashboardActive {
@@ -148,4 +165,43 @@ export interface ResetInviteCodeResponse {
   success: boolean;
   new_code?: string;
   error?: string;
+}
+
+export interface RushBreakItemStat {
+  item_id: string;
+  item_type: string;
+  question: string;
+  total_correct: number;
+  total_wrong: number;
+  avg_duration_seconds: number;
+}
+
+export interface TimeBattleItemStat {
+  item_id: string;
+  item_type: string;
+  question: string;
+  times_correct: number;
+  times_wrong: number;
+  avg_time_left_seconds: number;
+}
+
+export interface SpeedMarchItemStat {
+  item_id: string;
+  item_type: string;
+  question: string;
+  times_correct: number;
+  times_wrong: number;
+  avg_duration_seconds: number;
+}
+
+export interface ItemGameStatistics {
+  rush_break: RushBreakItemStat[];
+  time_battle: TimeBattleItemStat[];
+  speed_march: SpeedMarchItemStat[];
+}
+
+export interface GetItemGameStatisticsParams {
+  p_user_id?: string | null;
+  p_group_id?: string | null;
+  p_set_id?: string | null;
 }
