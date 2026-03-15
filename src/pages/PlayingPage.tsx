@@ -11,6 +11,7 @@ const PlayingPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const selectedItemIds = location.state?.selectedItemIds as string[] | undefined;
+    const duration = location.state?.duration as number | undefined;
 
     return (
         <div className="flex flex-col items-center py-12 min-h-screen bg-gray-900 text-white relative overflow-x-hidden overflow-y-auto">
@@ -23,9 +24,9 @@ const PlayingPage: React.FC = () => {
             </button>
             
             {gameId === 'rush-break' && setId ? (
-                <RushBreakGame setId={setId} selectedItemIds={selectedItemIds} />
+                <RushBreakGame setId={setId} selectedItemIds={selectedItemIds} duration={duration} />
             ) : gameId === 'time-battle' && setId ? (
-                <TimeBattleGame setId={setId} selectedItemIds={selectedItemIds} />
+                <TimeBattleGame setId={setId} selectedItemIds={selectedItemIds} duration={duration} />
             ) : gameId === 'speed-march' && setId ? (
                 <SpeedMarchGame setId={setId} selectedItemIds={selectedItemIds} />
             ) : gameId === 'car-park' && setId ? (

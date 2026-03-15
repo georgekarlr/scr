@@ -27,6 +27,11 @@ export const useSpeedMarchGame = ({ setId, selectedItemIds }: UseSpeedMarchGameP
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [gameEndedReason, setGameEndedReason] = useState<'completed' | 'no-items' | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<any>(null);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [answeredItems, setAnsweredItems] = useState<any[]>([]);
+  const [lastAnswerTime, setLastAnswerTime] = useState<number | null>(null);
 
   // Item-specific states
   const [flipped, setFlipped] = useState(false);
@@ -99,6 +104,9 @@ export const useSpeedMarchGame = ({ setId, selectedItemIds }: UseSpeedMarchGameP
         setItemStats({});
         setCurrentIndex(0);
         setTimeTaken(0);
+        setStartTime(Date.now());
+        setLastAnswerTime(Date.now());
+        setAnsweredItems([]);
         setGameEndedReason(null);
         setGameState('playing');
         prepareItem(shuffled[0]);
@@ -140,6 +148,18 @@ export const useSpeedMarchGame = ({ setId, selectedItemIds }: UseSpeedMarchGameP
     
     const currentItem = items[currentIndex % items.length];
     if (currentItem) {
+      const now = Date.now();
+      const duration = lastAnswerTime ? (now - lastAnswerTime) / 1000 : 0;
+      setLastAnswerTime(now);
+      
+      setAnsweredItems(prev => [...prev, {
+        item_id: currentItem.id,
+        type: currentItem.type,
+        question: currentItem.content.question || currentItem.content.front || '',
+        is_correct: isCorrectAnswer,
+        duration
+      }]);
+
       setItemStats(prev => {
         const stats = prev[currentItem.id] || { 
           correct: 0, 
@@ -181,6 +201,45 @@ export const useSpeedMarchGame = ({ setId, selectedItemIds }: UseSpeedMarchGameP
     }, delay);
   };
 
+  const finishGame = useCallback(async () => {
+    if (isFinishing || !startTime) return;
+    setIsFinishing(true);
+    try {
+      const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Standard results for spaced repetition
+      const results = Object.entries(itemStats).map(([itemId, stats]) => ({
+        item_id: itemId,
+        is_correct: stats.mistakes === 0
+      }));
+
+      const summary = await studyService.finishStudySession({
+        set_id: setId,
+        duration_seconds: Math.max(durationSeconds, 1),
+        results,
+        game_mode: 'speed_march',
+        game_data: answeredItems
+      });
+      setSessionSummary(summary);
+    } catch (error) {
+      console.error('Failed to finish game session:', error);
+    } finally {
+      setIsFinishing(false);
+    }
+  }, [setId, startTime, itemStats, answeredItems, isFinishing]);
+
+  useEffect(() => {
+    if (gameState === 'game-over' && gameEndedReason !== 'no-items' && !sessionSummary && !isFinishing) {
+      finishGame();
+    }
+  }, [gameState, gameEndedReason, sessionSummary, isFinishing, finishGame]);
+
+  useEffect(() => {
+    if (selectedItemIds && selectedItemIds.length > 0 && gameState === 'config') {
+      fetchItems();
+    }
+  }, [selectedItemIds, gameState, fetchItems]);
+
   return {
     gameState,
     setGameState,
@@ -194,7 +253,10 @@ export const useSpeedMarchGame = ({ setId, selectedItemIds }: UseSpeedMarchGameP
     isAnswered,
     isCorrect,
     gameEndedReason,
-    fetchItems,
+    isFinishing,
+    sessionSummary,
+    finishGame,
+    startGame: fetchItems,
     handleAnswer,
     // Item-specific states
     flipped, setFlipped,

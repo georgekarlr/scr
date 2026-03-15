@@ -12,7 +12,11 @@ import {
   UpdateGroupSettingsParams,
   InviteUserToGroupParams,
   ResetInviteCodeParams,
-  ResetInviteCodeResponse
+  ResetInviteCodeResponse,
+  UpdateGroupSetParams,
+  RemoveSetFromGroupParams,
+  ItemGameStatistics,
+  GetItemGameStatisticsParams
 } from '../types/groups';
 
 export const groupService = {
@@ -215,5 +219,43 @@ export const groupService = {
     }
 
     return data as ResetInviteCodeResponse;
+  },
+
+  /**
+   * Updates a study set in a group context.
+   */
+  async updateGroupSet(params: UpdateGroupSetParams): Promise<void> {
+    const { error } = await supabase.rpc('c_update_group_set', params);
+
+    if (error) {
+      console.error('Error updating group set:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Removes a set from a group, optionally deleting it entirely.
+   */
+  async removeSetFromGroup(params: RemoveSetFromGroupParams): Promise<void> {
+    const { error } = await supabase.rpc('c_remove_set_from_group', params);
+
+    if (error) {
+      console.error('Error removing set from group:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches detailed item statistics for games played within a group.
+   */
+  async getItemGameStatistics(params: GetItemGameStatisticsParams): Promise<ItemGameStatistics> {
+    const { data, error } = await supabase.rpc('c_get_item_game_statistics', params);
+
+    if (error) {
+      console.error('Error fetching item game statistics:', error);
+      throw error;
+    }
+
+    return data as ItemGameStatistics;
   }
 };

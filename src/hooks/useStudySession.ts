@@ -154,7 +154,7 @@ export const useStudySession = (setId: string | undefined, onFinish: (summary: F
       resetItemState();
       shuffleItem(data.items[nextIdx]);
     } else if (data && currentIndex === data.items.length - 1) {
-      handleFinish();
+      handleFinish('standard');
     }
   };
 
