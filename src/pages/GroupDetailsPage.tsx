@@ -38,7 +38,8 @@ import {
   Trash2,
   BarChart2,
   AlertCircle,
-  Filter
+  Filter,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { studyService } from '../services/studyService';
@@ -71,6 +72,7 @@ const GroupDetailsPage: React.FC = () => {
   // Statistics filters
   const [statsUserFilter, setStatsUserFilter] = useState<string>('all');
   const [statsSetFilter, setStatsSetFilter] = useState<string>('all');
+  const [statsModeFilter, setStatsModeFilter] = useState<'all' | 'rush_break' | 'time_battle' | 'speed_march'>('all');
   
   // Menu and Modals state
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -521,64 +523,55 @@ const GroupDetailsPage: React.FC = () => {
                             </button>
 
                             {activeMenuId === item.id && (
-                              <>
-                                <div 
-                                  className="fixed inset-0 z-10" 
+                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-100">
+                                <button
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    setSelectedSetForStudy(item);
+                                    setIsStudyModeOpen(true);
                                     setActiveMenuId(null);
                                   }}
-                                />
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-100">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedSetForStudy(item);
-                                      setIsStudyModeOpen(true);
-                                      setActiveMenuId(null);
-                                    }}
-                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                  >
-                                    <BookOpen className="h-4 w-4 mr-3" />
-                                    Study Now
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditSet(item);
-                                      setActiveMenuId(null);
-                                    }}
-                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                  >
-                                    <Edit2 className="h-4 w-4 mr-3" />
-                                    Edit Set
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleGenerateWord(item);
-                                      setActiveMenuId(null);
-                                    }}
-                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                  >
-                                    <FileText className="h-4 w-4 mr-3" />
-                                    Generate Word
-                                  </button>
-                                  <div className="my-1 border-t border-gray-50" />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSetToDelete(item);
-                                      setIsDeleteConfirmOpen(true);
-                                      setActiveMenuId(null);
-                                    }}
-                                    className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-3" />
-                                    Remove from Group
-                                  </button>
-                                </div>
-                              </>
+                                  className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                >
+                                  <BookOpen className="h-4 w-4 mr-3" />
+                                  Study Now
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditSet(item);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                >
+                                  <Edit2 className="h-4 w-4 mr-3" />
+                                  Edit Set
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleGenerateWord(item);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                >
+                                  <FileText className="h-4 w-4 mr-3" />
+                                  Generate Word
+                                </button>
+                                <div className="my-1 border-t border-gray-50" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSetToDelete(item);
+                                    setIsDeleteConfirmOpen(true);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-3" />
+                                  Remove from Group
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -819,7 +812,7 @@ const GroupDetailsPage: React.FC = () => {
                 <Filter size={16} className="text-blue-600" />
                 <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Filter Data</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* User Filter */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Member</label>
@@ -857,6 +850,21 @@ const GroupDetailsPage: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                {/* Game Mode Filter */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Game Mode</label>
+                  <select
+                    value={statsModeFilter}
+                    onChange={(e) => setStatsModeFilter(e.target.value as any)}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">All Analytics</option>
+                    <option value="rush_break">Rush Break</option>
+                    <option value="time_battle">Time Battle</option>
+                    <option value="speed_march">Speed March</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -865,7 +873,11 @@ const GroupDetailsPage: React.FC = () => {
                 <Loader2 className="h-10 w-10 animate-spin text-blue-500 mb-4" />
                 <p className="text-gray-500 font-bold">Calculating insights...</p>
               </div>
-            ) : !stats || (stats.rush_break.length === 0 && stats.time_battle.length === 0 && stats.speed_march.length === 0) ? (
+            ) : !stats || (
+              (statsModeFilter === 'all' || statsModeFilter === 'rush_break') && stats.rush_break.length === 0 && 
+              (statsModeFilter === 'all' || statsModeFilter === 'time_battle') && stats.time_battle.length === 0 && 
+              (statsModeFilter === 'all' || statsModeFilter === 'speed_march') && stats.speed_march.length === 0
+            ) ? (
               <div className="text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
                 <div className="h-20 w-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6 text-gray-300">
                   <BarChart2 size={40} />
@@ -876,7 +888,7 @@ const GroupDetailsPage: React.FC = () => {
             ) : (
               <div className="space-y-12">
                 {/* Rush Break Section */}
-                {stats.rush_break.length > 0 && (
+                {(statsModeFilter === 'all' || statsModeFilter === 'rush_break') && stats.rush_break.length > 0 && (
                   <section>
                     <div className="flex items-center gap-3 mb-6">
                       <div className="h-10 w-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
@@ -930,7 +942,7 @@ const GroupDetailsPage: React.FC = () => {
                 )}
 
                 {/* Time Battle Section */}
-                {stats.time_battle.length > 0 && (
+                {(statsModeFilter === 'all' || statsModeFilter === 'time_battle') && stats.time_battle.length > 0 && (
                   <section>
                     <div className="flex items-center gap-3 mb-6">
                       <div className="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -984,7 +996,7 @@ const GroupDetailsPage: React.FC = () => {
                 )}
 
                 {/* Speed March Section */}
-                {stats.speed_march.length > 0 && (
+                {(statsModeFilter === 'all' || statsModeFilter === 'speed_march') && stats.speed_march.length > 0 && (
                   <section>
                     <div className="flex items-center gap-3 mb-6">
                       <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
