@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { studyService } from '../../services/studyService';
 import { 
   StudyItemPlay, 
   QuizQuestionContent,
   CheckboxQuestionContent, 
   MatchingPairsContent, 
-  OrderSequenceContent 
+  OrderSequenceContent,
+  FinishStudySessionResponse
 } from '../../types/study';
 
 export type GameState = 'config' | 'loading' | 'playing' | 'game-over';
@@ -28,6 +29,9 @@ export const useCarParkGame = ({ setId, selectedItemIds }: UseCarParkGameProps) 
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [gameEndedReason, setGameEndedReason] = useState<'timeout' | 'no-items' | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<FinishStudySessionResponse | null>(null);
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   // Item-specific states
   const [flipped, setFlipped] = useState(false);
@@ -102,6 +106,7 @@ export const useCarParkGame = ({ setId, selectedItemIds }: UseCarParkGameProps) 
         setTimeLeft(duration);
         setGameEndedReason(null);
         setGameState('playing');
+        setStartTime(Date.now());
         prepareItem(shuffled[0]);
       } else {
         setGameEndedReason('no-items');
@@ -194,6 +199,42 @@ export const useCarParkGame = ({ setId, selectedItemIds }: UseCarParkGameProps) 
     }
   }, [selectedItemIds, gameState, fetchItems]);
 
+  const finishGame = useCallback(async () => {
+    if (isFinishing || !startTime) return;
+    setIsFinishing(true);
+    try {
+      const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
+      
+      const results = Object.entries(itemStats).map(([itemId, stats]) => ({
+        item_id: itemId,
+        is_correct: stats.mistakes === 0
+      }));
+
+      const summary = await studyService.finishPersonalStudy({
+        p_set_id: setId,
+        p_duration_seconds: Math.max(durationSeconds, 1),
+        p_results: results,
+        p_game_mode: 'car_park',
+        p_game_data: Object.entries(itemStats).map(([itemId, stats]) => ({
+          item_id: itemId,
+          correct: stats.correct,
+          wrong: stats.mistakes
+        }))
+      });
+      setSessionSummary(summary);
+    } catch (error) {
+      console.error('Failed to finish game session:', error);
+    } finally {
+      setIsFinishing(false);
+    }
+  }, [setId, startTime, itemStats, isFinishing]);
+
+  useEffect(() => {
+    if (gameState === 'game-over' && gameEndedReason !== 'no-items' && !sessionSummary && !isFinishing) {
+      finishGame();
+    }
+  }, [gameState, gameEndedReason, sessionSummary, isFinishing, finishGame]);
+
   return {
     gameState,
     setGameState,
@@ -209,6 +250,9 @@ export const useCarParkGame = ({ setId, selectedItemIds }: UseCarParkGameProps) 
     isAnswered,
     isCorrect,
     gameEndedReason,
+    isFinishing,
+    sessionSummary,
+    finishGame,
     fetchItems,
     handleAnswer,
     // Item-specific states

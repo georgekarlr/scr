@@ -216,12 +216,12 @@ export const useTimeBattleGame = ({ setId, selectedItemIds, initialDuration }: U
         is_correct: stats.mistakes === 0
       }));
 
-      const summary = await studyService.finishStudySession({
-        set_id: setId,
-        duration_seconds: Math.max(durationSeconds, 1),
-        results,
-        game_mode: 'time_battle',
-        game_data: answeredItems
+      const summary = await studyService.finishPersonalStudy({
+        p_set_id: setId,
+        p_duration_seconds: Math.max(durationSeconds, 1),
+        p_results: results,
+        p_game_mode: 'time_battle',
+        p_game_data: answeredItems
       });
       setSessionSummary(summary);
     } catch (error) {

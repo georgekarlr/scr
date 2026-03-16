@@ -7,7 +7,7 @@ import { useNavigation } from '../contexts/NavigationContext'
 import { LibraryContentItem, LibraryTabType } from '../types/library'
 import { FlashcardContent, QuizQuestionContent, WrittenAnswerContent, CheckboxQuestionContent, NoteContent, MatchingPairsContent, OrderSequenceContent } from '../types/study'
 
-type Step = 'select-game' | 'select-set' | 'select-items'
+type Step = 'select-game' | 'select-set' | 'select-items' | 'select-duration'
 type SetTab = 'my-sets' | 'saved-sets'
 
 interface Game {
@@ -43,14 +43,16 @@ const GamesPage: React.FC = () => {
   const [setTab, setSetTab] = useState<SetTab>('my-sets')
   const [items, setItems] = useState<GameItem[]>([])
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set())
+  const [duration, setDuration] = useState(60)
+  const durationOptions = [30, 60, 120]
   const [sets, setSets] = useState<LibraryContentItem[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingItems, setLoadingItems] = useState(false)
   const navigate = useNavigate()
   const { setBottomNavVisible, setTopBarVisible } = useNavigation()
 
-  const stepIndex = step === 'select-game' ? 0 : step === 'select-set' ? 1 : 2
-  const steps = ['Select Game', 'Select Set', 'Select Items']
+  const stepIndex = step === 'select-game' ? 0 : step === 'select-set' ? 1 : step === 'select-items' ? 2 : 3
+  const steps = ['Select Game', 'Select Set', 'Select Items', 'Duration']
 
   useEffect(() => {
     if (step === 'select-items') {
@@ -471,7 +473,13 @@ const GamesPage: React.FC = () => {
           {/* Start Game Button */}
           <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center z-[60] pointer-events-none">
             <button
-              onClick={() => navigate(`/study/${selectedSet.id}/playing/${selectedGame?.id}`, { state: { selectedItemIds: Array.from(selectedItemIds) } })}
+              onClick={() => {
+                if (selectedGame?.id === 'rush-break' || selectedGame?.id === 'time-battle') {
+                  setStep('select-duration')
+                } else {
+                  navigate(`/study/${selectedSet.id}/playing/${selectedGame?.id}`, { state: { selectedItemIds: Array.from(selectedItemIds) } })
+                }
+              }}
               disabled={selectedItemIds.size < 1}
               className={`w-full max-w-2xl text-white font-bold py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center space-x-2 pointer-events-auto ${
                 selectedItemIds.size < 1
@@ -480,7 +488,85 @@ const GamesPage: React.FC = () => {
               }`}
             >
               <Play className="h-5 w-5 fill-current" />
-              <span>Start Game ({selectedItemIds.size})</span>
+              <span>{selectedGame?.id === 'rush-break' || selectedGame?.id === 'time-battle' ? 'Continue' : `Start Game (${selectedItemIds.size})`}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Select Duration */}
+      {step === 'select-duration' && selectedSet && (
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center space-x-2 mb-6">
+            <button 
+              onClick={() => setStep('select-items')}
+              className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to items
+            </button>
+          </div>
+
+          <div className="text-center mb-12">
+            <div className={`h-20 w-20 mx-auto bg-gradient-to-br ${selectedGame?.color} rounded-3xl flex items-center justify-center mb-6 shadow-xl`}>
+              {selectedGame && <selectedGame.icon className="h-10 w-10 text-white" />}
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">{selectedGame?.name}</h3>
+            <p className="text-gray-500">Set the time limit for your game</p>
+          </div>
+
+          <div className="space-y-6">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-widest block text-center">
+              Duration: <span className="text-blue-600">{duration} seconds</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {durationOptions.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setDuration(opt)}
+                  className={`py-6 rounded-2xl font-bold transition-all text-xl ${
+                    duration === opt 
+                      ? 'bg-blue-600 text-white shadow-xl shadow-blue-100 scale-105' 
+                      : 'bg-white border border-gray-100 text-gray-600 hover:border-blue-200 hover:bg-blue-50/30'
+                  }`}
+                >
+                  {opt}s
+                </button>
+              ))}
+              <div className="col-span-1 sm:col-span-1">
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="3600"
+                  value={durationOptions.includes(duration) ? '' : duration}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val)) setDuration(Math.max(1, Math.min(3600, val)));
+                  }}
+                  placeholder="Custom"
+                  className={`w-full py-6 px-2 rounded-2xl font-bold transition-all outline-none text-center text-xl border ${
+                    !durationOptions.includes(duration) 
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-100' 
+                      : 'bg-white border-gray-100 text-gray-600 hover:border-blue-200 focus:ring-2 focus:ring-blue-100'
+                  }`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Start Game Button */}
+          <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center z-[60] pointer-events-none">
+            <button
+              onClick={() => navigate(`/study/${selectedSet.id}/playing/${selectedGame?.id}`, { 
+                state: { 
+                  selectedItemIds: Array.from(selectedItemIds),
+                  duration: duration
+                } 
+              })}
+              className="w-full max-w-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center space-x-2 pointer-events-auto"
+            >
+              <Play className="h-5 w-5 fill-current" />
+              <span>Start Game ({selectedItemIds.size} items)</span>
             </button>
           </div>
         </div>
