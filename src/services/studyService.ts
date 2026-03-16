@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { HomeDashboardResponse, StudySet, CreateFullSetParams, UpdateFullSetParams, Subject, GetSetForPlayResponse, GetSetDetailsResponse, FinishStudySessionParams, FinishStudySessionResponse, ItemLiker, StudyComment, RateSetParams, RateSetResponse, GetUserProfileResponse, ContinueStudyingSet, ContinueStudyingItem, ExploreInitialResponse, SearchUserResult, SearchSetResult, WhoToFollowUser, UserConnection } from '../types/study';
+import { HomeDashboardResponse, StudySet, CreateFullSetParams, UpdateFullSetParams, Subject, GetSetForPlayResponse, GetSetDetailsResponse, FinishStudySessionParams, FinishPersonalStudyParams, FinishStudySessionResponse, ItemLiker, StudyComment, RateSetParams, RateSetResponse, GetUserProfileResponse, ContinueStudyingSet, ContinueStudyingItem, ExploreInitialResponse, SearchUserResult, SearchSetResult, WhoToFollowUser, UserConnection } from '../types/study';
 
 export interface ToggleReactionResponse {
   is_liked: boolean;
@@ -317,6 +317,26 @@ export const studyService = {
 
     if (error) {
       console.error('Error finishing study session:', error);
+      throw error;
+    }
+
+    return data as FinishStudySessionResponse;
+  },
+
+  /**
+   * Finishes a personal study session (used for games) and updates progress.
+   */
+  async finishPersonalStudy(params: FinishPersonalStudyParams): Promise<FinishStudySessionResponse> {
+    const { data, error } = await supabase.rpc('c_finish_personal_study', {
+      p_set_id: params.p_set_id,
+      p_duration_seconds: params.p_duration_seconds,
+      p_results: params.p_results,
+      p_game_mode: params.p_game_mode || 'standard',
+      p_game_data: params.p_game_data || null,
+    });
+
+    if (error) {
+      console.error('Error finishing personal study:', error);
       throw error;
     }
 

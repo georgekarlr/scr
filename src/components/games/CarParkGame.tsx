@@ -54,6 +54,9 @@ const CarParkGame: React.FC<CarParkGameProps> = ({ setId, selectedItemIds }) => 
     isAnswered,
     isCorrect,
     gameEndedReason,
+    isFinishing,
+    sessionSummary,
+    finishGame,
     fetchItems,
     handleAnswer,
     flipped, setFlipped,
@@ -354,6 +357,29 @@ const CarParkGame: React.FC<CarParkGameProps> = ({ setId, selectedItemIds }) => 
             </div>
           </div>
 
+          {sessionSummary && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+              <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-orange-200 p-2 rounded-xl">
+                    <Zap className="h-5 w-5 text-orange-700 fill-orange-700" />
+                  </div>
+                  <span className="font-black text-orange-900 text-sm">XP EARNED</span>
+                </div>
+                <span className="text-2xl font-black text-orange-700">+{sessionSummary.xp_earned}</span>
+              </div>
+              <div className="bg-pink-50 rounded-2xl p-5 border border-pink-100 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-pink-200 p-2 rounded-xl">
+                    <Trophy className="h-5 w-5 text-pink-700" />
+                  </div>
+                  <span className="font-black text-pink-900 text-sm">NEW STREAK</span>
+                </div>
+                <span className="text-2xl font-black text-pink-700">{sessionSummary.new_streak} DAYS</span>
+              </div>
+            </div>
+          )}
+
           {Object.keys(itemStats).length > 0 && (
             <div className="mb-10">
               <h3 className="text-lg font-black text-gray-900 mb-5 flex items-center gap-2 uppercase tracking-tight">
@@ -408,14 +434,16 @@ const CarParkGame: React.FC<CarParkGameProps> = ({ setId, selectedItemIds }) => 
           <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
             <button
               onClick={fetchItems}
-              className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-base shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center space-x-2"
+              disabled={isFinishing}
+              className={`flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-base shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center space-x-2 ${isFinishing ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <RefreshCw className="h-5 w-5" />
+              {isFinishing ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
               <span>DRIVE AGAIN</span>
             </button>
             <button
               onClick={() => navigate(-1)}
-              className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-2xl font-black text-base hover:bg-gray-200 transition-all active:scale-95"
+              disabled={isFinishing}
+              className={`flex-1 bg-gray-100 text-gray-700 py-4 rounded-2xl font-black text-base hover:bg-gray-200 transition-all active:scale-95 ${isFinishing ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               BACK TO SET
             </button>

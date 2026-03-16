@@ -217,13 +217,17 @@ export const useRushBreakGame = ({ setId, selectedItemIds, initialDuration }: Us
         duration: durationSeconds / Object.keys(itemStats).length // Approximate per item
       }));
 
-      const summary = await studyService.finishStudySession({
-        set_id: setId,
-        duration_seconds: Math.max(durationSeconds, 1),
-        results,
-        game_mode: 'rush_break',
-        game_data: gameData
+      console.log('Game session results:', results);
+      console.log('Game session detailed data:', gameData);
+
+      const summary = await studyService.finishPersonalStudy({
+        p_set_id: setId,
+        p_duration_seconds: Math.max(durationSeconds, 1),
+        p_results: results,
+        p_game_mode: 'rush_break',
+        p_game_data: gameData
       });
+      console.log('Game session summary:', summary);
       setSessionSummary(summary);
     } catch (error) {
       console.error('Failed to finish game session:', error);

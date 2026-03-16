@@ -338,6 +338,14 @@ export interface FinishStudySessionParams {
   game_data?: any;
 }
 
+export interface FinishPersonalStudyParams {
+  p_set_id: string;
+  p_duration_seconds: number;
+  p_results: StudySessionResult[];
+  p_game_mode?: string;
+  p_game_data?: any;
+}
+
 export interface FinishStudySessionResponse {
   xp_earned: number;
   new_streak: number;
