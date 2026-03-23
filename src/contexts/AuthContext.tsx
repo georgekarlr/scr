@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { AuthContextType, User, Session } from '../types/auth'
+import { AuthContextType, User, Session, School, UserProfile } from '../types/auth'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -16,6 +16,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log('AuthProvider rendering')
   // Account authentication state
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -26,6 +27,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Initial session received:', session)
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.user) {
+        refreshProfile()
+      } else {
+        setProfile(null)
+      }
       setLoading(false)
     }).catch(err => {
       console.error('Error getting session:', err)
@@ -39,6 +45,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Auth change event:', event, session)
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.user) {
+        refreshProfile()
+      } else {
+        setProfile(null)
+      }
       setLoading(false)
     })
 
@@ -46,10 +57,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   // Account authentication methods
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, metadata: { first_name: string; last_name: string; school_id: string }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: metadata
+      }
     })
     return { error }
   }
@@ -94,9 +108,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut()
   }
 
+  const getSchools = async () => {
+    const { data, error } = await supabase.rpc('get_schools_for_signup')
+    return { data: data as School[] | null, error }
+  }
+
+  const refreshProfile = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_my_profile')
+      if (error) {
+        console.error('Error fetching profile:', error)
+        setProfile(null)
+        return
+      }
+      
+      console.log('Profile fetched:', data)
+      // data from get_my_profile is returned as an array of one object
+      if (Array.isArray(data) && data.length > 0) {
+        setProfile(data[0] as UserProfile)
+      } else if (data && !Array.isArray(data)) {
+        setProfile(data as UserProfile)
+      } else {
+        setProfile(null)
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err)
+      setProfile(null)
+    }
+  }
+
   const value = {
     // Account authentication
     user,
+    profile,
     session,
     loading,
     signUp,
@@ -106,6 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword,
     updatePassword,
     signOut,
+    getSchools,
+    refreshProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

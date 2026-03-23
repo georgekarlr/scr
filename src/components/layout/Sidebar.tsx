@@ -1,147 +1,131 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import {
-  Home,
-  Library,
-  Search,
-  Bell,
-  MessageSquare,
-  User,
-  Settings,
-  X,
-  Gamepad2,
-  Users
-} from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
-import { useNotifications } from '../../contexts/NotificationContext'
-import { useMessages } from '../../contexts/MessageContext'
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 
-interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
+interface NavItemProps {
+  to: string;
+  label: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
 }
 
-type NavItem = {
-  name: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-}
+const NavItem: React.FC<NavItemProps> = ({ to, label, icon, onClick }) => (
+  <NavLink
+    to={to}
+    onClick={onClick}
+    className={({ isActive }) =>
+      `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+        isActive
+          ? 'bg-blue-50 text-blue-700 font-semibold'
+          : 'text-gray-600 hover:bg-gray-100'
+      }`
+    }
+  >
+    {icon}
+    <span>{label}</span>
+  </NavLink>
+);
 
-const navigation: NavItem[] = [
-  { name: 'Home', href: '/dashboard', icon: Home },
-  { name: 'Library', href: '/library', icon: Library },
-  { name: 'Explore', href: '/explore', icon: Search },
-  { name: 'Groups', href: '/groups', icon: Users },
-  { name: 'Games', href: '/games', icon: Gamepad2 },
-  { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Profile', href: '/profile', icon: User },
-  { name: 'Settings', href: '/settings', icon: Settings },
-]
+const Sidebar: React.FC = () => {
+  const { user, profile } = useAuth();
+  const { isOpen, close } = useSidebar();
+  const location = useLocation();
+  const role = profile?.role || user?.user_metadata?.role;
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const location = useLocation()
-  const { user } = useAuth()
-  const { unreadCount } = useNotifications()
-  const { unreadMessagesCount } = useMessages()
+  // Close sidebar on navigation (mobile)
+  React.useEffect(() => {
+    close();
+  }, [location.pathname, close]);
+
+  const renderNavLinks = () => {
+    switch (role) {
+      case 'school_admin':
+        return (
+          <>
+            <NavItem to="/dashboard/settings" label="Settings" />
+            <NavItem to="/dashboard/departments" label="Departments" />
+            <NavItem to="/dashboard/subjects" label="Subjects" />
+            <NavItem to="/dashboard/staff" label="Staff" />
+          </>
+        );
+      case 'registrar':
+        return (
+          <>
+            <NavItem to="/dashboard/approvals" label="User Approvals" />
+            <NavItem to="/dashboard/roster" label="Master Roster" />
+            <NavItem to="/dashboard/subjects" label="Subjects" />
+            <NavItem to="/dashboard/directory" label="Staff Directory" />
+          </>
+        );
+      case 'moderator':
+        return (
+          <>
+            <NavItem to="/dashboard/classes" label="Classes" />
+            <NavItem to="/dashboard/enrollment" label="Enrollment" />
+            <NavItem to="/dashboard/requests" label="Requests Inbox" />
+          </>
+        );
+      case 'teacher':
+        return (
+          <>
+            <NavItem to="/dashboard/my-classes" label="My Classes" />
+            <NavItem to="/dashboard/student-request" label="Add Student Request" />
+            <NavItem to="/dashboard/gradebook" label="Gradebook" />
+            <NavItem to="/dashboard/attendance-history" label="Attendance Records" />
+          </>
+        );
+      case 'student':
+        return (
+          <>
+            <NavItem to="/dashboard/my-grades" label="My Grades" />
+            <NavItem to="/dashboard/my-attendance" label="My Attendance" />
+          </>
+        );
+      default:
+        return <p className="px-4 text-xs text-gray-400 italic">No role assigned</p>;
+    }
+  };
 
   return (
-      <>
-        {/* Backdrop - shown on all screen sizes when sidebar is open */}
-        {isOpen && (
-            <div
-                className="fixed inset-0 z-40 bg-gray-600 bg-opacity-50 backdrop-blur-sm"
-                onClick={onClose}
-            />
-        )}
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-gray-900/50 z-40 lg:hidden backdrop-blur-sm"
+          onClick={close}
+        />
+      )}
 
-        {/* Sidebar */}
-        <div className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:inset-auto lg:shadow-none lg:border-r lg:border-gray-200 h-screen overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-          <div className="flex flex-col h-full">
-            {/* Header - Mobile only close button */}
-            <div className="flex items-center justify-between h-16 px-6 lg:hidden border-b border-gray-100">
-              <Link to="/dashboard" className="flex items-center gap-2" onClick={onClose}>
-                <img src="/icon.svg" alt="Ceintelly" className="h-8 w-8" />
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Ceintelly</h1>
-              </Link>
-              <button
-                  onClick={onClose}
-                  className="p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors"
-                  aria-label="Close sidebar"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Logo - Desktop */}
-            <div className="hidden lg:flex items-center h-16 px-6">
-              <Link to="/dashboard" className="flex items-center gap-3">
-                <img src="/icon.svg" alt="Ceintelly" className="h-10 w-10" />
-                <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Ceintelly</h1>
-              </Link>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href
-                const Icon = item.icon
-                return (
-                    <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={onClose}
-                        className={`
-                    flex items-center px-4 py-3 text-base font-semibold rounded-xl transition-all duration-200
-                    ${isActive
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }
-                  `}
-                    >
-                      <Icon className={`
-                    h-6 w-6 mr-4 flex-shrink-0
-                    ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}
-                  `} />
-                      {item.name}
-                      {item.name === 'Messages' && unreadMessagesCount > 0 && (
-                          <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-blue-500 text-white rounded-full">
-                      {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-                    </span>
-                      )}
-                      {item.name === 'Notifications' && unreadCount > 0 && (
-                          <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                      )}
-                    </Link>
-                )
-              })}
-            </nav>
-
-            {/* User Profile Summary (Bottom) */}
-            <div className="p-4 border-t border-gray-100">
-              <div className="flex items-center space-x-3 px-2 overflow-hidden">
-                <div className="h-10 w-10 flex-shrink-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
-                  {user?.email?.[0].toUpperCase()}
-                </div>
-                <div className="flex flex-col min-w-0">
-                 <span className="text-sm font-bold text-gray-900 truncate">
-                   {user?.email?.split('@')[0]}
-                 </span>
-                  <span className="text-xs text-gray-500 truncate">
-                   {user?.email}
-                 </span>
-                </div>
-              </div>
-            </div>
+      <aside
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50
+          w-64 bg-white border-r border-gray-200 
+          transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          flex flex-col p-4 gap-2 h-full lg:h-[calc(100vh-65px)]
+        `}
+      >
+        <div className="mb-4">
+          <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Navigation
+          </h3>
+        </div>
+        <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
+          <NavItem to="/dashboard" label="Overview" />
+          <hr className="my-2 border-gray-100" />
+          {renderNavLinks()}
+        </nav>
+        <div className="mt-auto pt-4 border-t border-gray-100">
+          <div className="px-4 py-2">
+            <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">
+              Role: {role?.replace('_', ' ') || 'Guest'}
+            </span>
           </div>
         </div>
-      </>
-  )
-}
+      </aside>
+    </>
+  );
+};
 
-export default Sidebar
+export default Sidebar;

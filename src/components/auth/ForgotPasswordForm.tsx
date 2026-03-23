@@ -32,9 +32,9 @@ const ForgotPasswordForm: React.FC = () => {
       <div className="max-w-md w-full">
         <div className="text-center mb-6 sm:mb-10">
           <div className="flex flex-col items-center justify-center gap-4 mb-4">
-            <img src="/icon.svg" alt="Ceintelly" className="h-16 w-16 sm:h-20 sm:w-20" />
-            <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Ceintelly
+            <img src="/icon.svg" alt="School Class Record" className="h-16 w-16 sm:h-20 sm:w-20" />
+            <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent text-center">
+              School Class Record
             </h1>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Reset your password</h2>

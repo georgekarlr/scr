@@ -1,106 +1,189 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
-import { ToastProvider } from './contexts/ToastContext'
-import { NotificationProvider } from './contexts/NotificationContext'
-import { MessageProvider } from './contexts/MessageContext'
-import { NavigationProvider } from './contexts/NavigationContext'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { SidebarProvider, useSidebar } from './contexts/SidebarContext'
+import { Menu, X } from 'lucide-react'
 import LoginForm from './components/auth/LoginForm'
 import SignupForm from './components/auth/SignupForm'
 import ForgotPasswordForm from './components/auth/ForgotPasswordForm'
 import UpdatePasswordForm from './components/auth/UpdatePasswordForm'
 import ConfirmAuth from './components/auth/ConfirmAuth'
-import ProtectedRoute from './components/ProtectedRoute'
-import Layout from './components/layout/Layout'
-import FeedPage from './pages/FeedPage'
-import ExplorePage from './pages/ExplorePage'
-import LibraryPage from './pages/LibraryPage'
-import PlaceholderPage from './pages/PlaceholderPage'
-import UserProfilePage from './pages/UserProfilePage'
-import ProfilePage from './pages/ProfilePage'
-import SettingsPage from './pages/SettingsPage'
-import NotificationsPage from './pages/NotificationsPage'
-import WhoToFollowPage from './pages/WhoToFollowPage'
-import MessagesPage from './pages/MessagesPage'
-import ChatPage from './pages/ChatPage'
-import UserConnectionsPage from './pages/UserConnectionsPage'
-import PostPage from './pages/PostPage'
-import GamesPage from './pages/GamesPage'
-import StudyPage from './pages/StudyPage'
-import PlayingPage from './pages/PlayingPage'
-import TermsOfServicePage from './pages/legal/TermsOfServicePage'
-import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
-import CookiePolicyPage from './pages/legal/CookiePolicyPage'
-import AboutPage from './pages/AboutPage'
-import PresentationPage from './pages/PresentationPage'
-import HowToPage from './pages/HowToPage'
-import GroupsPage from './pages/GroupsPage'
-import GroupDetailsPage from './pages/GroupDetailsPage'
+import Sidebar from './components/layout/Sidebar'
+import * as Pages from './pages/dashboard/PlaceholderPages'
+import { SettingsPage } from './pages/dashboard/SettingsPage'
+import { DepartmentsPage } from './pages/dashboard/DepartmentsPage'
+import { StaffPage } from './pages/dashboard/StaffPage'
+import { UserApprovalsPage } from './pages/dashboard/UserApprovalsPage'
+import { MasterRosterPage } from './pages/dashboard/MasterRosterPage'
+import { ClassesPage } from './pages/dashboard/ClassesPage'
+import { SubjectsPage } from './pages/dashboard/SubjectsPage'
+import { EnrollmentPage } from './pages/dashboard/EnrollmentPage'
+import { RequestsInboxPage } from './pages/dashboard/RequestsInboxPage'
+import { StaffDirectoryPage } from './pages/dashboard/StaffDirectoryPage'
+import MyClassesPage from './pages/dashboard/teacher/MyClassesPage'
+import StudentRequestPage from './pages/dashboard/teacher/StudentRequestPage'
+import GradebookPage from './pages/dashboard/teacher/GradebookPage'
+import AttendanceHistoryPage from './pages/dashboard/teacher/AttendanceHistoryPage'
+
+const DashboardLayout: React.FC = () => {
+    const { user, profile, signOut } = useAuth()
+    const { isOpen, toggle } = useSidebar()
+    
+    return (
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            <nav className="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center z-30 sticky top-0">
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <button 
+                        onClick={toggle}
+                        className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg lg:hidden"
+                        aria-label="Toggle Menu"
+                    >
+                        {isOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <img src="/icon.svg" alt="School Class Record" className="h-8 w-8" />
+                        <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-none">
+                            School Class Record
+                        </span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-sm font-semibold text-gray-900">
+                            {profile ? `${profile.first_name} ${profile.last_name}` : user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}` : 'User'}
+                        </span>
+                        <span className="text-xs text-gray-500">{profile?.email || user?.email}</span>
+                    </div>
+                    <button 
+                        onClick={() => signOut()}
+                        className="text-sm font-semibold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors border border-blue-100 sm:border-transparent sm:text-gray-600 sm:hover:text-blue-600"
+                    >
+                        Sign out
+                    </button>
+                </div>
+            </nav>
+            <div className="flex flex-1 relative overflow-hidden">
+                <Sidebar />
+                <main className="flex-1 overflow-y-auto bg-gray-50 w-full">
+                    <Outlet />
+                </main>
+            </div>
+        </div>
+    )
+}
+
+const DashboardOverview: React.FC = () => {
+    const { user, profile } = useAuth()
+    const metadata = user?.user_metadata
+    
+    return (
+        <div className="p-4 sm:p-8">
+            <div className="max-w-4xl mx-auto">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Dashboard</h1>
+                <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-sm">
+                    <p className="text-gray-600 mb-6">
+                        Welcome to School Class Record! You're successfully logged in.
+                    </p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg sm:rounded-xl p-4 sm:p-6">
+                        <h2 className="text-sm font-bold text-blue-900 mb-4 uppercase tracking-wider">Your Profile Details</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-blue-600 uppercase">Name</p>
+                                <p className="text-sm font-semibold text-blue-900">{profile ? `${profile.first_name} ${profile.last_name}` : metadata?.first_name ? `${metadata.first_name} ${metadata.last_name}` : 'Not Available'}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-blue-600 uppercase">School</p>
+                                <p className="text-sm font-semibold text-blue-900">{profile?.school_name || metadata?.school_name || metadata?.school_id || 'Not Assigned'}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-blue-600 uppercase">Role</p>
+                                <p className="text-sm font-semibold text-blue-900 capitalize">{(profile?.role || metadata?.role || 'Not Assigned').replace('_', ' ')}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-blue-600 uppercase">Status</p>
+                                <p className="text-sm font-semibold text-blue-900">{profile?.status || 'Pending'}</p>
+                            </div>
+                            <div className="sm:col-span-2 space-y-1">
+                                <p className="text-xs font-medium text-blue-600 uppercase">Email</p>
+                                <p className="text-sm font-semibold text-blue-900">{profile?.email || user?.email}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user, loading } = useAuth()
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        )
+    }
+
+    if (!user) {
+        return <Navigate to="/login" replace />
+    }
+
+    return <>{children}</>
+}
 
 function App() {
-    console.log('App rendering, current path:', window.location.pathname)
     return (
         <Router>
             <AuthProvider>
-                <ToastProvider>
-                    <NotificationProvider>
-                        <MessageProvider>
-                            <NavigationProvider>
-                            <Routes>
-                        {/* Legal Pages - Publicly accessible */}
-                        <Route path="/about" element={<Layout><AboutPage /></Layout>} />
-                        <Route path="/presentation" element={<Layout><PresentationPage /></Layout>} />
-                        <Route path="/how-to" element={<Layout><HowToPage /></Layout>} />
-                        <Route path="/tos" element={<Layout><TermsOfServicePage /></Layout>} />
-                        <Route path="/privacy" element={<Layout><PrivacyPolicyPage /></Layout>} />
-                        <Route path="/cookies" element={<Layout><CookiePolicyPage /></Layout>} />
+                <Routes>
+                    <Route path="/login" element={<LoginForm />} />
+                    <Route path="/signup" element={<SignupForm />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+                    <Route path="/update-password" element={<UpdatePasswordForm />} />
+                    <Route path="/confirm-auth" element={<ConfirmAuth />} />
+                    
+                    <Route 
+                        path="/dashboard" 
+                        element={
+                            <ProtectedRoute>
+                                <SidebarProvider>
+                                    <DashboardLayout />
+                                </SidebarProvider>
+                            </ProtectedRoute>
+                        } 
+                    >
+                        <Route index element={<DashboardOverview />} />
+                        
+                        {/* School Admin Routes */}
+                        <Route path="settings" element={<SettingsPage />} />
+                        <Route path="departments" element={<DepartmentsPage />} />
+                        <Route path="subjects" element={<SubjectsPage />} />
+                        <Route path="staff" element={<StaffPage />} />
+                        
+                        {/* Registrar Routes */}
+                        <Route path="approvals" element={<UserApprovalsPage />} />
+                        <Route path="roster" element={<MasterRosterPage />} />
+                        <Route path="directory" element={<StaffDirectoryPage />} />
+                        
+                        {/* Moderator Routes */}
+                        <Route path="classes" element={<ClassesPage />} />
+                        <Route path="enrollment" element={<EnrollmentPage />} />
+                        <Route path="requests" element={<RequestsInboxPage />} />
+                        
+                        {/* Teacher Routes */}
+                        <Route path="my-classes" element={<MyClassesPage />} />
+                        <Route path="student-request" element={<StudentRequestPage />} />
+                        <Route path="gradebook" element={<GradebookPage />} />
+                        <Route path="attendance-history" element={<AttendanceHistoryPage />} />
+                        
+                        {/* Student Routes */}
+                        <Route path="my-grades" element={<Pages.MyGradesPage />} />
+                        <Route path="my-attendance" element={<Pages.MyAttendancePage />} />
+                    </Route>
 
-                        {/* Public routes */}
-                        <Route path="/login" element={<LoginForm />} />
-                        <Route path="/signup" element={<SignupForm />} />
-                        <Route path="/forgot-password" element={<ForgotPasswordForm />} />
-                        <Route path="/auth/confirm" element={<ConfirmAuth />} />
-
-                        <Route path="/account/update-password" element={
-                                    <ProtectedRoute>
-                                        <UpdatePasswordForm />
-                                    </ProtectedRoute>
-                                } />
-
-                                {/* Private routes */}
-                                <Route path="/dashboard" element={<ProtectedRoute><Layout><FeedPage /></Layout></ProtectedRoute>} />
-                                <Route path="/library" element={<ProtectedRoute><Layout><LibraryPage /></Layout></ProtectedRoute>} />
-                                <Route path="/explore" element={<ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>} />
-                                <Route path="/groups" element={<ProtectedRoute><Layout><GroupsPage /></Layout></ProtectedRoute>} />
-                                <Route path="/groups/:groupId" element={<ProtectedRoute><GroupDetailsPage /></ProtectedRoute>} />
-                                <Route path="/games" element={<ProtectedRoute><Layout><GamesPage /></Layout></ProtectedRoute>} />
-                                <Route path="/messages" element={<ProtectedRoute><Layout><MessagesPage /></Layout></ProtectedRoute>} />
-                                <Route path="/messages/:conversationId" element={<ProtectedRoute><Layout><ChatPage /></Layout></ProtectedRoute>} />
-                                <Route path="/notifications" element={<ProtectedRoute><Layout><NotificationsPage /></Layout></ProtectedRoute>} />
-                                <Route path="/who-to-follow" element={<ProtectedRoute><Layout><WhoToFollowPage /></Layout></ProtectedRoute>} />
-                                <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
-                                <Route path="/u/:username" element={<ProtectedRoute><Layout><UserProfilePage /></Layout></ProtectedRoute>} />
-                                <Route path="/u/:username/connections" element={<ProtectedRoute><Layout><UserConnectionsPage /></Layout></ProtectedRoute>} />
-                                <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
-                                <Route path="/study/:id" element={<ProtectedRoute><Layout><StudyPage /></Layout></ProtectedRoute>} />
-                                <Route path="/study/:id/playing/:gameId" element={<ProtectedRoute><PlayingPage /></ProtectedRoute>} />
-                                <Route path="/p/:setId" element={<ProtectedRoute><Layout><PostPage /></Layout></ProtectedRoute>} />
-
-                                {/* Redirect root to dashboard */}
-                                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                                
-                                {/* Catch all */}
-                                <Route path="*" element={
-                                    <div style={{ padding: '50px', textAlign: 'center', backgroundColor: '#fee2e2' }}>
-                                        <h1 style={{ color: '#dc2626' }}>404 - Page Not Found</h1>
-                                        <p>The path <code>{window.location.pathname}</code> does not match any routes.</p>
-                                        <a href="/login" style={{ color: '#2563eb', fontWeight: 'bold' }}>Go to Login</a>
-                                    </div>
-                                } />
-                            </Routes>
-                        </NavigationProvider>
-                        </MessageProvider>
-                    </NotificationProvider>
-                </ToastProvider>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
             </AuthProvider>
         </Router>
     )

@@ -32,9 +32,9 @@ export default defineConfig({
                 enabled: true,
             },
             manifest: {
-                name: 'Ceintelly',
-                short_name: 'Ceintelly',
-                description: 'Study with Ceintelly Social Media',
+                name: 'School Class Record',
+                short_name: 'SCR',
+                description: 'Manage your classes and students efficiently.',
                 start_url: '/',
                 scope: '/',
                 display: 'standalone',

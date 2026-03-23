@@ -1,89 +1,85 @@
-import React from 'react';
-import Modal from './Modal';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import React from 'react'
+import { X, AlertTriangle } from 'lucide-react'
 
 interface ConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-  loading?: boolean;
-  variant?: 'danger' | 'info' | 'warning';
+  isOpen: boolean
+  title: string
+  message: string
+  onConfirm: () => void
+  onCancel: () => void
+  confirmText?: string
+  cancelText?: string
+  loading?: boolean
+  variant?: 'danger' | 'warning' | 'info'
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
-  onClose,
-  onConfirm,
   title,
   message,
+  onConfirm,
+  onCancel,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   loading = false,
-  variant = 'info',
+  variant = 'danger'
 }) => {
+  if (!isOpen) return null
+
   const getVariantStyles = () => {
     switch (variant) {
       case 'danger':
-        return {
-          iconBg: 'bg-red-50',
-          iconColor: 'text-red-600',
-          buttonBg: 'bg-red-600 hover:bg-red-700 shadow-red-100',
-        };
+        return 'bg-red-600 hover:bg-red-700'
       case 'warning':
-        return {
-          iconBg: 'bg-amber-50',
-          iconColor: 'text-amber-600',
-          buttonBg: 'bg-amber-600 hover:bg-amber-700 shadow-amber-100',
-        };
+        return 'bg-amber-600 hover:bg-amber-700'
       default:
-        return {
-          iconBg: 'bg-blue-50',
-          iconColor: 'text-blue-600',
-          buttonBg: 'bg-blue-600 hover:bg-blue-700 shadow-blue-100',
-        };
+        return 'bg-blue-600 hover:bg-blue-700'
     }
-  };
-
-  const styles = getVariantStyles();
+  }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <div className="flex flex-col items-center text-center p-2">
-        <div className={`h-16 w-16 ${styles.iconBg} rounded-full flex items-center justify-center mb-4`}>
-          <AlertCircle className={`h-8 w-8 ${styles.iconColor}`} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button 
+            onClick={onCancel}
+            disabled={loading}
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-gray-500" />
+          </button>
         </div>
         
-        <p className="text-gray-600 mb-8 leading-relaxed">
-          {message}
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full">
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-100' : variant === 'warning' ? 'bg-amber-100' : 'bg-blue-100'}`}>
+              <AlertTriangle className={variant === 'danger' ? 'text-red-600' : variant === 'warning' ? 'text-amber-600' : 'text-blue-600'} size={24} />
+            </div>
+            <p className="text-gray-600 leading-relaxed">{message}</p>
+          </div>
+        </div>
+        
+        <div className="flex justify-end gap-3 p-4 bg-gray-50 border-t">
           <button
-            onClick={onClose}
+            onClick={onCancel}
             disabled={loading}
-            className="flex-1 px-6 py-3 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`flex-1 px-6 py-3 ${styles.buttonBg} text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center disabled:opacity-50 active:scale-95`}
+            className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${getVariantStyles()}`}
           >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <span>{confirmText}</span>
-            )}
+            {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
+            {confirmText}
           </button>
         </div>
       </div>
-    </Modal>
-  );
-};
+    </div>
+  )
+}
 
-export default ConfirmationModal;
+export default ConfirmationModal

@@ -3,6 +3,8 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
+import StatusMessage from '../ui/StatusMessage'
+
 declare global {
   interface Window {
     handleSignInWithGoogle: (response: any) => Promise<void>;
@@ -106,24 +108,19 @@ const LoginForm: React.FC = () => {
         <div className="max-w-md w-full">
           <div className="text-center mb-6 sm:mb-10">
             <div className="flex flex-col items-center justify-center gap-4 mb-4">
-              <img src="/icon.svg" alt="Ceintelly" className="h-16 w-16 sm:h-20 sm:w-20" />
-              <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Ceintelly
+              <img src="/icon.svg" alt="School Class Record" className="h-16 w-16 sm:h-20 sm:w-20" />
+              <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent text-center">
+                School Class Record
               </h1>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Learn better, together</h2>
-            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 px-4">Join the social learning revolution.</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Efficiently manage your classes</h2>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 px-4">Track students, attendance, and grades.</p>
           </div>
 
           <div className="bg-white p-6 sm:p-8 rounded-2xl sm:border sm:border-gray-100 sm:shadow-xl sm:shadow-blue-50/50">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-5 sm:mb-6">Sign in to your account</h3>
             <form className="space-y-5" onSubmit={handleSubmit}>
-              {error && (
-                  <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center space-x-3 animate-shake">
-                    <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-              )}
+              <StatusMessage status={loading ? 'loading' : error ? 'error' : 'idle'} message={error} />
 
               <div>
                 <div className="relative group">
@@ -212,7 +209,7 @@ const LoginForm: React.FC = () => {
 
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <p className="text-gray-600">
-                New to Ceintelly?{' '}
+                New to School Class Record?{' '}
                 <Link
                     to="/signup"
                     className="font-bold text-blue-600 hover:text-blue-700 transition-colors"

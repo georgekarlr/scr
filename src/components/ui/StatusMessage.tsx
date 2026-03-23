@@ -1,35 +1,34 @@
-import React from 'react';
-import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import React from 'react'
 
 interface StatusMessageProps {
-  status: 'success' | 'error' | 'loading' | 'idle';
-  message?: React.ReactNode;
-  className?: string;
+  status: 'idle' | 'loading' | 'success' | 'error'
+  message: React.ReactNode
 }
 
-const StatusMessage: React.FC<StatusMessageProps> = ({ status, message, className = '' }) => {
-  if (status === 'idle' || (!message && status !== 'loading')) return null;
+const StatusMessage: React.FC<StatusMessageProps> = ({ status, message }) => {
+  if (status === 'idle' || !message) return null
 
-  const statusStyles = {
-    success: 'bg-green-50 border-green-100 text-green-700',
-    error: 'bg-red-50 border-red-100 text-red-700',
-    loading: 'bg-blue-50 border-blue-100 text-blue-700',
-    idle: '',
-  };
-
-  const Icon = {
-    success: CheckCircle,
-    error: AlertCircle,
-    loading: Loader2,
-    idle: () => null,
-  }[status];
+  const getStatusStyles = () => {
+    switch (status) {
+      case 'success':
+        return 'bg-green-50 border-green-200 text-green-800'
+      case 'error':
+        return 'bg-red-50 border-red-200 text-red-800'
+      case 'loading':
+        return 'bg-blue-50 border-blue-200 text-blue-800'
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800'
+    }
+  }
 
   return (
-    <div className={`rounded-xl p-4 border flex items-center space-x-3 ${statusStyles[status]} ${className}`}>
-      <Icon className={`h-5 w-5 flex-shrink-0 ${status === 'loading' ? 'animate-spin' : ''}`} />
-      <p className="text-sm font-medium">{message || (status === 'loading' ? 'Loading...' : '')}</p>
+    <div className={`mt-4 p-4 border rounded-lg text-sm font-medium ${getStatusStyles()}`}>
+      {status === 'loading' && (
+        <span className="inline-block animate-spin mr-2">⏳</span>
+      )}
+      {message}
     </div>
-  );
-};
+  )
+}
 
-export default StatusMessage;
+export default StatusMessage
