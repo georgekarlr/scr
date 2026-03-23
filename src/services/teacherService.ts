@@ -14,6 +14,8 @@ import {
   TeacherAttendanceRecordWithStudent,
   TeacherAssignment,
   TeacherGrade,
+  TeacherSyncOfflineAssignmentsAndGradesParams,
+  TeacherSyncOfflineAttendanceFullParams,
 } from '../types/teacher'
 
 export const teacherService = {
@@ -56,7 +58,11 @@ export const teacherService = {
    * Add a new assignment (Quiz, Exam, Homework)
    */
   async createAssignment(params: TeacherCreateAssignmentParams) {
-    const { data, error } = await supabase.rpc('teacher_create_assignment', params)
+    const { id, ...rest } = params
+    const { data, error } = await supabase.rpc('teacher_create_assignment', {
+        ...rest,
+        p_id: id // Pass p_id if it exists
+    })
     return { data: data as string | null, error }
   },
 
@@ -94,7 +100,11 @@ export const teacherService = {
    * Create a new attendance session (e.g. "Morning Session")
    */
   async createAttendance(params: TeacherCreateAttendanceParams) {
-    const { data, error } = await supabase.rpc('teacher_create_attendance', params)
+    const { id, ...rest } = params
+    const { data, error } = await supabase.rpc('teacher_create_attendance', {
+        ...rest,
+        p_id: id // Pass p_id if it exists
+    })
     return { data: data as string | null, error }
   },
 
@@ -150,6 +160,30 @@ export const teacherService = {
     })
 
     return { data: transformed as TeacherAttendanceRecordWithStudent[] | null, error }
+  },
+
+  /**
+   * Bulk sync offline assignments and grades in a single transaction
+   */
+  async syncOfflineAssignmentsAndGrades(params: TeacherSyncOfflineAssignmentsAndGradesParams) {
+    const { error } = await supabase.rpc('teacher_sync_offline_assignments_and_grades', {
+      p_class_id: params.classId,
+      p_assignments: params.assignments,
+      p_grades: params.grades,
+    })
+    return { error }
+  },
+
+  /**
+   * Bulk sync offline attendance sessions (columns) and records (cells)
+   */
+  async syncOfflineAttendanceFull(params: TeacherSyncOfflineAttendanceFullParams) {
+    const { error } = await supabase.rpc('teacher_sync_offline_attendance_full', {
+      p_class_id: params.classId,
+      p_attendances: params.attendances,
+      p_records: params.records,
+    })
+    return { error }
   },
 
   /**

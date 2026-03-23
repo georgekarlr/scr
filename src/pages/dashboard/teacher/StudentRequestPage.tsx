@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { teacherService } from '../../../services/teacherService'
+import { offlineSync } from '../../../utils/offlineSync'
 import { TeacherClass, TeacherUnrolledStudent } from '../../../types/teacher'
 import { Search, UserPlus, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react'
 
@@ -17,9 +18,20 @@ const StudentRequestPage: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const fetchMyClasses = async () => {
+    const cached = await offlineSync.getCachedData('my_classes')
+    if (cached) {
+      setClasses(cached)
+      if (!selectedClassId && cached.length > 0) {
+        setSelectedClassId(cached[0].id)
+      }
+    }
+
+    if (!navigator.onLine && cached) return
+
     const { data } = await teacherService.getMyClasses()
     if (data) {
       setClasses(data)
+      offlineSync.cacheData('my_classes', data)
       if (!selectedClassId && data.length > 0) {
         setSelectedClassId(data[0].id)
       }
@@ -28,6 +40,10 @@ const StudentRequestPage: React.FC = () => {
 
   const handleSearch = async () => {
     if (!selectedClassId) return
+    if (!navigator.onLine) {
+        setMessage({ type: 'error', text: 'Searching students requires an internet connection.' })
+        return
+    }
     setLoading(true)
     const { data, error } = await teacherService.searchUnrolledStudents(selectedClassId, searchTerm)
     if (error) {
@@ -55,6 +71,10 @@ const StudentRequestPage: React.FC = () => {
 
   const handleRequestEnrollment = async (studentId: string) => {
     if (!selectedClassId) return
+    if (!navigator.onLine) {
+        setMessage({ type: 'error', text: 'Requesting enrollment requires an internet connection.' })
+        return
+    }
     setRequestingId(studentId)
     setMessage(null)
 

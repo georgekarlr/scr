@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { teacherService } from '../../../services/teacherService'
+import { offlineSync } from '../../../utils/offlineSync'
 import { TeacherClass } from '../../../types/teacher'
 import { Users, BookOpen, ChevronRight, Calendar, Search, SlidersHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -12,11 +13,24 @@ const MyClassesPage: React.FC = () => {
 
   const fetchMyClasses = useCallback(async () => {
     setFetchLoading(true)
+    
+    // Try to get cached data first
+    const cached = await offlineSync.getCachedData('my_classes')
+    if (cached) {
+      setClasses(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await teacherService.getMyClasses()
     if (error) {
       setError(error.message)
     } else if (data) {
       setClasses(data)
+      offlineSync.cacheData('my_classes', data)
     }
     setFetchLoading(false)
   }, [])

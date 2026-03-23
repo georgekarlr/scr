@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { schoolAdminService } from '../../services/schoolAdminService'
+import { offlineSync } from '../../utils/offlineSync'
 import { CreateDepartmentParams, Department, Moderator } from '../../types/schoolAdmin'
 import { Edit2, Trash2, X, Check } from 'lucide-react'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -24,21 +25,40 @@ export const DepartmentsPage: React.FC = () => {
 
   const fetchDepartments = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('admin_departments')
+    if (cached) {
+      setDepartments(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await schoolAdminService.getDepartments()
     if (error) {
       console.error('Error fetching departments:', error)
     } else if (data) {
       setDepartments(data)
+      offlineSync.cacheData('admin_departments', data)
     }
     setFetchLoading(false)
   }
 
   const fetchModerators = async () => {
+    const cached = await offlineSync.getCachedData('admin_moderators')
+    if (cached) {
+      setModerators(cached)
+    }
+
+    if (!navigator.onLine && cached) return
+
     const { data, error } = await schoolAdminService.getModerators()
     if (error) {
       console.error('Error fetching moderators:', error)
     } else if (data) {
       setModerators(data)
+      offlineSync.cacheData('admin_moderators', data)
     }
   }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { teacherService } from '../../../services/teacherService'
 import { schoolAdminService } from '../../../services/schoolAdminService'
+import { offlineSync, PendingAssignment, PendingGrade } from '../../../utils/offlineSync'
 import { 
   TeacherClass, 
   TeacherStudent, 
@@ -23,8 +24,10 @@ import {
   Percent,
   Hash,
   LayoutGrid,
-  List
+  List,
+  FileDown
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 const GradebookPage: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -67,6 +70,21 @@ const GradebookPage: React.FC = () => {
 
   const fetchInitialData = async () => {
     setFetchLoading(true)
+    
+    // Try to get cached data first
+    const cachedClasses = await offlineSync.getCachedData('my_classes')
+    const cachedPeriods = await offlineSync.getCachedData('grading_periods')
+    
+    if (cachedClasses) setClasses(cachedClasses)
+    if (cachedPeriods) setGradingPeriods(cachedPeriods)
+    
+    if (!navigator.onLine && cachedClasses && cachedPeriods) {
+        if (!selectedClassId && cachedClasses.length > 0) setSelectedClassId(cachedClasses[0].id)
+        if (cachedPeriods.length > 0) setSelectedGradingPeriodId(cachedPeriods[0].id)
+        setFetchLoading(false)
+        return
+    }
+
     const [classesRes, periodsRes] = await Promise.all([
       teacherService.getMyClasses(),
       schoolAdminService.getGradingPeriods()
@@ -74,12 +92,14 @@ const GradebookPage: React.FC = () => {
 
     if (classesRes.data) {
       setClasses(classesRes.data)
+      offlineSync.cacheData('my_classes', classesRes.data)
       if (!selectedClassId && classesRes.data.length > 0) {
         setSelectedClassId(classesRes.data[0].id)
       }
     }
     if (periodsRes.data) {
       setGradingPeriods(periodsRes.data)
+      offlineSync.cacheData('grading_periods', periodsRes.data)
       if (periodsRes.data.length > 0) {
         setSelectedGradingPeriodId(periodsRes.data[0].id)
       }
@@ -89,24 +109,100 @@ const GradebookPage: React.FC = () => {
 
   const fetchRoster = async () => {
     if (!selectedClassId) return
+    
+    const cacheKey = `roster_${selectedClassId}`
+    const cached = await offlineSync.getCachedData(cacheKey)
+    if (cached) setRoster(cached)
+    
+    if (!navigator.onLine && cached) return
+
     const { data } = await teacherService.getClassRoster(selectedClassId)
-    if (data) setRoster(data)
+    if (data) {
+        setRoster(data)
+        offlineSync.cacheData(cacheKey, data)
+    }
   }
 
   const fetchGradesAndAssignments = async () => {
     if (!selectedClassId || !selectedGradingPeriodId) return
     setLoading(true)
+    
+    const assignKey = `assignments_${selectedClassId}_${selectedGradingPeriodId}`
+    const gradesKey = `grades_${selectedClassId}_${selectedGradingPeriodId}`
+    
+    const cachedAssignments = await offlineSync.getCachedData(assignKey) as TeacherAssignment[] | null
+    const cachedGrades = await offlineSync.getCachedData(gradesKey) as TeacherGrade[] | null
+    
+    // When merging cached data with pending offline data
+    const pendingAssignments = await offlineSync.getPendingAssignments(selectedClassId)
+    const pendingGrades = await offlineSync.getPendingGrades(selectedClassId)
+    
+    let displayAssignments = cachedAssignments || []
+    let displayGrades = cachedGrades || []
+    
+    // Merge pending assignments (avoid duplicates)
+    pendingAssignments.forEach(pa => {
+        if (!displayAssignments.find(a => a.id === pa.id)) {
+            displayAssignments = [...displayAssignments, {
+                id: pa.id,
+                title: pa.title,
+                max_score: pa.max_score,
+                due_date: pa.due_date,
+                class_id: pa.classId,
+                grading_period_id: pa.grading_period_id,
+                school_id: '' // placeholder
+            } as TeacherAssignment]
+        }
+    })
+    
+    // Merge pending grades
+    pendingGrades.forEach(pg => {
+        const index = displayGrades.findIndex(g => g.assignment_id === pg.assignment_id && g.student_id === pg.student_id)
+        const gradeObj = {
+            assignment_id: pg.assignment_id,
+            student_id: pg.student_id,
+            score: pg.score,
+            class_id: pg.classId,
+            school_id: '',
+            id: '',
+            updated_at: new Date().toISOString()
+        } as TeacherGrade
+        
+        if (index > -1) {
+            displayGrades[index] = gradeObj
+        } else {
+            displayGrades.push(gradeObj)
+        }
+    })
+
+    setAssignments(displayAssignments)
+    setGrades(displayGrades)
+    
+    if (viewMode === 'assignment' && !focusedAssignmentId && displayAssignments.length > 0) {
+        setFocusedAssignmentId(displayAssignments[0].id)
+    }
+
+    if (!navigator.onLine) {
+        setLoading(false)
+        return
+    }
+
     const [assignmentsRes, gradesRes] = await Promise.all([
       teacherService.getAssignments(selectedClassId, selectedGradingPeriodId),
       teacherService.getGrades(selectedClassId, selectedGradingPeriodId)
     ])
+    
     if (assignmentsRes.data) {
       setAssignments(assignmentsRes.data)
+      offlineSync.cacheData(assignKey, assignmentsRes.data)
       if (viewMode === 'assignment' && !focusedAssignmentId && assignmentsRes.data.length > 0) {
         setFocusedAssignmentId(assignmentsRes.data[0].id)
       }
     }
-    if (gradesRes.data) setGrades(gradesRes.data)
+    if (gradesRes.data) {
+        setGrades(gradesRes.data)
+        offlineSync.cacheData(gradesKey, gradesRes.data)
+    }
     setLoading(false)
   }
 
@@ -134,13 +230,48 @@ const GradebookPage: React.FC = () => {
 
   const handleSaveGrade = async (assignmentId: string, studentId: string, score: number | null, remarks?: string | null) => {
     setGradeSaving(`${assignmentId}-${studentId}`)
-    const { error } = await teacherService.saveGrade({
+    
+    const params = {
       p_class_id: selectedClassId,
       p_assignment_id: assignmentId,
       p_student_id: studentId,
       p_score: score ?? 0,
       p_remarks: remarks
-    })
+    }
+
+    if (!navigator.onLine) {
+        // Save to local queue
+        await offlineSync.saveGradeLocally({
+            assignment_id: assignmentId,
+            student_id: studentId,
+            score: score ?? 0,
+            classId: selectedClassId
+        })
+        
+        // Optimistic UI update
+        setGrades(prev => {
+            const index = prev.findIndex(g => g.assignment_id === assignmentId && g.student_id === studentId)
+            const newGrade = { 
+                assignment_id: assignmentId, 
+                student_id: studentId, 
+                score: score ?? 0,
+                updated_at: new Date().toISOString()
+            } as TeacherGrade
+            if (index > -1) {
+                const updated = [...prev]
+                updated[index] = newGrade
+                return updated
+            }
+            return [...prev, newGrade]
+        })
+        
+        setMessage({ type: 'success', text: 'Grade saved locally (Offline)' })
+        setTimeout(() => setMessage(null), 3000)
+        setGradeSaving(null)
+        return
+    }
+
+    const { error } = await teacherService.saveGrade(params)
 
     if (error) {
       setMessage({ type: 'error', text: error.message || 'Failed to save grade' })
@@ -148,9 +279,127 @@ const GradebookPage: React.FC = () => {
     } else {
       // Refresh grades
       const { data } = await teacherService.getGrades(selectedClassId, selectedGradingPeriodId)
-      if (data) setGrades(data)
+      if (data) {
+          setGrades(data)
+          const gradesKey = `grades_${selectedClassId}_${selectedGradingPeriodId}`
+          offlineSync.cacheData(gradesKey, data)
+      }
     }
     setGradeSaving(null)
+  }
+
+  const handleGenerateExcel = () => {
+    if (roster.length === 0) {
+      setMessage({ type: 'error', text: 'No students in roster to export' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    const selectedClass = classes.find(c => c.id === selectedClassId)
+    const selectedPeriod = gradingPeriods.find(p => p.id === selectedGradingPeriodId)
+
+    // Prepare data for Excel
+    // Header Row: Student Name, Student ID, Assignment 1, Assignment 2, ..., Total Score, Percentage
+    const headers = [
+      'Student Name',
+      'Student ID',
+      ...assignments.map(a => `${a.title} (Max: ${a.max_score})`),
+      'Total Score',
+      'Total Max',
+      'Percentage (%)'
+    ]
+
+    const rows = roster.map(student => {
+      let studentTotalScore = 0
+      let totalMaxScore = 0
+
+      const studentGrades = assignments.map(asgn => {
+        const grade = grades.find(g => g.assignment_id === asgn.id && g.student_id === student.student_id)
+        const score = grade?.score ?? 0
+        studentTotalScore += score
+        totalMaxScore += asgn.max_score
+        return score
+      })
+
+      const percentage = totalMaxScore > 0 ? (studentTotalScore / totalMaxScore) * 100 : 0
+
+      return [
+        `${student.last_name}, ${student.first_name}`,
+        student.student_id_number,
+        ...studentGrades,
+        studentTotalScore,
+        totalMaxScore,
+        percentage.toFixed(2)
+      ]
+    })
+
+    // Combine headers and rows
+    const data = [headers, ...rows]
+
+    // Create Worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(data)
+
+    // Create Workbook
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Gradebook')
+
+    // Generate File Name
+    const classInfo = selectedClass ? `${selectedClass.subject_code}_${selectedClass.section_name}` : 'Gradebook'
+    const periodName = selectedPeriod ? selectedPeriod.name : 'Period'
+    const dateStr = new Date().toISOString().split('T')[0]
+    const fileName = `Gradebook_${classInfo}_${periodName}_${dateStr}.xlsx`.replace(/\s+/g, '_')
+
+    // Download File
+    XLSX.writeFile(workbook, fileName)
+  }
+
+  const handleExportAssignmentExcel = () => {
+    if (!focusedAssignmentId) return
+    const asgn = assignments.find(a => a.id === focusedAssignmentId)
+    if (!asgn) return
+    if (roster.length === 0) {
+      setMessage({ type: 'error', text: 'No students in roster to export' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    const selectedClass = classes.find(c => c.id === selectedClassId)
+
+    // Header Row: Student ID, Student Name, Score, Max Score, Percentage, Remarks
+    const headers = [
+      'Student ID',
+      'Student Name',
+      'Score',
+      'Max Score',
+      'Percentage (%)',
+      'Remarks'
+    ]
+
+    const rows = roster.map(student => {
+      const grade = grades.find(g => g.assignment_id === asgn.id && g.student_id === student.student_id)
+      const score = grade?.score ?? 0
+      const percentage = asgn.max_score > 0 ? (score / asgn.max_score) * 100 : 0
+
+      return [
+        student.student_id_number,
+        `${student.last_name}, ${student.first_name}`,
+        score,
+        asgn.max_score,
+        percentage.toFixed(2),
+        grade?.remarks || ''
+      ]
+    })
+
+    const data = [headers, ...rows]
+    const worksheet = XLSX.utils.aoa_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Assignment Grades')
+
+    const classInfo = selectedClass ? `${selectedClass.subject_code}_${selectedClass.section_name}` : 'Gradebook'
+    const dateStr = new Date().toISOString().split('T')[0]
+    const fileName = `Gradebook_Assignment_${classInfo}_${asgn.title}_${dateStr}.xlsx`.replace(/\s+/g, '_')
+
+    XLSX.writeFile(workbook, fileName)
   }
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
@@ -158,11 +407,48 @@ const GradebookPage: React.FC = () => {
     if (!selectedClassId || !selectedGradingPeriodId) return
     setLoading(true)
     
+    const tempId = crypto.randomUUID()
+    const newAssignment: PendingAssignment = {
+        id: tempId,
+        grading_period_id: selectedGradingPeriodId,
+        title: assignmentForm.p_title,
+        max_score: assignmentForm.p_max_score,
+        due_date: assignmentForm.p_due_date,
+        classId: selectedClassId
+    }
+
+    if (!navigator.onLine) {
+        await offlineSync.saveAssignmentLocally(newAssignment)
+        
+        // Optimistic UI
+        setAssignments(prev => [...prev, {
+            id: tempId,
+            title: newAssignment.title,
+            max_score: newAssignment.max_score,
+            due_date: newAssignment.due_date,
+            class_id: selectedClassId,
+            grading_period_id: selectedGradingPeriodId,
+            school_id: ''
+        } as TeacherAssignment])
+        
+        setMessage({ type: 'success', text: 'Assignment created locally (Offline)' })
+        setShowCreateAssignment(false)
+        setAssignmentForm({
+          p_title: '',
+          p_max_score: 100,
+          p_due_date: new Date().toISOString().split('T')[0]
+        })
+        setLoading(false)
+        setTimeout(() => setMessage(null), 3000)
+        return
+    }
+    
     const { error } = await teacherService.createAssignment({
+      id: tempId, // Pass the generated ID
       p_class_id: selectedClassId,
       p_grading_period_id: selectedGradingPeriodId,
       ...assignmentForm
-    })
+    } as any)
 
     if (error) {
       setMessage({ type: 'error', text: error.message || 'Failed to create assignment' })
@@ -293,13 +579,35 @@ const GradebookPage: React.FC = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-900">Assignments</h2>
-                <button
-                  onClick={() => setShowCreateAssignment(!showCreateAssignment)}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  <Plus size={18} />
-                  New Assignment
-                </button>
+                <div className="flex gap-2">
+                  {viewMode === 'grid' && (
+                    <button
+                      onClick={handleGenerateExcel}
+                      className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                      title="Export Grid to Excel"
+                    >
+                      <FileDown size={18} />
+                      <span>Export Grid</span>
+                    </button>
+                  )}
+                  {viewMode === 'assignment' && focusedAssignmentId && (
+                    <button
+                      onClick={handleExportAssignmentExcel}
+                      className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                      title="Export Assignment to Excel"
+                    >
+                      <FileDown size={18} />
+                      <span>Export Assignment</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowCreateAssignment(!showCreateAssignment)}
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    <Plus size={18} />
+                    New Assignment
+                  </button>
+                </div>
               </div>
 
               {showCreateAssignment && (

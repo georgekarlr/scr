@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { moderatorService } from '../../services/moderatorService'
 import { registrarService } from '../../services/registrarService'
+import { offlineSync } from '../../utils/offlineSync'
 import { ModeratorClass, ModeratorDepartment, ModeratorSubject } from '../../types/moderator'
 import { StaffProfile } from '../../types/registrar'
 import { Plus, Users, BookOpen, Clock, X, Check } from 'lucide-react'
@@ -28,6 +29,39 @@ export const ClassesPage: React.FC = () => {
 
   const fetchData = async () => {
     setFetchLoading(true)
+
+    // Try to get cached data first
+    const cachedClasses = await offlineSync.getCachedData('moderator_classes')
+    const cachedDepts = await offlineSync.getCachedData('moderator_departments')
+    const cachedSubjects = await offlineSync.getCachedData('moderator_subjects')
+    const cachedStaff = await offlineSync.getCachedData('moderator_staff')
+
+    if (cachedClasses) setClasses(cachedClasses)
+    if (cachedDepts) {
+        setDepartments(cachedDepts)
+        if (!formData.p_department_id && cachedDepts.length > 0) {
+            setFormData(prev => ({ ...prev, p_department_id: cachedDepts[0].id }))
+        }
+    }
+    if (cachedSubjects) {
+        setSubjects(cachedSubjects)
+        if (!formData.p_subject_id && cachedSubjects.length > 0) {
+            setFormData(prev => ({ ...prev, p_subject_id: cachedSubjects[0].id }))
+        }
+    }
+    if (cachedStaff) {
+        const teacherList = cachedStaff.filter((s: StaffProfile) => s.role === 'teacher')
+        setTeachers(teacherList)
+        if (!formData.p_teacher_id && teacherList.length > 0) {
+            setFormData(prev => ({ ...prev, p_teacher_id: teacherList[0].id }))
+        }
+    }
+
+    if (!navigator.onLine && (cachedClasses || cachedDepts || cachedSubjects || cachedStaff)) {
+        setFetchLoading(false)
+        return
+    }
+
     const [classesRes, deptsRes, subjectsRes, staffRes] = await Promise.all([
       moderatorService.getClasses(),
       moderatorService.getMyDepartments(),
@@ -35,15 +69,20 @@ export const ClassesPage: React.FC = () => {
       registrarService.getStaff()
     ])
 
-    if (classesRes.data) setClasses(classesRes.data)
+    if (classesRes.data) {
+        setClasses(classesRes.data)
+        offlineSync.cacheData('moderator_classes', classesRes.data)
+    }
     if (deptsRes.data) {
       setDepartments(deptsRes.data)
+      offlineSync.cacheData('moderator_departments', deptsRes.data)
       if (deptsRes.data.length > 0) {
         setFormData(prev => ({ ...prev, p_department_id: deptsRes.data![0].id }))
       }
     }
     if (subjectsRes.data) {
       setSubjects(subjectsRes.data)
+      offlineSync.cacheData('moderator_subjects', subjectsRes.data)
       if (subjectsRes.data.length > 0) {
         setFormData(prev => ({ ...prev, p_subject_id: subjectsRes.data![0].id }))
       }
@@ -51,6 +90,7 @@ export const ClassesPage: React.FC = () => {
     if (staffRes.data) {
       const teacherList = staffRes.data.filter(s => s.role === 'teacher')
       setTeachers(teacherList)
+      offlineSync.cacheData('moderator_staff', staffRes.data)
       if (teacherList.length > 0) {
         setFormData(prev => ({ ...prev, p_teacher_id: teacherList[0].id }))
       }
@@ -60,6 +100,12 @@ export const ClassesPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!navigator.onLine) {
+        setMessage({ type: 'error', text: 'Creating classes requires an internet connection.' })
+        return
+    }
+
     setLoading(true)
     setMessage(null)
 

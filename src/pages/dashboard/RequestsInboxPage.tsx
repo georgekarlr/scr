@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { moderatorService } from '../../services/moderatorService'
+import { offlineSync } from '../../utils/offlineSync'
 import { ModeratorEnrollmentRequest } from '../../types/moderator'
 import { Check, X, Clock, User, BookOpen } from 'lucide-react'
 
@@ -15,12 +16,28 @@ export const RequestsInboxPage: React.FC = () => {
 
   const fetchRequests = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('moderator_enrollment_requests')
+    if (cached) setRequests(cached)
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data } = await moderatorService.getEnrollmentRequests()
-    if (data) setRequests(data)
+    if (data) {
+      setRequests(data)
+      offlineSync.cacheData('moderator_enrollment_requests', data)
+    }
     setFetchLoading(false)
   }
 
   const handleResolve = async (requestId: string, status: 'approved' | 'rejected') => {
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: `Resolving requests requires an internet connection.` })
+      return
+    }
+
     setLoading(true)
     const { error } = await moderatorService.resolveRequest({
       p_request_id: requestId,

@@ -27,6 +27,7 @@ export interface TeacherRequestEnrollmentParams {
 }
 
 export interface TeacherCreateAssignmentParams {
+  id?: string
   p_class_id: string
   p_grading_period_id: string
   p_title: string
@@ -66,6 +67,7 @@ export interface TeacherAttendanceRecordWithStudent extends TeacherAttendanceRec
 }
 
 export interface TeacherCreateAttendanceParams {
+  id?: string
   p_class_id: string
   p_name: string
   p_record_date: string // DATE
@@ -98,4 +100,36 @@ export interface TeacherSaveAttendanceParams {
   p_student_id: string
   p_record_date: string // DATE
   p_status: AttendanceStatus
+}
+
+// Bulk sync: assignments and grades (offline → online)
+export interface TeacherSyncOfflineAssignmentsAndGradesParams {
+  classId: string
+  assignments: {
+    id: string
+    grading_period_id: string
+    title: string
+    max_score: number
+    due_date: string // DATE
+  }[]
+  grades: {
+    assignment_id: string
+    student_id: string
+    score: number
+  }[]
+}
+
+// Bulk sync: full attendance (sessions + records)
+export interface TeacherSyncOfflineAttendanceFullParams {
+  classId: string
+  attendances: {
+    id: string
+    name: string
+    record_date: string // DATE
+  }[]
+  records: {
+    attendance_id: string
+    student_id: string
+    status: AttendanceStatus
+  }[]
 }

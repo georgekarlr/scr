@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { subjectService } from '../../services/subjectService'
+import { offlineSync } from '../../utils/offlineSync'
 import { CreateSubjectParams, Subject } from '../../types/subject'
 import { Edit2, Trash2, X, Check, Plus, BookOpen, Loader2, Search } from 'lucide-react'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -24,11 +25,22 @@ export const SubjectsPage: React.FC = () => {
 
   const fetchSubjects = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('admin_subjects')
+    if (cached) {
+      setSubjects(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await subjectService.getSubjects()
     if (error) {
       console.error('Error fetching subjects:', error)
     } else if (data) {
       setSubjects(data)
+      offlineSync.cacheData('admin_subjects', data)
     }
     setFetchLoading(false)
   }
@@ -40,6 +52,11 @@ export const SubjectsPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.p_name.trim()) return
+
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: 'Creating subjects requires an internet connection.' })
+      return
+    }
 
     setLoading(true)
     setMessage(null)
@@ -63,6 +80,12 @@ export const SubjectsPage: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editFormData || !editFormData.name.trim()) return
+
+    if (!navigator.onLine) {
+      alert('Updating subjects requires an internet connection.')
+      return
+    }
+
     setLoading(true)
 
     const { error } = await subjectService.updateSubject({
@@ -88,6 +111,12 @@ export const SubjectsPage: React.FC = () => {
   const confirmDelete = async () => {
     if (!deleteModal.subjectId) return
     
+    if (!navigator.onLine) {
+      alert('Deleting subjects requires an internet connection.')
+      setDeleteModal({ isOpen: false, subjectId: null })
+      return
+    }
+
     setLoading(true)
     const { error } = await subjectService.deleteSubject(deleteModal.subjectId)
     if (error) {

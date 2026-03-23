@@ -1,7 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { SidebarProvider, useSidebar } from './contexts/SidebarContext'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, WifiOff, RefreshCw } from 'lucide-react'
+import { offlineSync } from './utils/offlineSync'
 import LoginForm from './components/auth/LoginForm'
 import SignupForm from './components/auth/SignupForm'
 import ForgotPasswordForm from './components/auth/ForgotPasswordForm'
@@ -19,6 +21,7 @@ import { SubjectsPage } from './pages/dashboard/SubjectsPage'
 import { EnrollmentPage } from './pages/dashboard/EnrollmentPage'
 import { RequestsInboxPage } from './pages/dashboard/RequestsInboxPage'
 import { StaffDirectoryPage } from './pages/dashboard/StaffDirectoryPage'
+import { AccountPage } from './pages/dashboard/AccountPage'
 import MyClassesPage from './pages/dashboard/teacher/MyClassesPage'
 import StudentRequestPage from './pages/dashboard/teacher/StudentRequestPage'
 import GradebookPage from './pages/dashboard/teacher/GradebookPage'
@@ -27,9 +30,45 @@ import AttendanceHistoryPage from './pages/dashboard/teacher/AttendanceHistoryPa
 const DashboardLayout: React.FC = () => {
     const { user, profile, signOut } = useAuth()
     const { isOpen, toggle } = useSidebar()
-    
+    const [isOnline, setIsOnline] = useState(navigator.onLine)
+    const [isSyncing, setIsSyncing] = useState(false)
+
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true)
+            syncData()
+        }
+        const handleOffline = () => setIsOnline(false)
+
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [])
+
+    const syncData = async () => {
+        if (!navigator.onLine) return
+        setIsSyncing(true)
+        try {
+            await offlineSync.syncAll()
+        } catch (error) {
+            console.error('Manual sync failed:', error)
+        } finally {
+            setIsSyncing(false)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
+            {!isOnline && (
+                <div className="bg-amber-500 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300">
+                    <WifiOff size={16} />
+                    You are offline. Changes will be saved locally and synced when you're back online.
+                </div>
+            )}
             <nav className="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center z-30 sticky top-0">
                 <div className="flex items-center gap-2 sm:gap-4">
                     <button 
@@ -47,12 +86,22 @@ const DashboardLayout: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-4">
-                    <div className="hidden sm:flex flex-col items-end">
+                    {isOnline && (
+                        <button
+                            onClick={syncData}
+                            disabled={isSyncing}
+                            className={`p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors ${isSyncing ? 'animate-spin' : ''}`}
+                            title="Sync offline data"
+                        >
+                            <RefreshCw size={20} />
+                        </button>
+                    )}
+                    <Link to="/dashboard/account" className="hidden sm:flex flex-col items-end hover:bg-gray-50 p-1 px-2 rounded-lg transition-colors">
                         <span className="text-sm font-semibold text-gray-900">
                             {profile ? `${profile.first_name} ${profile.last_name}` : user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}` : 'User'}
                         </span>
                         <span className="text-xs text-gray-500">{profile?.email || user?.email}</span>
-                    </div>
+                    </Link>
                     <button 
                         onClick={() => signOut()}
                         className="text-sm font-semibold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors border border-blue-100 sm:border-transparent sm:text-gray-600 sm:hover:text-blue-600"
@@ -154,6 +203,7 @@ function App() {
                         } 
                     >
                         <Route index element={<DashboardOverview />} />
+                        <Route path="account" element={<AccountPage />} />
                         
                         {/* School Admin Routes */}
                         <Route path="settings" element={<SettingsPage />} />

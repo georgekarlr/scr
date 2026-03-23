@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { AuthContextType, User, Session, School, UserProfile } from '../types/auth'
+import { offlineSync } from '../utils/offlineSync'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -23,18 +24,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     console.log('Fetching initial session...')
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session received:', session)
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
+      
+      if (session) {
+        setSession(session)
+        setUser(session.user)
+        // Cache session for offline use
+        await offlineSync.cacheData('auth_session_current', session)
         refreshProfile()
       } else {
-        setProfile(null)
+        // Try to load session from cache if network session is null
+        const cachedSession = await offlineSync.getCachedData('auth_session_current')
+        if (cachedSession) {
+          console.log('Loaded session from cache:', cachedSession)
+          setSession(cachedSession)
+          setUser(cachedSession.user)
+          refreshProfile()
+        } else {
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+        }
       }
       setLoading(false)
-    }).catch(err => {
+    }).catch(async err => {
       console.error('Error getting session:', err)
+      
+      // Try to load session from cache on error
+      const cachedSession = await offlineSync.getCachedData('auth_session_current')
+      if (cachedSession) {
+        console.log('Recovered session from cache after error:', cachedSession)
+        setSession(cachedSession)
+        setUser(cachedSession.user)
+        refreshProfile()
+      } else {
+        setSession(null)
+        setUser(null)
+      }
       setLoading(false)
     })
 
@@ -45,8 +72,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Auth change event:', event, session)
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) {
+      
+      if (session) {
+        // Cache session for offline use
+        await offlineSync.cacheData('auth_session_current', session)
         refreshProfile()
+      } else if (event === 'SIGNED_OUT') {
+        // Clear cached session on sign out
+        // Note: we don't have a specific clearCache method in offlineSync, 
+        // but we can set it to null or use cacheData with null
+        await offlineSync.cacheData('auth_session_current', null)
+        await offlineSync.cacheData('user_profile_current', null)
+        setProfile(null)
       } else {
         setProfile(null)
       }
@@ -116,24 +153,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = async () => {
     try {
       const { data, error } = await supabase.rpc('get_my_profile')
+      
       if (error) {
         console.error('Error fetching profile:', error)
+        
+        // Try to load from cache if offline or network error
+        const cachedProfile = await offlineSync.getCachedData('user_profile_current')
+        if (cachedProfile) {
+          console.log('Loaded profile from cache:', cachedProfile)
+          setProfile(cachedProfile)
+          return
+        }
+        
         setProfile(null)
         return
       }
       
       console.log('Profile fetched:', data)
+      let profileData: UserProfile | null = null
+      
       // data from get_my_profile is returned as an array of one object
       if (Array.isArray(data) && data.length > 0) {
-        setProfile(data[0] as UserProfile)
+        profileData = data[0] as UserProfile
       } else if (data && !Array.isArray(data)) {
-        setProfile(data as UserProfile)
+        profileData = data as UserProfile
+      }
+      
+      if (profileData) {
+        setProfile(profileData)
+        // Cache the profile for offline use
+        await offlineSync.cacheData('user_profile_current', profileData)
       } else {
         setProfile(null)
       }
     } catch (err) {
       console.error('Unexpected error fetching profile:', err)
-      setProfile(null)
+      
+      // Try to load from cache on unexpected error
+      const cachedProfile = await offlineSync.getCachedData('user_profile_current')
+      if (cachedProfile) {
+        setProfile(cachedProfile)
+      } else {
+        setProfile(null)
+      }
     }
   }
 

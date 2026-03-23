@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { registrarService } from '../../services/registrarService'
+import { offlineSync } from '../../utils/offlineSync'
 import { StaffProfile } from '../../types/registrar'
 import { AppRole, ProfileStatus } from '../../types/auth'
 import { Search, Edit2, X, Check, ShieldCheck } from 'lucide-react'
@@ -18,11 +19,22 @@ export const StaffDirectoryPage: React.FC = () => {
 
   const fetchStaff = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('registrar_staff')
+    if (cached) {
+      setStaff(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await registrarService.getStaff()
     if (error) {
       console.error('Error fetching staff:', error)
     } else if (data) {
       setStaff(data)
+      offlineSync.cacheData('registrar_staff', data)
     }
     setFetchLoading(false)
   }
@@ -30,6 +42,12 @@ export const StaffDirectoryPage: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editFormData) return
+
+    if (!navigator.onLine) {
+      alert('Updating staff members requires an internet connection.')
+      return
+    }
+
     setLoading(true)
 
     const { error } = await registrarService.updateStaffRole({

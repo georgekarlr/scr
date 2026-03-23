@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { registrarService } from '../../services/registrarService'
+import { offlineSync } from '../../utils/offlineSync'
 import { PendingProfile } from '../../types/registrar'
 import { AppRole } from '../../types/auth'
 import { Check, X, Clock, UserCheck } from 'lucide-react'
@@ -17,11 +18,27 @@ export const UserApprovalsPage: React.FC = () => {
 
   const fetchPendingProfiles = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('registrar_pending_profiles')
+    if (cached) {
+      setPendingProfiles(cached)
+      const initialRoles: Record<string, AppRole> = {}
+      cached.forEach((p: PendingProfile) => {
+        initialRoles[p.id] = 'teacher'
+      })
+      setSelectedRoles(initialRoles)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await registrarService.getPendingProfiles()
     if (error) {
       console.error('Error fetching pending profiles:', error)
     } else if (data) {
       setPendingProfiles(data)
+      offlineSync.cacheData('registrar_pending_profiles', data)
       // Initialize roles for selection, default to teacher or something sensible
       const initialRoles: Record<string, AppRole> = {}
       data.forEach(p => {
@@ -33,6 +50,11 @@ export const UserApprovalsPage: React.FC = () => {
   }
 
   const handleApprove = async (profileId: string) => {
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: 'Approving users requires an internet connection.' })
+      return
+    }
+
     setLoading(true)
     setMessage(null)
     const role = selectedRoles[profileId] || 'teacher'

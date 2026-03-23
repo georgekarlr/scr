@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { moderatorService } from '../../services/moderatorService'
 import { registrarService } from '../../services/registrarService'
+import { offlineSync } from '../../utils/offlineSync'
 import { ModeratorClass, ModeratorClassRoster } from '../../types/moderator'
 import { Student } from '../../types/registrar'
 import { Search, UserPlus, UserMinus, Users, BookOpen } from 'lucide-react'
@@ -30,6 +31,21 @@ export const EnrollmentPage: React.FC = () => {
 
   const fetchInitialData = async () => {
     setFetchLoading(true)
+    const cachedClasses = await offlineSync.getCachedData('moderator_classes')
+    const cachedStudents = await offlineSync.getCachedData('registrar_students')
+    if (cachedClasses) {
+      setClasses(cachedClasses)
+      if (cachedClasses.length > 0) {
+        setSelectedClassId(cachedClasses[0].id)
+      }
+    }
+    if (cachedStudents) setAllStudents(cachedStudents)
+
+    if (!navigator.onLine && (cachedClasses || cachedStudents)) {
+      setFetchLoading(false)
+      return
+    }
+
     const [classesRes, studentsRes] = await Promise.all([
       moderatorService.getClasses(),
       registrarService.getStudents()
@@ -37,21 +53,39 @@ export const EnrollmentPage: React.FC = () => {
 
     if (classesRes.data) {
       setClasses(classesRes.data)
-      if (classesRes.data.length > 0) {
+      offlineSync.cacheData('moderator_classes', classesRes.data)
+      if (classesRes.data.length > 0 && !selectedClassId) {
         setSelectedClassId(classesRes.data[0].id)
       }
     }
-    if (studentsRes.data) setAllStudents(studentsRes.data)
+    if (studentsRes.data) {
+      setAllStudents(studentsRes.data)
+      offlineSync.cacheData('registrar_students', studentsRes.data)
+    }
     setFetchLoading(false)
   }
 
   const fetchRoster = async (classId: string) => {
+    const cachedRoster = await offlineSync.getCachedData(`moderator_class_roster_${classId}`)
+    if (cachedRoster) setRoster(cachedRoster)
+
+    if (!navigator.onLine && cachedRoster) return
+
     const { data } = await moderatorService.getClassRoster(classId)
-    if (data) setRoster(data)
+    if (data) {
+      setRoster(data)
+      offlineSync.cacheData(`moderator_class_roster_${classId}`, data)
+    }
   }
 
   const handleEnroll = async (studentId: string) => {
     if (!selectedClassId) return
+
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: 'Enrolling students requires an internet connection.' })
+      return
+    }
+
     setLoading(true)
     const { error } = await moderatorService.enrollStudent({
       p_class_id: selectedClassId,
@@ -70,6 +104,12 @@ export const EnrollmentPage: React.FC = () => {
 
   const handleRemove = async (studentId: string) => {
     if (!selectedClassId) return
+
+    if (!navigator.onLine) {
+      alert('Removing students requires an internet connection.')
+      return
+    }
+
     if (!confirm('Are you sure you want to remove this student from the class?')) return
     
     setLoading(true)

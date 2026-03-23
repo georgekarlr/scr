@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { schoolAdminService } from '../../services/schoolAdminService'
+import { offlineSync } from '../../utils/offlineSync'
 import { InviteStaffParams, StaffProfile } from '../../types/schoolAdmin'
 import { AppRole } from '../../types/auth'
 import { Edit2, Trash2, X, Check, Mail } from 'lucide-react'
@@ -28,24 +29,38 @@ export const StaffPage: React.FC = () => {
 
   const fetchStaff = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('admin_staff')
+    if (cached) {
+      setStaff(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await schoolAdminService.getStaff()
     if (error) {
       console.error('Error fetching staff:', error)
     } else if (data) {
       setStaff(data)
+      offlineSync.cacheData('admin_staff', data)
     }
     setFetchLoading(false)
   }
 
   useEffect(() => {
-    const init = async () => {
-      await fetchStaff()
-    }
-    init()
+    fetchStaff()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: 'Inviting staff requires an internet connection.' })
+      return
+    }
+
     setLoading(true)
     setMessage(null)
 

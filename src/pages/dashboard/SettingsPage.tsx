@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { schoolAdminService } from '../../services/schoolAdminService'
+import { offlineSync } from '../../utils/offlineSync'
 import { CreateGradingPeriodParams, GradingPeriod } from '../../types/schoolAdmin'
 import { Edit2, Trash2, X, Check } from 'lucide-react'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -25,11 +26,22 @@ export const SettingsPage: React.FC = () => {
 
   const fetchGradingPeriods = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('admin_grading_periods')
+    if (cached) {
+      setGradingPeriods(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await schoolAdminService.getGradingPeriods()
     if (error) {
       console.error('Error fetching grading periods:', error)
     } else if (data) {
       setGradingPeriods(data)
+      offlineSync.cacheData('admin_grading_periods', data)
     }
     setFetchLoading(false)
   }
@@ -43,6 +55,12 @@ export const SettingsPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: 'Creating grading periods requires an internet connection.' })
+      return
+    }
+
     setLoading(true)
     setMessage(null)
 
@@ -66,6 +84,12 @@ export const SettingsPage: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editFormData) return
+
+    if (!navigator.onLine) {
+      alert('Updating grading periods requires an internet connection.')
+      return
+    }
+
     setLoading(true)
 
     const { error } = await schoolAdminService.updateGradingPeriod({
@@ -92,6 +116,12 @@ export const SettingsPage: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!deleteModal.periodId) return
+
+    if (!navigator.onLine) {
+      alert('Deleting grading periods requires an internet connection.')
+      setDeleteModal({ isOpen: false, periodId: null })
+      return
+    }
     
     setLoading(true)
     const { error } = await schoolAdminService.deleteGradingPeriod(deleteModal.periodId)

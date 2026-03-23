@@ -1,7 +1,8 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -28,9 +29,10 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon, onClick }) => (
 );
 
 const Sidebar: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { isOpen, close } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   const role = profile?.role || user?.user_metadata?.role;
 
   // Close sidebar on navigation (mobile)
@@ -38,48 +40,53 @@ const Sidebar: React.FC = () => {
     close();
   }, [location.pathname, close]);
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
   const renderNavLinks = () => {
     switch (role) {
       case 'school_admin':
         return (
           <>
-            <NavItem to="/dashboard/settings" label="Settings" />
-            <NavItem to="/dashboard/departments" label="Departments" />
-            <NavItem to="/dashboard/subjects" label="Subjects" />
-            <NavItem to="/dashboard/staff" label="Staff" />
+            <NavItem to="/dashboard/settings" label="Settings" icon={<Settings size={18} />} />
+            <NavItem to="/dashboard/departments" label="Departments" icon={<Users size={18} />} />
+            <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
+            <NavItem to="/dashboard/staff" label="Staff" icon={<Users size={18} />} />
           </>
         );
       case 'registrar':
         return (
           <>
-            <NavItem to="/dashboard/approvals" label="User Approvals" />
-            <NavItem to="/dashboard/roster" label="Master Roster" />
-            <NavItem to="/dashboard/subjects" label="Subjects" />
-            <NavItem to="/dashboard/directory" label="Staff Directory" />
+            <NavItem to="/dashboard/approvals" label="User Approvals" icon={<CheckSquare size={18} />} />
+            <NavItem to="/dashboard/roster" label="Master Roster" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
+            <NavItem to="/dashboard/directory" label="Staff Directory" icon={<Users size={18} />} />
           </>
         );
       case 'moderator':
         return (
           <>
-            <NavItem to="/dashboard/classes" label="Classes" />
-            <NavItem to="/dashboard/enrollment" label="Enrollment" />
-            <NavItem to="/dashboard/requests" label="Requests Inbox" />
+            <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
+            <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<Users size={18} />} />
+            <NavItem to="/dashboard/requests" label="Requests Inbox" icon={<Inbox size={18} />} />
           </>
         );
       case 'teacher':
         return (
           <>
-            <NavItem to="/dashboard/my-classes" label="My Classes" />
-            <NavItem to="/dashboard/student-request" label="Add Student Request" />
-            <NavItem to="/dashboard/gradebook" label="Gradebook" />
-            <NavItem to="/dashboard/attendance-history" label="Attendance Records" />
+            <NavItem to="/dashboard/my-classes" label="My Classes" icon={<ListTodo size={18} />} />
+            <NavItem to="/dashboard/student-request" label="Add Student Request" icon={<GraduationCap size={18} />} />
+            <NavItem to="/dashboard/gradebook" label="Gradebook" icon={<BookOpen size={18} />} />
+            <NavItem to="/dashboard/attendance-history" label="Attendance Records" icon={<ClipboardList size={18} />} />
           </>
         );
       case 'student':
         return (
           <>
-            <NavItem to="/dashboard/my-grades" label="My Grades" />
-            <NavItem to="/dashboard/my-attendance" label="My Attendance" />
+            <NavItem to="/dashboard/my-grades" label="My Grades" icon={<GraduationCap size={18} />} />
+            <NavItem to="/dashboard/my-attendance" label="My Attendance" icon={<ClipboardList size={18} />} />
           </>
         );
       default:
@@ -112,16 +119,24 @@ const Sidebar: React.FC = () => {
           </h3>
         </div>
         <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
-          <NavItem to="/dashboard" label="Overview" />
+          <NavItem to="/dashboard" label="Overview" icon={<LayoutDashboard size={18} />} />
+          <NavItem to="/dashboard/account" label="Account" icon={<User size={18} />} />
           <hr className="my-2 border-gray-100" />
           {renderNavLinks()}
         </nav>
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="px-4 py-2">
-            <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">
+        <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-2">
+          <div className="px-4">
+            <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded block w-fit">
               Role: {role?.replace('_', ' ') || 'Guest'}
             </span>
           </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut size={18} />
+            <span className="font-semibold">Sign out</span>
+          </button>
         </div>
       </aside>
     </>

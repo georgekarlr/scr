@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { registrarService } from '../../services/registrarService'
+import { offlineSync } from '../../utils/offlineSync'
 import { Student, CreateStudentParams } from '../../types/registrar'
 import { Plus, Search, Edit2, Trash2, X, Check, Users } from 'lucide-react'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -28,17 +29,34 @@ export const MasterRosterPage: React.FC = () => {
 
   const fetchStudents = async () => {
     setFetchLoading(true)
+    const cached = await offlineSync.getCachedData('registrar_students')
+    if (cached) {
+      setStudents(cached)
+    }
+
+    if (!navigator.onLine && cached) {
+      setFetchLoading(false)
+      return
+    }
+
     const { data, error } = await registrarService.getStudents()
     if (error) {
       console.error('Error fetching students:', error)
     } else if (data) {
       setStudents(data)
+      offlineSync.cacheData('registrar_students', data)
     }
     setFetchLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!navigator.onLine) {
+      setMessage({ type: 'error', text: 'Modifying students requires an internet connection.' })
+      return
+    }
+
     setLoading(true)
     setMessage(null)
 
@@ -77,6 +95,13 @@ export const MasterRosterPage: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!deleteModal.studentId) return
+
+    if (!navigator.onLine) {
+      alert('Deleting students requires an internet connection.')
+      setDeleteModal({ isOpen: false, studentId: null })
+      return
+    }
+
     setLoading(true)
     const { error } = await registrarService.deleteStudent(deleteModal.studentId)
     if (error) {
