@@ -234,11 +234,16 @@ const AttendanceHistoryPage: React.FC = () => {
         
         setAllRecords(prev => {
           const exists = prev.some(r => r.attendance_id === attendanceId && r.student_id === studentId)
+          let next;
           if (exists) {
-            return prev.map(r => (r.attendance_id === attendanceId && r.student_id === studentId) ? { ...r, status } : r)
+            next = prev.map(r => (r.attendance_id === attendanceId && r.student_id === studentId) ? { ...r, status } : r)
           } else {
-            return [...prev, { attendance_id: attendanceId, student_id: studentId, status }]
+            next = [...prev, { attendance_id: attendanceId, student_id: studentId, status }]
           }
+          // Update cache with the new state
+          const allRecordsKey = `all_attendance_records_${selectedClassId}`
+          offlineSync.cacheData(allRecordsKey, next)
+          return next
         })
         
         setMessage({ type: 'success', text: 'Status saved locally (Offline)' })
@@ -263,16 +268,17 @@ const AttendanceHistoryPage: React.FC = () => {
       
       setAllRecords(prev => {
         const exists = prev.some(r => r.attendance_id === attendanceId && r.student_id === studentId)
+        let next;
         if (exists) {
-          return prev.map(r => (r.attendance_id === attendanceId && r.student_id === studentId) ? { ...r, status } : r)
+          next = prev.map(r => (r.attendance_id === attendanceId && r.student_id === studentId) ? { ...r, status } : r)
         } else {
-          return [...prev, { attendance_id: attendanceId, student_id: studentId, status }]
+          next = [...prev, { attendance_id: attendanceId, student_id: studentId, status }]
         }
+        // Update cache with the new state
+        const allRecordsKey = `all_attendance_records_${selectedClassId}`
+        offlineSync.cacheData(allRecordsKey, next)
+        return next
       })
-      
-      // Update cache
-      const allRecordsKey = `all_attendance_records_${selectedClassId}`
-      offlineSync.cacheData(allRecordsKey, allRecords) // Note: this might be slightly behind, but fetchGridData handles it
     }
     setSaveLoading(false)
     setTimeout(() => setMessage(null), 3000)
@@ -720,7 +726,7 @@ const AttendanceHistoryPage: React.FC = () => {
                           </tr>
                         ) : (
                           records.map((record) => (
-                            <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={`${record.attendance_id}_${record.student_id}`} className="hover:bg-gray-50 transition-colors">
                               <td className="px-6 py-4 font-mono text-sm text-gray-600">{record.student_id_number}</td>
                               <td className="px-6 py-4 font-semibold text-gray-900">{record.first_name} {record.last_name}</td>
                               <td className="px-6 py-4">

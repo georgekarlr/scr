@@ -178,7 +178,7 @@ export const teacherService = {
    * Bulk sync offline attendance sessions (columns) and records (cells)
    */
   async syncOfflineAttendanceFull(params: TeacherSyncOfflineAttendanceFullParams) {
-    const { error } = await supabase.rpc('teacher_sync_offline_attendance_full', {
+    const { error } = await supabase.rpc('teacher_sync_offline_attendance_data', {
       p_class_id: params.classId,
       p_attendances: params.attendances,
       p_records: params.records,
