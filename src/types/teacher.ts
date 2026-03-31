@@ -35,6 +35,13 @@ export interface TeacherCreateAssignmentParams {
   p_due_date: string // DATE
 }
 
+export interface TeacherUpdateAssignmentParams {
+  p_assignment_id: string
+  p_title: string
+  p_max_score: number
+  p_due_date: string // DATE
+}
+
 export interface TeacherSaveGradeParams {
   p_class_id: string
   p_assignment_id: string
@@ -85,6 +92,7 @@ export interface TeacherAssignment {
   max_score: number
   due_date: string // DATE
   created_at: string // TIMESTAMPTZ
+  action_status?: 'updated' | 'deleted' | 'none'
 }
 
 export interface TeacherGrade {
@@ -93,6 +101,7 @@ export interface TeacherGrade {
   score: number
   remarks: string | null
   updated_at: string // TIMESTAMPTZ
+  action_status?: 'updated' | 'deleted' | 'none'
 }
 
 export interface TeacherSaveAttendanceParams {
@@ -111,12 +120,15 @@ export interface TeacherSyncOfflineAssignmentsAndGradesParams {
     title: string
     max_score: number
     due_date: string // DATE
+    action_status: 'updated' | 'deleted' | 'none'
   }[]
   grades: {
     assignment_id: string
     student_id: string
     score: number
+    action_status: 'updated' | 'deleted' | 'none'
   }[]
+  deleted_assignments?: string[] // Still keep this for backward compatibility or simple deletes
 }
 
 // Bulk sync: full attendance (sessions + records)

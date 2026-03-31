@@ -25,7 +25,10 @@ import {
   Hash,
   LayoutGrid,
   List,
-  FileDown
+  FileDown,
+  Trash2,
+  RefreshCcw,
+  Edit2
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -41,6 +44,7 @@ const GradebookPage: React.FC = () => {
   const [roster, setRoster] = useState<TeacherStudent[]>([])
   const [assignments, setAssignments] = useState<TeacherAssignment[]>([])
   const [grades, setGrades] = useState<TeacherGrade[]>([])
+  const [deletedAssignmentIds, setDeletedAssignmentIds] = useState<string[]>([])
   
   const [loading, setLoading] = useState(false)
   const [fetchLoading, setFetchLoading] = useState(true)
@@ -54,14 +58,16 @@ const GradebookPage: React.FC = () => {
   const [viewOptions, setViewOptions] = useState({
     showStudentId: true,
     showAsPercentage: false,
+    showAssignmentActions: true,
   })
   const [showViewOptions, setShowViewOptions] = useState(false)
 
   // Focused assignment for "by assignment" view
   const [focusedAssignmentId, setFocusedAssignmentId] = useState<string | null>(null)
 
-  // Form for new assignment
+  // Form for new/edit assignment
   const [showCreateAssignment, setShowCreateAssignment] = useState(false)
+  const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null)
   const [assignmentForm, setAssignmentForm] = useState({
     p_title: '',
     p_max_score: 100,
@@ -127,6 +133,10 @@ const GradebookPage: React.FC = () => {
     if (!selectedClassId || !selectedGradingPeriodId) return
     setLoading(true)
     
+    // Check for deleted assignments in offline mode
+    const deletedOffline = await offlineSync.getDeletedAssignments(selectedClassId)
+    setDeletedAssignmentIds(deletedOffline.map(d => d.id))
+
     const assignKey = `assignments_${selectedClassId}_${selectedGradingPeriodId}`
     const gradesKey = `grades_${selectedClassId}_${selectedGradingPeriodId}`
     
@@ -142,7 +152,8 @@ const GradebookPage: React.FC = () => {
     
     // Merge pending assignments (avoid duplicates)
     pendingAssignments.forEach(pa => {
-        if (!displayAssignments.find(a => a.id === pa.id)) {
+        const existing = displayAssignments.find(a => a.id === pa.id)
+        if (!existing) {
             displayAssignments = [...displayAssignments, {
                 id: pa.id,
                 title: pa.title,
@@ -150,8 +161,15 @@ const GradebookPage: React.FC = () => {
                 due_date: pa.due_date,
                 class_id: pa.classId,
                 grading_period_id: pa.grading_period_id,
-                school_id: '' // placeholder
+                school_id: '', // placeholder
+                action_status: pa.action_status
             } as TeacherAssignment]
+        } else {
+            // Update existing with pending status
+            existing.action_status = pa.action_status
+            existing.title = pa.title
+            existing.max_score = pa.max_score
+            existing.due_date = pa.due_date
         }
     })
     
@@ -165,7 +183,8 @@ const GradebookPage: React.FC = () => {
             class_id: pg.classId,
             school_id: '',
             id: '',
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            action_status: pg.action_status
         } as TeacherGrade
         
         if (index > -1) {
@@ -220,6 +239,22 @@ const GradebookPage: React.FC = () => {
     if (selectedClassId && selectedGradingPeriodId) {
       fetchGradesAndAssignments()
     }
+  }, [selectedClassId, selectedGradingPeriodId])
+
+  useEffect(() => {
+    // Listen for sync success to refetch online data
+    const unsubscribe = offlineSync.onSyncSuccess(() => {
+      console.log('Sync success detected in GradebookPage, refetching...')
+      if (selectedClassId && selectedGradingPeriodId) {
+        fetchGradesAndAssignments()
+      }
+      if (selectedClassId) {
+        fetchRoster()
+      }
+      fetchInitialData() // Refresh classes and periods just in case
+    })
+
+    return () => unsubscribe()
   }, [selectedClassId, selectedGradingPeriodId])
 
   useEffect(() => {
@@ -466,6 +501,115 @@ const GradebookPage: React.FC = () => {
     setTimeout(() => setMessage(null), 3000)
   }
 
+  const handleUpdateAssignment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingAssignmentId || !selectedClassId) return
+    setLoading(true)
+
+    const updateData = {
+      p_assignment_id: editingAssignmentId,
+      p_title: assignmentForm.p_title,
+      p_max_score: assignmentForm.p_max_score,
+      p_due_date: assignmentForm.p_due_date
+    }
+
+    if (!navigator.onLine) {
+      // Get existing assignment data
+      const existing = assignments.find(a => a.id === editingAssignmentId)
+      if (existing) {
+        await offlineSync.saveAssignmentLocally({
+          id: editingAssignmentId,
+          classId: selectedClassId,
+          grading_period_id: existing.grading_period_id,
+          title: updateData.p_title,
+          max_score: updateData.p_max_score,
+          due_date: updateData.p_due_date
+        } as PendingAssignment)
+
+        // Optimistic UI
+        setAssignments(prev => prev.map(a => 
+          a.id === editingAssignmentId 
+            ? { ...a, title: updateData.p_title, max_score: updateData.p_max_score, due_date: updateData.p_due_date, action_status: 'updated' } 
+            : a
+        ))
+        
+        setMessage({ type: 'success', text: 'Assignment updated locally (Offline)' })
+        setShowCreateAssignment(false)
+        setEditingAssignmentId(null)
+        setAssignmentForm({
+          p_title: '',
+          p_max_score: 100,
+          p_due_date: new Date().toISOString().split('T')[0]
+        })
+      }
+      setLoading(false)
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    const { error } = await teacherService.updateAssignment(updateData)
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message || 'Failed to update assignment' })
+    } else {
+      setMessage({ type: 'success', text: 'Assignment updated successfully!' })
+      setShowCreateAssignment(false)
+      setEditingAssignmentId(null)
+      setAssignmentForm({
+        p_title: '',
+        p_max_score: 100,
+        p_due_date: new Date().toISOString().split('T')[0]
+      })
+      fetchGradesAndAssignments()
+    }
+    setLoading(false)
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this assignment and all its grades?')) return
+    
+    setLoading(true)
+    if (!navigator.onLine) {
+      const isPending = (await offlineSync.getPendingAssignments(selectedClassId)).find(a => a.id === assignmentId);
+      await offlineSync.deleteAssignmentLocally(assignmentId, selectedClassId, !!isPending)
+      
+      // Optimistic UI
+      if (isPending) {
+        setAssignments(prev => prev.filter(a => a.id !== assignmentId))
+        setGrades(prev => prev.filter(g => g.assignment_id !== assignmentId))
+        if (focusedAssignmentId === assignmentId) setFocusedAssignmentId(null)
+      } else {
+        setDeletedAssignmentIds(prev => [...prev, assignmentId])
+      }
+      
+      setMessage({ type: 'success', text: 'Assignment marked for deletion (Offline)' })
+      setLoading(false)
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    const { error } = await teacherService.deleteAssignment(assignmentId)
+    if (error) {
+      setMessage({ type: 'error', text: error.message || 'Failed to delete assignment' })
+    } else {
+      setMessage({ type: 'success', text: 'Assignment deleted successfully!' })
+      if (focusedAssignmentId === assignmentId) setFocusedAssignmentId(null)
+      fetchGradesAndAssignments()
+    }
+    setLoading(false)
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleRestoreAssignment = async (assignmentId: string) => {
+    setLoading(true)
+    await offlineSync.restoreAssignmentLocally(assignmentId)
+    setDeletedAssignmentIds(prev => prev.filter(id => id !== assignmentId))
+    setMessage({ type: 'success', text: 'Assignment restored' })
+    setLoading(false)
+    setTimeout(() => setMessage(null), 3000)
+  }
+
   if (fetchLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -559,6 +703,16 @@ const GradebookPage: React.FC = () => {
                     </div>
                     {viewOptions.showAsPercentage && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
                   </button>
+                  <button
+                    onClick={() => setViewOptions({ ...viewOptions, showAssignmentActions: !viewOptions.showAssignmentActions })}
+                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-lg text-sm text-gray-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Settings2 size={16} />
+                      Show Actions
+                    </div>
+                    {viewOptions.showAssignmentActions && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
+                  </button>
                 </div>
               )}
             </div>
@@ -601,7 +755,15 @@ const GradebookPage: React.FC = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => setShowCreateAssignment(!showCreateAssignment)}
+                    onClick={() => {
+                      setEditingAssignmentId(null)
+                      setAssignmentForm({
+                        p_title: '',
+                        p_max_score: 100,
+                        p_due_date: new Date().toISOString().split('T')[0]
+                      })
+                      setShowCreateAssignment(!showCreateAssignment)
+                    }}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                   >
                     <Plus size={18} />
@@ -611,9 +773,9 @@ const GradebookPage: React.FC = () => {
               </div>
 
               {showCreateAssignment && (
-                <form onSubmit={handleCreateAssignment} className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <form onSubmit={editingAssignmentId ? handleUpdateAssignment : handleCreateAssignment} className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                   <div className="md:col-span-1">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{editingAssignmentId ? 'Edit' : 'New'} Title</label>
                     <input
                       type="text"
                       required
@@ -649,11 +811,14 @@ const GradebookPage: React.FC = () => {
                       disabled={loading}
                       className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-300"
                     >
-                      Create
+                      {editingAssignmentId ? 'Update' : 'Create'}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowCreateAssignment(false)}
+                      onClick={() => {
+                        setShowCreateAssignment(false)
+                        setEditingAssignmentId(null)
+                      }}
                       className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium"
                     >
                       Cancel
@@ -668,13 +833,71 @@ const GradebookPage: React.FC = () => {
                     <thead className="sticky top-0 z-20">
                       <tr className="bg-gray-50 border-b border-gray-200">
                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[200px] sticky left-0 bg-gray-50 z-30 border-r border-gray-200">Student Name</th>
-                        {assignments.map(asgn => (
-                          <th key={asgn.id} className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[120px] bg-gray-50 border-r border-gray-100 last:border-r-0">
-                            <div className="truncate mb-0.5" title={asgn.title}>{asgn.title}</div>
-                            <div className="text-[10px] text-gray-400 font-medium mb-0.5">{new Date(asgn.due_date).toLocaleDateString()}</div>
-                            <div className="text-[10px] text-blue-500 font-bold">Max: {asgn.max_score}</div>
-                          </th>
-                        ))}
+                        {assignments.map(asgn => {
+                          const isDeletedOffline = deletedAssignmentIds.includes(asgn.id) || asgn.action_status === 'deleted';
+                          const isUpdatedOffline = asgn.action_status === 'updated';
+                          
+                          let headerBg = 'bg-gray-50';
+                          let textColor = 'text-gray-500';
+                          if (isDeletedOffline) {
+                            headerBg = 'bg-red-50';
+                            textColor = 'text-red-500';
+                          } else if (isUpdatedOffline) {
+                            headerBg = 'bg-blue-50';
+                            textColor = 'text-blue-600';
+                          }
+
+                          return (
+                            <th key={asgn.id} className={`px-4 py-3 text-center text-xs font-bold uppercase tracking-wider min-w-[120px] border-r border-gray-100 last:border-r-0 group/th ${headerBg} ${textColor}`}>
+                              <div className="flex items-center justify-center gap-1 mb-0.5">
+                                <div className="truncate" title={asgn.title}>{asgn.title}</div>
+                                {isDeletedOffline ? (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRestoreAssignment(asgn.id);
+                                    }}
+                                    className="text-blue-500 hover:text-blue-700 transition-opacity"
+                                    title="Restore Assignment"
+                                  >
+                                    <RefreshCcw size={12} />
+                                  </button>
+                                ) : (
+                                  <div className={`flex items-center gap-1 transition-opacity ${viewOptions.showAssignmentActions ? 'opacity-100' : 'opacity-20 group-hover/th:opacity-100 group-focus-within/th:opacity-100'}`}>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingAssignmentId(asgn.id);
+                                        setAssignmentForm({
+                                          p_title: asgn.title,
+                                          p_max_score: asgn.max_score,
+                                          p_due_date: new Date(asgn.due_date).toISOString().split('T')[0]
+                                        });
+                                        setShowCreateAssignment(true);
+                                      }}
+                                      className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                      title="Edit Assignment"
+                                    >
+                                      <Edit2 size={12} />
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteAssignment(asgn.id);
+                                      }}
+                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                      title="Delete Assignment"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className={`text-[10px] font-medium mb-0.5 ${isDeletedOffline ? 'text-red-400' : 'text-gray-400'}`}>{new Date(asgn.due_date).toLocaleDateString()}</div>
+                              <div className={`text-[10px] font-bold ${isDeletedOffline ? 'text-red-500' : 'text-blue-500'}`}>Max: {asgn.max_score}</div>
+                            </th>
+                          )
+                        })}
                         {assignments.length === 0 && (
                           <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">No assignments yet</th>
                         )}
@@ -716,7 +939,7 @@ const GradebookPage: React.FC = () => {
                             }
                             
                             return (
-                              <td key={asgn.id} className={`px-4 py-3 text-center border-r border-gray-50 last:border-r-0 ${bgClass}`}>
+                              <td key={asgn.id} className={`px-4 py-3 text-center border-r border-gray-50 last:border-r-0 ${bgClass} ${grade?.action_status === 'updated' ? 'ring-1 ring-inset ring-blue-400' : ''}`}>
                                 <div className="relative inline-block w-20">
                                   <input
                                     type={viewOptions.showAsPercentage ? "text" : "number"}
@@ -783,23 +1006,29 @@ const GradebookPage: React.FC = () => {
                     {assignments.length === 0 && (
                       <div className="text-gray-400 italic text-sm py-4">No assignments found</div>
                     )}
-                    {assignments.map(asgn => (
-                      <button
-                        key={asgn.id}
-                        onClick={() => setFocusedAssignmentId(asgn.id)}
-                        className={`w-full text-left p-4 rounded-xl border transition-all ${
-                          focusedAssignmentId === asgn.id
-                            ? 'bg-blue-50 border-blue-200 shadow-sm'
-                            : 'bg-white border-gray-200 hover:border-blue-300'
-                        }`}
-                      >
-                        <div className="font-bold text-gray-900 mb-1">{asgn.title}</div>
-                        <div className="flex justify-between items-center text-xs text-gray-500">
-                          <span>Max: {asgn.max_score}</span>
-                          <span>Due: {new Date(asgn.due_date).toLocaleDateString()}</span>
-                        </div>
-                      </button>
-                    ))}
+                          {assignments.map(asgn => {
+                            const isDeletedOffline = deletedAssignmentIds.includes(asgn.id);
+                            return (
+                              <button
+                                key={asgn.id}
+                                onClick={() => setFocusedAssignmentId(asgn.id)}
+                                className={`w-full text-left p-4 rounded-xl border transition-all ${
+                                  focusedAssignmentId === asgn.id
+                                    ? (isDeletedOffline ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-blue-50 border-blue-200 shadow-sm')
+                                    : (isDeletedOffline ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200 hover:border-blue-300')
+                                }`}
+                              >
+                                <div className={`font-bold mb-1 ${isDeletedOffline ? 'text-red-700' : 'text-gray-900'}`}>{asgn.title}</div>
+                                <div className="flex justify-between items-center text-xs text-gray-500">
+                                  <span className={isDeletedOffline ? 'text-red-500' : ''}>Max: {asgn.max_score}</span>
+                                  <span className={isDeletedOffline ? 'text-red-500' : ''}>Due: {new Date(asgn.due_date).toLocaleDateString()}</span>
+                                </div>
+                                {isDeletedOffline && (
+                                  <div className="mt-2 text-[10px] font-bold text-red-600 uppercase">Pending Deletion (Offline)</div>
+                                )}
+                              </button>
+                            );
+                          })}
                   </div>
                   <div className="md:col-span-2">
                     {focusedAssignmentId ? (
@@ -807,25 +1036,65 @@ const GradebookPage: React.FC = () => {
                         {(() => {
                           const asgn = assignments.find(a => a.id === focusedAssignmentId);
                           if (!asgn) return null;
+                          const isDeletedOffline = deletedAssignmentIds.includes(asgn.id);
                           return (
                             <>
-                              <div className="flex justify-between items-center mb-6">
+                              <div className={`flex justify-between items-center mb-6 p-4 rounded-xl ${isDeletedOffline ? 'bg-red-50' : ''}`}>
                                 <div>
-                                  <h3 className="text-xl font-bold text-gray-900">{asgn.title}</h3>
-                                  <p className="text-sm text-gray-500">Entering grades for {roster.length} students</p>
+                                  <h3 className={`text-xl font-bold ${isDeletedOffline ? 'text-red-900' : 'text-gray-900'}`}>{asgn.title}</h3>
+                                  <p className={`text-sm ${isDeletedOffline ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+                                    {isDeletedOffline ? 'PENDING DELETION (OFFLINE)' : `Entering grades for ${roster.length} students`}
+                                  </p>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-xs font-bold text-gray-400 uppercase">Max Score</div>
-                                  <div className="text-lg font-bold text-blue-600">{asgn.max_score}</div>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-right">
+                                    <div className={`text-xs font-bold uppercase ${isDeletedOffline ? 'text-red-400' : 'text-gray-400'}`}>Max Score</div>
+                                    <div className={`text-lg font-bold ${isDeletedOffline ? 'text-red-600' : 'text-blue-600'}`}>{asgn.max_score}</div>
+                                  </div>
+                                  {isDeletedOffline ? (
+                                    <button
+                                      onClick={() => handleRestoreAssignment(asgn.id)}
+                                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2 font-medium text-sm"
+                                      title="Restore Assignment"
+                                    >
+                                      <RefreshCcw size={20} />
+                                      <span>Restore</span>
+                                    </button>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          setEditingAssignmentId(asgn.id);
+                                          setAssignmentForm({
+                                            p_title: asgn.title,
+                                            p_max_score: asgn.max_score,
+                                            p_due_date: new Date(asgn.due_date).toISOString().split('T')[0]
+                                          });
+                                          setShowCreateAssignment(true);
+                                        }}
+                                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit Assignment"
+                                      >
+                                        <Edit2 size={20} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteAssignment(asgn.id)}
+                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete Assignment"
+                                      >
+                                        <Trash2 size={20} />
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                              <div className={`bg-white border rounded-xl overflow-hidden ${isDeletedOffline ? 'border-red-200' : 'border-gray-200'}`}>
                                 <table className="w-full">
                                   <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-200">
-                                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Student</th>
-                                      <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase w-32">Grade</th>
-                                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Remarks</th>
+                                    <tr className={`border-b ${isDeletedOffline ? 'bg-red-50/50 border-red-100' : 'bg-gray-50 border-gray-200'}`}>
+                                      <th className={`px-4 py-3 text-left text-xs font-bold uppercase ${isDeletedOffline ? 'text-red-500' : 'text-gray-500'}`}>Student</th>
+                                      <th className={`px-4 py-3 text-center text-xs font-bold uppercase w-32 ${isDeletedOffline ? 'text-red-500' : 'text-gray-500'}`}>Grade</th>
+                                      <th className={`px-4 py-3 text-left text-xs font-bold uppercase ${isDeletedOffline ? 'text-red-500' : 'text-gray-500'}`}>Remarks</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-100">
@@ -837,11 +1106,11 @@ const GradebookPage: React.FC = () => {
                                         : (grade?.score ?? '');
 
                                       return (
-                                        <tr key={student.student_id} className="hover:bg-gray-50">
+                                        <tr key={student.student_id} className={`hover:bg-gray-50 ${isDeletedOffline ? 'bg-red-50/20' : ''}`}>
                                           <td className="px-4 py-3">
-                                            <div className="text-sm font-semibold text-gray-900">{student.last_name}, {student.first_name}</div>
+                                            <div className={`text-sm font-semibold ${isDeletedOffline ? 'text-red-900' : 'text-gray-900'}`}>{student.last_name}, {student.first_name}</div>
                                             {viewOptions.showStudentId && (
-                                              <div className="text-xs text-gray-500">{student.student_id_number}</div>
+                                              <div className={`text-xs ${isDeletedOffline ? 'text-red-400' : 'text-gray-500'}`}>{student.student_id_number}</div>
                                             )}
                                           </td>
                                           <td className="px-4 py-3">
@@ -857,6 +1126,7 @@ const GradebookPage: React.FC = () => {
                                                   }
                                                 }}
                                                 onBlur={(e) => {
+                                                  if (isDeletedOffline) return;
                                                   let val: number | null = null;
                                                   if (viewOptions.showAsPercentage) {
                                                     const raw = e.target.value.replace('%', '');
@@ -868,24 +1138,22 @@ const GradebookPage: React.FC = () => {
                                                     val = e.target.value === '' ? null : parseFloat(e.target.value)
                                                   }
 
-                                                  // Clamp value to max_score
                                                   if (val !== null && val > asgn.max_score) {
                                                     val = asgn.max_score;
-                                                    e.target.value = viewOptions.showAsPercentage ? '100' : asgn.max_score.toString();
                                                   }
 
                                                   if (val !== null && val !== grade?.score) {
                                                     handleSaveGrade(asgn.id, student.student_id, val, grade?.remarks)
                                                   }
                                                 }}
-                                                className={`w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-center focus:ring-2 focus:ring-blue-500 outline-none ${
-                                                  viewOptions.showAsPercentage ? 'bg-gray-50' : ''
+                                                className={`w-full rounded-lg border px-3 py-1.5 text-sm text-center focus:ring-2 outline-none transition-all ${
+                                                  isDeletedOffline ? 'bg-red-50 border-red-100 text-red-700' : 'bg-white border-gray-200 focus:ring-blue-500'
                                                 }`}
                                                 placeholder="-"
-                                                disabled={isSaving}
+                                                disabled={isSaving || isDeletedOffline}
                                               />
                                               {viewOptions.showAsPercentage && grade && (
-                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none">%</span>
+                                                <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none ${isDeletedOffline ? 'text-red-300' : 'text-gray-400'}`}>%</span>
                                               )}
                                               {isSaving && (
                                                 <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-blue-500 animate-spin">
@@ -907,13 +1175,16 @@ const GradebookPage: React.FC = () => {
                                                   }
                                                 }}
                                                 onBlur={(e) => {
+                                                  if (isDeletedOffline) return;
                                                   const val = e.target.value;
                                                   if (val !== (grade?.remarks || '')) {
                                                     handleSaveGrade(asgn.id, student.student_id, grade?.score ?? null, val)
                                                   }
                                                 }}
-                                                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                                disabled={isSaving}
+                                                className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:ring-2 outline-none ${
+                                                  isDeletedOffline ? 'bg-red-50 border-red-100 text-red-700 placeholder:text-red-300' : 'bg-white border-gray-200 focus:ring-blue-500 text-gray-600'
+                                                }`}
+                                                disabled={isSaving || isDeletedOffline}
                                               />
                                               {isSaving && (
                                                 <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-blue-500 animate-spin">

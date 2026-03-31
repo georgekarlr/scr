@@ -10,12 +10,19 @@ export interface PendingAssignment {
   max_score: number
   due_date: string
   classId: string
+  action_status: 'updated' | 'deleted' | 'none'
 }
 
 export interface PendingGrade {
   assignment_id: string
   student_id: string
   score: number
+  classId: string
+  action_status: 'updated' | 'deleted' | 'none'
+}
+
+export interface DeletedAssignment {
+  id: string
   classId: string
 }
 
@@ -36,13 +43,14 @@ export interface PendingAttendanceRecord {
 // --- IndexedDB Helper ---
 
 const DB_NAME = 'OfflineSyncDB'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 const STORES = {
   ASSIGNMENTS: 'pending_assignments',
   GRADES: 'pending_grades',
   ATTENDANCES: 'pending_attendances',
   ATTENDANCE_RECORDS: 'pending_attendance_records',
+  DELETED_ASSIGNMENTS: 'deleted_assignments',
   CACHE: 'data_cache'
 }
 
@@ -132,10 +140,81 @@ const db = new OfflineDB()
 
 // --- Sync Logic ---
 
+type SyncCallback = () => void
+const syncCallbacks: SyncCallback[] = []
+
 export const offlineSync = {
+  onSyncSuccess(callback: SyncCallback) {
+    syncCallbacks.push(callback)
+    return () => {
+      const index = syncCallbacks.indexOf(callback)
+      if (index > -1) syncCallbacks.splice(index, 1)
+    }
+  },
+
+  notifySyncSuccess() {
+    syncCallbacks.forEach(cb => cb())
+  },
   // Assignments
   async saveAssignmentLocally(assignment: PendingAssignment) {
-    await db.add(STORES.ASSIGNMENTS, assignment)
+    await db.add(STORES.ASSIGNMENTS, { ...assignment, action_status: 'updated' })
+  },
+
+  async deleteAssignmentLocally(assignmentId: string, classId: string, isNewlyCreatedOffline: boolean) {
+    if (isNewlyCreatedOffline) {
+      await db.delete(STORES.ASSIGNMENTS, assignmentId)
+      // Also clean up any pending grades for this assignment
+      const pendingGrades = await this.getPendingGrades(classId)
+      for (const grade of pendingGrades) {
+        if (grade.assignment_id === assignmentId) {
+          await db.delete(STORES.GRADES, grade.id)
+        }
+      }
+      return
+    }
+
+    // Otherwise, mark it for deletion
+    // Get existing assignment data if possible to keep it in the assignments store but with deleted status
+    const allAssignments = await db.getAll(STORES.ASSIGNMENTS) as PendingAssignment[]
+    const existing = allAssignments.find(a => a.id === assignmentId)
+    
+    if (existing) {
+        await db.add(STORES.ASSIGNMENTS, { ...existing, action_status: 'deleted' })
+    } else {
+        // We might not have it in pending_assignments if it was already synced
+        // We still need to track it as deleted
+        await db.add(STORES.DELETED_ASSIGNMENTS, { id: assignmentId, classId })
+    }
+
+    // Also mark related grades as deleted
+    const allGrades = await db.getAll(STORES.GRADES) as (PendingGrade & { id: string })[]
+    const relatedGrades = allGrades.filter(g => g.assignment_id === assignmentId)
+    for (const grade of relatedGrades) {
+        await db.add(STORES.GRADES, { ...grade, action_status: 'deleted' })
+    }
+  },
+
+  async restoreAssignmentLocally(assignmentId: string) {
+    // 1. Remove from deleted_assignments store
+    await db.delete(STORES.DELETED_ASSIGNMENTS, assignmentId)
+    
+    // 2. If it exists in pending_assignments with 'deleted' status, change to 'updated' or remove if it was just 'none'
+    const allAssignments = await db.getAll(STORES.ASSIGNMENTS) as PendingAssignment[]
+    const existing = allAssignments.find(a => a.id === assignmentId)
+    if (existing && existing.action_status === 'deleted') {
+        // If it was already in pending (e.g. updated offline then deleted), revert to updated
+        // For simplicity, let's just set it back to 'updated'
+        await db.add(STORES.ASSIGNMENTS, { ...existing, action_status: 'updated' })
+    }
+
+    // 3. Restore grades (set action_status back to updated)
+    const allGrades = await db.getAll(STORES.GRADES) as (PendingGrade & { id: string })[]
+    const relatedGrades = allGrades.filter(g => g.assignment_id === assignmentId)
+    for (const grade of relatedGrades) {
+        if (grade.action_status === 'deleted') {
+            await db.add(STORES.GRADES, { ...grade, action_status: 'updated' })
+        }
+    }
   },
 
   async getPendingAssignments(classId?: string) {
@@ -146,7 +225,7 @@ export const offlineSync = {
   // Grades
   async saveGradeLocally(grade: PendingGrade) {
     const id = `${grade.assignment_id}_${grade.student_id}`
-    await db.add(STORES.GRADES, { ...grade, id })
+    await db.add(STORES.GRADES, { ...grade, id, action_status: 'updated' })
   },
 
   async getPendingGrades(classId?: string) {
@@ -174,6 +253,11 @@ export const offlineSync = {
     return classId ? all.filter(r => r.classId === classId) : all
   },
 
+  async getDeletedAssignments(classId?: string) {
+    const all = await db.getAll(STORES.DELETED_ASSIGNMENTS) as DeletedAssignment[]
+    return classId ? all.filter(a => a.classId === classId) : all
+  },
+
   // Main Sync Function
   async syncAll() {
     if (!navigator.onLine) return
@@ -182,8 +266,9 @@ export const offlineSync = {
     const grades = await this.getPendingGrades()
     const attendances = await this.getPendingAttendances()
     const records = await this.getPendingAttendanceRecords()
+    const deletedAssignments = await this.getDeletedAssignments()
 
-    if (assignments.length === 0 && grades.length === 0 && attendances.length === 0 && records.length === 0) {
+    if (assignments.length === 0 && grades.length === 0 && attendances.length === 0 && records.length === 0 && deletedAssignments.length === 0) {
       return
     }
 
@@ -193,17 +278,21 @@ export const offlineSync = {
     grades.forEach(g => classIdsSet.add(g.classId))
     attendances.forEach(a => classIdsSet.add(a.classId))
     records.forEach(r => classIdsSet.add(r.classId))
+    deletedAssignments.forEach(d => classIdsSet.add(d.classId))
     
     const classIds = Array.from(classIdsSet)
+
+    let syncOccurred = false
 
     for (const classId of classIds) {
       const classAssignments = assignments.filter(a => a.classId === classId)
       const classGrades = grades.filter(g => g.classId === classId)
       const classAttendances = attendances.filter(a => a.classId === classId)
       const classRecords = records.filter(r => r.classId === classId)
+      const classDeletedAssignments = deletedAssignments.filter(d => d.id === d.id && d.classId === classId) // d.id check is just to satisfy some linters if needed, actually just filtering by classId
 
       // Sync Assignments and Grades
-      if (classAssignments.length > 0 || classGrades.length > 0) {
+      if (classAssignments.length > 0 || classGrades.length > 0 || classDeletedAssignments.length > 0) {
         const { error } = await teacherService.syncOfflineAssignmentsAndGrades({
           classId,
           assignments: classAssignments.map(({ classId, ...rest }) => ({
@@ -211,19 +300,24 @@ export const offlineSync = {
               grading_period_id: rest.grading_period_id,
               title: rest.title,
               max_score: rest.max_score,
-              due_date: rest.due_date
+              due_date: rest.due_date,
+              action_status: rest.action_status
           })),
           grades: classGrades.map(({ classId, id, ...rest }) => ({
               assignment_id: rest.assignment_id,
               student_id: rest.student_id,
-              score: rest.score
-          }))
+              score: rest.score,
+              action_status: rest.action_status
+          })),
+          deleted_assignments: classDeletedAssignments.map(d => d.id)
         })
 
         if (!error) {
+          syncOccurred = true
           // Clear synced items from IDB
           for (const a of classAssignments) await db.delete(STORES.ASSIGNMENTS, a.id)
           for (const g of classGrades) await db.delete(STORES.GRADES, g.id)
+          for (const d of classDeletedAssignments) await db.delete(STORES.DELETED_ASSIGNMENTS, d.id)
         } else {
             console.error('Failed to sync assignments/grades for class', classId, error)
         }
@@ -246,12 +340,17 @@ export const offlineSync = {
         })
 
         if (!error) {
+          syncOccurred = true
           for (const a of classAttendances) await db.delete(STORES.ATTENDANCES, a.id)
           for (const r of classRecords) await db.delete(STORES.ATTENDANCE_RECORDS, r.id)
         } else {
             console.error('Failed to sync attendance for class', classId, error)
         }
       }
+    }
+
+    if (syncOccurred) {
+      this.notifySyncSuccess()
     }
   },
 

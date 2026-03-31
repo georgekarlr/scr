@@ -211,6 +211,25 @@ const AttendanceHistoryPage: React.FC = () => {
     }
   }, [selectedClassId, fetchSessions, viewMode, fetchGridData])
 
+  useEffect(() => {
+    // Listen for sync success to refetch online data
+    const unsubscribe = offlineSync.onSyncSuccess(() => {
+        console.log('Sync success detected in AttendanceHistoryPage, refetching...')
+        fetchInitialData()
+        if (selectedClassId) {
+            fetchSessions()
+            if (viewMode === 'grid') {
+                fetchGridData()
+            }
+            if (selectedSession) {
+                fetchRecords(selectedSession.id)
+            }
+        }
+    })
+
+    return () => unsubscribe()
+  }, [selectedClassId, fetchInitialData, fetchSessions, viewMode, fetchGridData, selectedSession])
+
   const handleSessionClick = (session: TeacherAttendanceSession) => {
     setSelectedSession(session)
     fetchRecords(session.id)

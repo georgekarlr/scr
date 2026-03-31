@@ -15,7 +15,7 @@ import {
   TeacherAssignment,
   TeacherGrade,
   TeacherSyncOfflineAssignmentsAndGradesParams,
-  TeacherSyncOfflineAttendanceFullParams,
+  TeacherSyncOfflineAttendanceFullParams, TeacherUpdateAssignmentParams,
 } from '../types/teacher'
 
 export const teacherService = {
@@ -64,6 +64,14 @@ export const teacherService = {
         p_id: id // Pass p_id if it exists
     })
     return { data: data as string | null, error }
+  },
+
+  /**
+   * Update an existing assignment
+   */
+  async updateAssignment(params: TeacherUpdateAssignmentParams) {
+    const { error } = await supabase.rpc('teacher_update_assignment', params)
+    return { error }
   },
 
   /**
@@ -168,8 +176,31 @@ export const teacherService = {
   async syncOfflineAssignmentsAndGrades(params: TeacherSyncOfflineAssignmentsAndGradesParams) {
     const { error } = await supabase.rpc('teacher_sync_offline_assignments_and_grades', {
       p_class_id: params.classId,
-      p_assignments: params.assignments,
-      p_grades: params.grades,
+      p_assignments: params.assignments.map(a => ({
+        id: a.id,
+        grading_period_id: a.grading_period_id,
+        title: a.title,
+        max_score: a.max_score,
+        due_date: a.due_date,
+        action_status: a.action_status
+      })),
+      p_grades: params.grades.map(g => ({
+        assignment_id: g.assignment_id,
+        student_id: g.student_id,
+        score: g.score,
+        action_status: g.action_status
+      })),
+      p_deleted_assignments: params.deleted_assignments || [],
+    })
+    return { error }
+  },
+
+  /**
+   * Delete an assignment
+   */
+  async deleteAssignment(assignmentId: string) {
+    const { error } = await supabase.rpc('teacher_delete_assignment', {
+      p_assignment_id: assignmentId,
     })
     return { error }
   },
