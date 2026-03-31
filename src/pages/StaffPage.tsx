@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { schoolAdminService } from '../../services/schoolAdminService'
-import { offlineSync } from '../../utils/offlineSync'
-import { InviteStaffParams, StaffProfile } from '../../types/schoolAdmin'
-import { AppRole } from '../../types/auth'
+import { schoolAdminService } from '../services/schoolAdminService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { InviteStaffParams, StaffProfile } from '../types/schoolAdmin.ts'
+import { AppRole } from '../types/auth.ts'
 import { Edit2, Trash2, X, Check, Mail } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
-import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { useAuth } from '../contexts/AuthContext.tsx'
+import ConfirmationModal from '../components/ui/ConfirmationModal.tsx'
 
 export const StaffPage: React.FC = () => {
   const { profile: currentProfile } = useAuth()

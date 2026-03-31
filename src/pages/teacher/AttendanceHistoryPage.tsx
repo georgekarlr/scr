@@ -1,14 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
-import { teacherService } from '../../../services/teacherService'
-import { offlineSync, PendingAttendance, PendingAttendanceRecord } from '../../../utils/offlineSync'
-import { 
-  TeacherClass, 
-  TeacherAttendanceSession, 
-  TeacherAttendanceRecordWithStudent,
-  TeacherStudent,
-  TeacherAttendanceRecord
-} from '../../../types/teacher'
+import React from 'react'
+import { Link } from 'react-router-dom'
+import { useAttendance } from './hooks/useAttendance.ts'
 import { 
   Calendar, 
   ArrowLeft, 
@@ -28,437 +20,36 @@ import {
   X as XIcon,
   FileDown
 } from 'lucide-react'
-import * as XLSX from 'xlsx'
-import { AttendanceStatus } from '../../../types/teacher'
+import { AttendanceStatus } from '../../types/teacher.ts'
 
 const AttendanceHistoryPage: React.FC = () => {
-  const [searchParams] = useSearchParams()
-  const classIdFromQuery = searchParams.get('classId')
-
-  const [classes, setClasses] = useState<TeacherClass[]>([])
-  const [selectedClassId, setSelectedClassId] = useState(classIdFromQuery || '')
-  const [sessions, setSessions] = useState<TeacherAttendanceSession[]>([])
-  const [selectedSession, setSelectedSession] = useState<TeacherAttendanceSession | null>(null)
-  const [records, setRecords] = useState<TeacherAttendanceRecordWithStudent[]>([])
-  const [allRecords, setAllRecords] = useState<TeacherAttendanceRecord[]>([])
-  const [roster, setRoster] = useState<TeacherStudent[]>([])
-  
-  const [viewMode, setViewMode] = useState<'sessions' | 'grid'>('sessions')
-  
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [sessionsLoading, setSessionsLoading] = useState(false)
-  const [recordsLoading, setRecordsLoading] = useState(false)
-  const [gridLoading, setGridLoading] = useState(false)
-  const [saveLoading, setSaveLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newSessionForm, setNewSessionForm] = useState({
-    p_name: 'Daily Attendance',
-    p_record_date: new Date().toISOString().split('T')[0]
-  })
-
-  const fetchInitialData = useCallback(async () => {
-    setFetchLoading(true)
-    const cachedClasses = await offlineSync.getCachedData('my_classes')
-    if (cachedClasses) {
-      setClasses(cachedClasses)
-      if (!selectedClassId && cachedClasses.length > 0) {
-        setSelectedClassId(cachedClasses[0].id)
-      }
-    }
-    
-    if (!navigator.onLine && cachedClasses) {
-      setFetchLoading(false)
-      return
-    }
-
-    const { data } = await teacherService.getMyClasses()
-    if (data) {
-      setClasses(data)
-      offlineSync.cacheData('my_classes', data)
-      if (!selectedClassId && data.length > 0) {
-        setSelectedClassId(data[0].id)
-      }
-    }
-    setFetchLoading(false)
-  }, [selectedClassId])
-
-  const fetchSessions = useCallback(async () => {
-    if (!selectedClassId) return
-    setSessionsLoading(true)
-    
-    const cacheKey = `sessions_${selectedClassId}`
-    const cached = await offlineSync.getCachedData(cacheKey) as TeacherAttendanceSession[] | null
-    const pending = await offlineSync.getPendingAttendances(selectedClassId)
-    
-    let displaySessions = cached || []
-    pending.forEach(p => {
-        if (!displaySessions.find(s => s.id === p.id)) {
-            displaySessions = [...displaySessions, {
-                id: p.id,
-                name: p.name,
-                record_date: p.record_date,
-                class_id: p.classId,
-                school_id: ''
-            } as TeacherAttendanceSession]
-        }
-    })
-    
-    setSessions(displaySessions)
-    
-    if (!navigator.onLine) {
-        setSessionsLoading(false)
-        return
-    }
-
-    const { data } = await teacherService.getAttendanceSessions(selectedClassId)
-    if (data) {
-      setSessions(data)
-      offlineSync.cacheData(cacheKey, data)
-    }
-    setSessionsLoading(false)
-  }, [selectedClassId])
-
-  const fetchRecords = useCallback(async (sessionId: string) => {
-    setRecordsLoading(true)
-    const cacheKey = `records_${sessionId}`
-    const cached = await offlineSync.getCachedData(cacheKey) as TeacherAttendanceRecordWithStudent[] | null
-    const pending = await offlineSync.getPendingAttendanceRecords(selectedClassId)
-    
-    let displayRecords = cached || []
-    pending.filter(p => p.attendance_id === sessionId).forEach(p => {
-        const index = displayRecords.findIndex(r => r.student_id === p.student_id)
-        if (index > -1) {
-            displayRecords[index] = { ...displayRecords[index], status: p.status }
-        }
-    })
-    
-    if (displayRecords.length > 0) setRecords(displayRecords)
-
-    if (!navigator.onLine) {
-        setRecordsLoading(false)
-        return
-    }
-
-    const { data } = await teacherService.getAttendanceRecords(sessionId)
-    if (data) {
-      setRecords(data)
-      offlineSync.cacheData(cacheKey, data)
-    }
-    setRecordsLoading(false)
-  }, [selectedClassId])
-
-  const fetchGridData = useCallback(async () => {
-    if (!selectedClassId) return
-    setGridLoading(true)
-    
-    const rosterKey = `roster_${selectedClassId}`
-    const allRecordsKey = `all_attendance_records_${selectedClassId}`
-    
-    const cachedRoster = await offlineSync.getCachedData(rosterKey)
-    const cachedAllRecords = await offlineSync.getCachedData(allRecordsKey) as TeacherAttendanceRecord[] | null
-    const pendingRecords = await offlineSync.getPendingAttendanceRecords(selectedClassId)
-    
-    if (cachedRoster) setRoster(cachedRoster)
-    
-    let displayAllRecords = cachedAllRecords || []
-    pendingRecords.forEach(p => {
-        const index = displayAllRecords.findIndex(r => r.attendance_id === p.attendance_id && r.student_id === p.student_id)
-        const recordObj = { attendance_id: p.attendance_id, student_id: p.student_id, status: p.status }
-        if (index > -1) {
-            displayAllRecords[index] = recordObj
-        } else {
-            displayAllRecords.push(recordObj)
-        }
-    })
-    
-    setAllRecords(displayAllRecords)
-    
-    if (!navigator.onLine) {
-        setGridLoading(false)
-        return
-    }
-
-    const [rosterRes, recordsRes] = await Promise.all([
-      teacherService.getClassRoster(selectedClassId),
-      teacherService.getAttendanceRecordsForClass(selectedClassId)
-    ])
-    
-    if (rosterRes.data) {
-        setRoster(rosterRes.data)
-        offlineSync.cacheData(rosterKey, rosterRes.data)
-    }
-    if (recordsRes.data) {
-        setAllRecords(recordsRes.data)
-        offlineSync.cacheData(allRecordsKey, recordsRes.data)
-    }
-    setGridLoading(false)
-  }, [selectedClassId])
-
-  useEffect(() => {
-    fetchInitialData()
-  }, [fetchInitialData])
-
-  useEffect(() => {
-    if (selectedClassId) {
-      fetchSessions()
-      setSelectedSession(null)
-      setRecords([])
-      if (viewMode === 'grid') {
-        fetchGridData()
-      }
-    }
-  }, [selectedClassId, fetchSessions, viewMode, fetchGridData])
-
-  useEffect(() => {
-    // Listen for sync success to refetch online data
-    const unsubscribe = offlineSync.onSyncSuccess(() => {
-        console.log('Sync success detected in AttendanceHistoryPage, refetching...')
-        fetchInitialData()
-        if (selectedClassId) {
-            fetchSessions()
-            if (viewMode === 'grid') {
-                fetchGridData()
-            }
-            if (selectedSession) {
-                fetchRecords(selectedSession.id)
-            }
-        }
-    })
-
-    return () => unsubscribe()
-  }, [selectedClassId, fetchInitialData, fetchSessions, viewMode, fetchGridData, selectedSession])
-
-  const handleSessionClick = (session: TeacherAttendanceSession) => {
-    setSelectedSession(session)
-    fetchRecords(session.id)
-  }
-
-  const handleUpdateStatus = async (attendanceId: string, studentId: string, status: AttendanceStatus) => {
-    setSaveLoading(true)
-    
-    if (!navigator.onLine) {
-        await offlineSync.saveAttendanceRecordLocally({
-            attendance_id: attendanceId,
-            student_id: studentId,
-            status: status,
-            classId: selectedClassId
-        })
-        
-        // Optimistic UI updates
-        if (viewMode === 'sessions' && selectedSession?.id === attendanceId) {
-            setRecords(prev => prev.map(r => r.student_id === studentId ? { ...r, status } : r))
-        }
-        
-        setAllRecords(prev => {
-          const exists = prev.some(r => r.attendance_id === attendanceId && r.student_id === studentId)
-          let next;
-          if (exists) {
-            next = prev.map(r => (r.attendance_id === attendanceId && r.student_id === studentId) ? { ...r, status } : r)
-          } else {
-            next = [...prev, { attendance_id: attendanceId, student_id: studentId, status }]
-          }
-          // Update cache with the new state
-          const allRecordsKey = `all_attendance_records_${selectedClassId}`
-          offlineSync.cacheData(allRecordsKey, next)
-          return next
-        })
-        
-        setMessage({ type: 'success', text: 'Status saved locally (Offline)' })
-        setSaveLoading(false)
-        setTimeout(() => setMessage(null), 3000)
-        return
-    }
-
-    const { error } = await teacherService.saveAttendanceRecord({
-      p_attendance_id: attendanceId,
-      p_student_id: studentId,
-      p_status: status
-    })
-
-    if (error) {
-      setMessage({ type: 'error', text: error.message || 'Failed to update status' })
-    } else {
-      // Update local state
-      if (viewMode === 'sessions' && selectedSession?.id === attendanceId) {
-        setRecords(prev => prev.map(r => r.student_id === studentId ? { ...r, status } : r))
-      }
-      
-      setAllRecords(prev => {
-        const exists = prev.some(r => r.attendance_id === attendanceId && r.student_id === studentId)
-        let next;
-        if (exists) {
-          next = prev.map(r => (r.attendance_id === attendanceId && r.student_id === studentId) ? { ...r, status } : r)
-        } else {
-          next = [...prev, { attendance_id: attendanceId, student_id: studentId, status }]
-        }
-        // Update cache with the new state
-        const allRecordsKey = `all_attendance_records_${selectedClassId}`
-        offlineSync.cacheData(allRecordsKey, next)
-        return next
-      })
-    }
-    setSaveLoading(false)
-    setTimeout(() => setMessage(null), 3000)
-  }
-
-  const handleCreateSession = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedClassId) return
-    setSaveLoading(true)
-    
-    const tempId = crypto.randomUUID()
-    
-    if (!navigator.onLine) {
-        await offlineSync.saveAttendanceLocally({
-            id: tempId,
-            name: newSessionForm.p_name,
-            record_date: newSessionForm.p_record_date,
-            classId: selectedClassId
-        })
-        
-        // Optimistic UI
-        const newSession = {
-            id: tempId,
-            name: newSessionForm.p_name,
-            record_date: newSessionForm.p_record_date,
-            class_id: selectedClassId,
-            school_id: ''
-        } as TeacherAttendanceSession
-        
-        setSessions(prev => [...prev, newSession])
-        setMessage({ type: 'success', text: 'Session created locally (Offline)' })
-        setShowCreateModal(false)
-        setSaveLoading(false)
-        setTimeout(() => setMessage(null), 3000)
-        return
-    }
-
-    const { data, error } = await teacherService.createAttendance({
-      id: tempId,
-      p_class_id: selectedClassId,
-      ...newSessionForm
-    } as any)
-
-    if (error) {
-      setMessage({ type: 'error', text: error.message || 'Failed to create session' })
-    } else {
-      setMessage({ type: 'success', text: 'Session created successfully!' })
-      setShowCreateModal(false)
-      fetchSessions()
-      if (viewMode === 'grid') {
-        fetchGridData()
-      }
-    }
-    setSaveLoading(false)
-    setTimeout(() => setMessage(null), 3000)
-  }
-
-  const handleExportExcel = () => {
-    if (roster.length === 0) {
-      setMessage({ type: 'error', text: 'No students in roster to export' })
-      setTimeout(() => setMessage(null), 3000)
-      return
-    }
-
-    const selectedClass = classes.find(c => c.id === selectedClassId)
-
-    // Prepare headers: Student Info, then Each Session, then Summaries
-    const headers = [
-      'Student Name',
-      'Student ID',
-      ...sessions.map(s => `${s.name} (${s.record_date})`),
-      'Present',
-      'Absent',
-      'Late',
-      'Excused',
-      'Total Sessions',
-      'Attendance %'
-    ]
-
-    const rows = roster.map(student => {
-      let presentCount = 0
-      let absentCount = 0
-      let lateCount = 0
-      let excusedCount = 0
-
-      const studentAttendance = sessions.map(session => {
-        const status = attendanceMatrix[student.student_id]?.[session.id]
-        if (status === 'present') presentCount++
-        else if (status === 'absent') absentCount++
-        else if (status === 'late') lateCount++
-        else if (status === 'excused') excusedCount++
-        return status || '-'
-      })
-
-      const totalSessions = presentCount + absentCount + lateCount + excusedCount
-      const attendancePercentage = totalSessions > 0 
-        ? ((presentCount + lateCount + excusedCount) / totalSessions) * 100 
-        : 0
-
-      return [
-        `${student.last_name}, ${student.first_name}`,
-        student.student_id_number,
-        ...studentAttendance,
-        presentCount,
-        absentCount,
-        lateCount,
-        excusedCount,
-        totalSessions,
-        attendancePercentage.toFixed(2) + '%'
-      ]
-    })
-
-    const data = [headers, ...rows]
-    const worksheet = XLSX.utils.aoa_to_sheet(data)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance')
-
-    const classInfo = selectedClass ? `${selectedClass.subject_code}_${selectedClass.section_name}` : 'Attendance'
-    const dateStr = new Date().toISOString().split('T')[0]
-    const fileName = `Attendance_Report_${classInfo}_${dateStr}.xlsx`.replace(/\s+/g, '_')
-
-    XLSX.writeFile(workbook, fileName)
-  }
-
-  const handleExportSessionExcel = () => {
-    if (!selectedSession) return
-    if (records.length === 0) {
-      setMessage({ type: 'error', text: 'No records to export for this session' })
-      setTimeout(() => setMessage(null), 3000)
-      return
-    }
-
-    const selectedClass = classes.find(c => c.id === selectedClassId)
-
-    // Prepare headers: Student ID, Student Name, Status
-    const headers = [
-      'Student ID',
-      'Student Name',
-      'Status',
-      'Session Date',
-      'Session Name'
-    ]
-
-    const rows = records.map(record => [
-      record.student_id_number,
-      `${record.last_name}, ${record.first_name}`,
-      record.status || '-',
-      new Date(selectedSession.record_date).toLocaleDateString(),
-      selectedSession.name
-    ])
-
-    const data = [headers, ...rows]
-    const worksheet = XLSX.utils.aoa_to_sheet(data)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Session Attendance')
-
-    const classInfo = selectedClass ? `${selectedClass.subject_code}_${selectedClass.section_name}` : 'Attendance'
-    const fileName = `Attendance_Session_${classInfo}_${selectedSession.name}_${selectedSession.record_date}.xlsx`.replace(/\s+/g, '_')
-
-    XLSX.writeFile(workbook, fileName)
-  }
+  const {
+    classes,
+    selectedClassId,
+    setSelectedClassId,
+    sessions,
+    selectedSession,
+    records,
+    roster,
+    viewMode,
+    setViewMode,
+    fetchLoading,
+    sessionsLoading,
+    recordsLoading,
+    gridLoading,
+    saveLoading,
+    message,
+    showCreateModal,
+    setShowCreateModal,
+    newSessionForm,
+    setNewSessionForm,
+    handleSessionClick,
+    handleUpdateStatus,
+    handleCreateSession,
+    attendanceMatrix,
+    onExportExcel,
+    onExportSessionExcel
+  } = useAttendance()
 
   const cycleStatus = (currentStatus: AttendanceStatus | undefined): AttendanceStatus => {
     const statuses: AttendanceStatus[] = ['present', 'absent', 'late', 'excused']
@@ -487,15 +78,6 @@ const AttendanceHistoryPage: React.FC = () => {
     }
   }
 
-  const attendanceMatrix = useMemo(() => {
-    const matrix: Record<string, Record<string, string>> = {}
-    allRecords.forEach(rec => {
-      if (!matrix[rec.student_id]) matrix[rec.student_id] = {}
-      matrix[rec.student_id][rec.attendance_id] = rec.status
-    })
-    return matrix
-  }, [allRecords])
-
   if (fetchLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -518,24 +100,22 @@ const AttendanceHistoryPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             {viewMode === 'grid' && (
-              <button
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-                title="Export Grid to Excel"
-              >
-                <FileDown size={16} />
-                <span>Export Grid</span>
-              </button>
+               <button
+                  onClick={onExportExcel}
+                  className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  <FileDown size={16} />
+                  Export Report
+                </button>
             )}
 
             {viewMode === 'sessions' && selectedSession && records.length > 0 && (
               <button
-                onClick={handleExportSessionExcel}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-                title="Export Session to Excel"
+                onClick={onExportSessionExcel}
+                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors text-xs font-bold"
               >
-                <FileDown size={16} />
-                <span>Export Session</span>
+                <FileDown size={14} />
+                Export Session
               </button>
             )}
 

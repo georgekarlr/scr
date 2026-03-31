@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { registrarService } from '../../services/registrarService'
-import { offlineSync } from '../../utils/offlineSync'
-import { StaffProfile } from '../../types/registrar'
-import { AppRole, ProfileStatus } from '../../types/auth'
+import { registrarService } from '../services/registrarService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { StaffProfile } from '../types/registrar.ts'
+import { AppRole, ProfileStatus } from '../types/auth.ts'
 import { Search, Edit2, X, Check, ShieldCheck } from 'lucide-react'
 
 export const StaffDirectoryPage: React.FC = () => {

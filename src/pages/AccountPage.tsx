@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { User, Shield, School, Mail, CheckCircle, AlertCircle, WifiOff } from 'lucide-react';
-import { offlineSync } from '../../utils/offlineSync';
+import { offlineSync } from '../utils/offlineSync.ts';
 
 export const AccountPage: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();

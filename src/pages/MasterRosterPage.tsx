@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { registrarService } from '../../services/registrarService'
-import { offlineSync } from '../../utils/offlineSync'
-import { Student, CreateStudentParams } from '../../types/registrar'
+import { registrarService } from '../services/registrarService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { Student, CreateStudentParams } from '../types/registrar.ts'
 import { Plus, Search, Edit2, Trash2, X, Check, Users } from 'lucide-react'
-import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import ConfirmationModal from '../components/ui/ConfirmationModal.tsx'
 
 export const MasterRosterPage: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([])

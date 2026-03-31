@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { moderatorService } from '../../services/moderatorService'
-import { registrarService } from '../../services/registrarService'
-import { offlineSync } from '../../utils/offlineSync'
-import { ModeratorClass, ModeratorDepartment, ModeratorSubject } from '../../types/moderator'
-import { StaffProfile } from '../../types/registrar'
+import { moderatorService } from '../services/moderatorService.ts'
+import { registrarService } from '../services/registrarService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { ModeratorClass, ModeratorDepartment, ModeratorSubject } from '../types/moderator.ts'
+import { StaffProfile } from '../types/registrar.ts'
 import { Plus, Users, BookOpen, Clock, X, Check } from 'lucide-react'
 
 export const ClassesPage: React.FC = () => {

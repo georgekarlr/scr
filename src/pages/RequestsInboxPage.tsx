@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { moderatorService } from '../../services/moderatorService'
-import { offlineSync } from '../../utils/offlineSync'
-import { ModeratorEnrollmentRequest } from '../../types/moderator'
+import { moderatorService } from '../services/moderatorService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { ModeratorEnrollmentRequest } from '../types/moderator.ts'
 import { Check, X, Clock, User, BookOpen } from 'lucide-react'
 
 export const RequestsInboxPage: React.FC = () => {

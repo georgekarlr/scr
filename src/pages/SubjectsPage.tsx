@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { subjectService } from '../../services/subjectService'
-import { offlineSync } from '../../utils/offlineSync'
-import { CreateSubjectParams, Subject } from '../../types/subject'
+import { subjectService } from '../services/subjectService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { CreateSubjectParams, Subject } from '../types/subject.ts'
 import { Edit2, Trash2, X, Check, Plus, BookOpen, Loader2, Search } from 'lucide-react'
-import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import ConfirmationModal from '../components/ui/ConfirmationModal.tsx'
 
 export const SubjectsPage: React.FC = () => {
   const [subjects, setSubjects] = useState<Subject[]>([])

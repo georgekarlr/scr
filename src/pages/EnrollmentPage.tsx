@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { moderatorService } from '../../services/moderatorService'
-import { registrarService } from '../../services/registrarService'
-import { offlineSync } from '../../utils/offlineSync'
-import { ModeratorClass, ModeratorClassRoster } from '../../types/moderator'
-import { Student } from '../../types/registrar'
+import { moderatorService } from '../services/moderatorService.ts'
+import { registrarService } from '../services/registrarService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { ModeratorClass, ModeratorClassRoster } from '../types/moderator.ts'
+import { Student } from '../types/registrar.ts'
 import { Search, UserPlus, UserMinus, Users, BookOpen } from 'lucide-react'
 
 export const EnrollmentPage: React.FC = () => {

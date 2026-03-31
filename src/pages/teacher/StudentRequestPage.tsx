@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { teacherService } from '../../../services/teacherService'
-import { offlineSync } from '../../../utils/offlineSync'
-import { TeacherClass, TeacherUnrolledStudent } from '../../../types/teacher'
+import { teacherService } from '../../services/teacherService.ts'
+import { offlineSync } from '../../utils/offlineSync.ts'
+import { TeacherClass, TeacherUnrolledStudent } from '../../types/teacher.ts'
 import { Search, UserPlus, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react'
 
 const StudentRequestPage: React.FC = () => {

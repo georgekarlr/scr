@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { registrarService } from '../../services/registrarService'
-import { offlineSync } from '../../utils/offlineSync'
-import { PendingProfile } from '../../types/registrar'
-import { AppRole } from '../../types/auth'
+import { registrarService } from '../services/registrarService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { PendingProfile } from '../types/registrar.ts'
+import { AppRole } from '../types/auth.ts'
 import { Check, X, Clock, UserCheck } from 'lucide-react'
 
 export const UserApprovalsPage: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { teacherService } from '../../../services/teacherService'
-import { offlineSync } from '../../../utils/offlineSync'
-import { TeacherClass } from '../../../types/teacher'
+import { teacherService } from '../../services/teacherService.ts'
+import { offlineSync } from '../../utils/offlineSync.ts'
+import { TeacherClass } from '../../types/teacher.ts'
 import { Users, BookOpen, ChevronRight, Calendar, Search, SlidersHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
 

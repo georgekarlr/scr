@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { schoolAdminService } from '../../services/schoolAdminService'
-import { offlineSync } from '../../utils/offlineSync'
-import { CreateGradingPeriodParams, GradingPeriod } from '../../types/schoolAdmin'
+import { schoolAdminService } from '../services/schoolAdminService.ts'
+import { offlineSync } from '../utils/offlineSync.ts'
+import { CreateGradingPeriodParams, GradingPeriod } from '../types/schoolAdmin.ts'
 import { Edit2, Trash2, X, Check } from 'lucide-react'
-import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import ConfirmationModal from '../components/ui/ConfirmationModal.tsx'
 
 export const SettingsPage: React.FC = () => {
   const [gradingPeriods, setGradingPeriods] = useState<GradingPeriod[]>([])
