@@ -7,8 +7,6 @@ import { School } from '../../types/auth'
 
 declare global {
   interface Window {
-    handleSignInWithGoogle: (response: any) => Promise<void>;
-    google: any;
   }
 }
 
@@ -23,9 +21,8 @@ const SignupForm: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState<React.ReactNode>('')
-  const [nonceData, setNonceData] = useState<{ raw: string, hashed: string } | null>(null)
   const [schools, setSchools] = useState<School[]>([])
-  const { signUp, signInWithGoogleIdToken, user, getSchools } = useAuth()
+  const { signUp, user, getSchools } = useAuth()
 
   useEffect(() => {
     const fetchSchools = async () => {
@@ -39,68 +36,6 @@ const SignupForm: React.FC = () => {
     fetchSchools()
   }, [getSchools])
 
-  useEffect(() => {
-    const generateNonce = async () => {
-      const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
-      const encoder = new TextEncoder()
-      const encodedNonce = encoder.encode(nonce)
-      const hashBuffer = await crypto.subtle.digest('SHA-256', encodedNonce)
-      const hashArray = Array.from(new Uint8Array(hashBuffer))
-      const hashed = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
-
-      setNonceData({ raw: nonce, hashed })
-    }
-
-    generateNonce()
-  }, [])
-
-  useEffect(() => {
-    if (!nonceData) return
-
-    const handleCredentialResponse = async (response: any) => {
-      setStatus('loading')
-      setMessage('')
-      const { error } = await signInWithGoogleIdToken(response.credential, nonceData.raw)
-      if (error) {
-        setMessage(error.message)
-        setStatus('error')
-      }
-    }
-
-    const initGoogleSignIn = () => {
-      if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse,
-          nonce: nonceData.hashed,
-          auto_select: true,
-          itp_support: true,
-          use_fedcm_for_prompt: true,
-        })
-
-        const buttonElement = document.getElementById('google-signin-button')
-        if (buttonElement) {
-          window.google.accounts.id.renderButton(buttonElement, {
-            type: 'standard',
-            shape: 'pill',
-            theme: 'outline',
-            text: 'signin_with',
-            size: 'large',
-            logo_alignment: 'left',
-            width: 320,
-          })
-        }
-
-        // Also prompt One Tap
-        window.google.accounts.id.prompt()
-      } else {
-        // Retry after a short delay if script hasn't loaded yet
-        setTimeout(initGoogleSignIn, 100)
-      }
-    }
-
-    initGoogleSignIn()
-  }, [nonceData, signInWithGoogleIdToken])
 
   if (user) {
     return <Navigate to="/dashboard" replace />
@@ -306,20 +241,6 @@ const SignupForm: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-100"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col items-center">
-                <div id="google-signin-button"></div>
-              </div>
-            </div>
 
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <p className="text-gray-600">

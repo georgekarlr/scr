@@ -124,23 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error }
   }
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,      },
-    })
-    return { error }
-  }
-
-  const signInWithGoogleIdToken = async (token: string, nonce?: string) => {
-    const { error } = await supabase.auth.signInWithIdToken({
-      provider: 'google',
-      token,
-      nonce,
-    })
-    return { error }
-  }
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email)
@@ -218,8 +201,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signUp,
     signIn,
-    signInWithGoogle,
-    signInWithGoogleIdToken,
     resetPassword,
     updatePassword,
     signOut,
