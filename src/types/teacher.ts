@@ -144,4 +144,5 @@ export interface TeacherSyncOfflineAttendanceFullParams {
     student_id: string
     status: AttendanceStatus
   }[]
+  deleted_attendances?: string[] // NEW: Array of UUIDs to delete
 }

@@ -206,13 +206,24 @@ export const teacherService = {
   },
 
   /**
+   * Delete an attendance session
+   */
+  async deleteAttendance(attendanceId: string) {
+    const { error } = await supabase.rpc('teacher_delete_attendance', {
+      p_attendance_id: attendanceId,
+    })
+    return { error }
+  },
+
+  /**
    * Bulk sync offline attendance sessions (columns) and records (cells)
    */
   async syncOfflineAttendanceFull(params: TeacherSyncOfflineAttendanceFullParams) {
-    const { error } = await supabase.rpc('teacher_sync_offline_attendance_data', {
+    const { error } = await supabase.rpc('teacher_sync_offline_attendances_and_records', {
       p_class_id: params.classId,
       p_attendances: params.attendances,
       p_records: params.records,
+      p_deleted_attendances: params.deleted_attendances || [],
     })
     return { error }
   },

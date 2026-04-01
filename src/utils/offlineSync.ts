@@ -26,6 +26,11 @@ export interface DeletedAssignment {
   classId: string
 }
 
+export interface DeletedAttendance {
+  id: string
+  classId: string
+}
+
 export interface PendingAttendance {
   id: string
   name: string
@@ -51,6 +56,7 @@ const STORES = {
   ATTENDANCES: 'pending_attendances',
   ATTENDANCE_RECORDS: 'pending_attendance_records',
   DELETED_ASSIGNMENTS: 'deleted_assignments',
+  DELETED_ATTENDANCES: 'deleted_attendances',
   CACHE: 'data_cache'
 }
 
@@ -258,6 +264,33 @@ export const offlineSync = {
     return classId ? all.filter(a => a.classId === classId) : all
   },
 
+  async addDeletedAttendance(id: string, classId: string) {
+    await db.add(STORES.DELETED_ATTENDANCES, { id, classId })
+  },
+
+  async deleteAttendanceLocally(id: string, classId: string, isPending: boolean) {
+    if (isPending) {
+        await db.delete(STORES.ATTENDANCES, id)
+    } else {
+        await this.addDeletedAttendance(id, classId)
+    }
+  },
+
+  async restoreAttendanceLocally(id: string) {
+    await db.delete(STORES.DELETED_ATTENDANCES, id)
+  },
+
+  async getDeletedAttendances(classId?: string) {
+    const all = await db.getAll(STORES.DELETED_ATTENDANCES) as DeletedAttendance[]
+    return classId ? all.filter(a => a.classId === classId) : all
+  },
+
+  async clearCache(keys: string[]) {
+    for (const key of keys) {
+      await db.delete(STORES.CACHE, key)
+    }
+  },
+
   // Main Sync Function
   async syncAll() {
     if (!navigator.onLine) return
@@ -267,8 +300,9 @@ export const offlineSync = {
     const attendances = await this.getPendingAttendances()
     const records = await this.getPendingAttendanceRecords()
     const deletedAssignments = await this.getDeletedAssignments()
+    const deletedAttendances = await this.getDeletedAttendances()
 
-    if (assignments.length === 0 && grades.length === 0 && attendances.length === 0 && records.length === 0 && deletedAssignments.length === 0) {
+    if (assignments.length === 0 && grades.length === 0 && attendances.length === 0 && records.length === 0 && deletedAssignments.length === 0 && deletedAttendances.length === 0) {
       return
     }
 
@@ -279,6 +313,7 @@ export const offlineSync = {
     attendances.forEach(a => classIdsSet.add(a.classId))
     records.forEach(r => classIdsSet.add(r.classId))
     deletedAssignments.forEach(d => classIdsSet.add(d.classId))
+    deletedAttendances.forEach(d => classIdsSet.add(d.classId))
     
     const classIds = Array.from(classIdsSet)
 
@@ -289,7 +324,8 @@ export const offlineSync = {
       const classGrades = grades.filter(g => g.classId === classId)
       const classAttendances = attendances.filter(a => a.classId === classId)
       const classRecords = records.filter(r => r.classId === classId)
-      const classDeletedAssignments = deletedAssignments.filter(d => d.id === d.id && d.classId === classId) // d.id check is just to satisfy some linters if needed, actually just filtering by classId
+      const classDeletedAssignments = deletedAssignments.filter(d => d.classId === classId) 
+      const classDeletedAttendances = deletedAttendances.filter(d => d.classId === classId)
 
       // Sync Assignments and Grades
       if (classAssignments.length > 0 || classGrades.length > 0 || classDeletedAssignments.length > 0) {
@@ -318,13 +354,19 @@ export const offlineSync = {
           for (const a of classAssignments) await db.delete(STORES.ASSIGNMENTS, a.id)
           for (const g of classGrades) await db.delete(STORES.GRADES, g.id)
           for (const d of classDeletedAssignments) await db.delete(STORES.DELETED_ASSIGNMENTS, d.id)
+          
+          // Clear cache to force refetch
+          const gradingPeriodIds = new Set(classAssignments.map(a => a.grading_period_id))
+          const cacheKeys = [`assignments_${classId}`, `roster_${classId}`]
+          gradingPeriodIds.forEach(gpId => cacheKeys.push(`assignments_${classId}_${gpId}`, `grades_${classId}_${gpId}`))
+          await this.clearCache(cacheKeys)
         } else {
             console.error('Failed to sync assignments/grades for class', classId, error)
         }
       }
 
       // Sync Attendance
-      if (classAttendances.length > 0 || classRecords.length > 0) {
+      if (classAttendances.length > 0 || classRecords.length > 0 || classDeletedAttendances.length > 0) {
         const { error } = await teacherService.syncOfflineAttendanceFull({
           classId,
           attendances: classAttendances.map(({ classId, ...rest }) => ({
@@ -336,13 +378,21 @@ export const offlineSync = {
               attendance_id: rest.attendance_id,
               student_id: rest.student_id,
               status: rest.status
-          }))
+          })),
+          deleted_attendances: classDeletedAttendances.map(d => d.id)
         })
 
         if (!error) {
           syncOccurred = true
           for (const a of classAttendances) await db.delete(STORES.ATTENDANCES, a.id)
           for (const r of classRecords) await db.delete(STORES.ATTENDANCE_RECORDS, r.id)
+          for (const d of classDeletedAttendances) await db.delete(STORES.DELETED_ATTENDANCES, d.id)
+          
+          // Clear cache to force refetch
+          const cacheKeys = [`sessions_${classId}`, `all_attendance_records_${classId}`]
+          classAttendances.forEach(a => cacheKeys.push(`records_${a.id}`))
+          classDeletedAttendances.forEach(d => cacheKeys.push(`records_${d.id}`))
+          await this.clearCache(cacheKeys)
         } else {
             console.error('Failed to sync attendance for class', classId, error)
         }

@@ -18,7 +18,9 @@ import {
   CheckCircle2,
   Save,
   X as XIcon,
-  FileDown
+  FileDown,
+  Trash2,
+  RotateCcw
 } from 'lucide-react'
 import { AttendanceStatus } from '../../types/teacher.ts'
 
@@ -48,7 +50,10 @@ const AttendanceHistoryPage: React.FC = () => {
     handleCreateSession,
     attendanceMatrix,
     onExportExcel,
-    onExportSessionExcel
+    onExportSessionExcel,
+    handleDeleteSession,
+    handleRestoreSession,
+    deletedSessionIds
   } = useAttendance()
 
   const cycleStatus = (currentStatus: AttendanceStatus | undefined): AttendanceStatus => {
@@ -256,31 +261,74 @@ const AttendanceHistoryPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50 max-h-[600px] overflow-y-auto">
-                    {sessions.map((session) => (
-                      <button
-                        key={session.id}
-                        onClick={() => handleSessionClick(session)}
-                        className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group ${
-                          selectedSession?.id === session.id ? 'bg-blue-50/50' : ''
-                        }`}
-                      >
-                        <div>
-                          <p className={`font-bold text-sm ${selectedSession?.id === session.id ? 'text-blue-700' : 'text-gray-900'}`}>
-                            {session.name}
-                          </p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                            <Calendar size={12} />
-                            {new Date(session.record_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <ChevronRight 
-                          size={16} 
-                          className={`transition-transform ${
-                            selectedSession?.id === session.id ? 'text-blue-500 translate-x-1' : 'text-gray-300 group-hover:translate-x-1'
-                          }`} 
-                        />
-                      </button>
-                    ))}
+                    {sessions.map((session) => {
+                      const isDeleted = deletedSessionIds.includes(session.id)
+                      return (
+                        <button
+                          key={session.id}
+                          onClick={() => {
+                            if (!isDeleted) handleSessionClick(session)
+                          }}
+                          className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group ${
+                            selectedSession?.id === session.id ? 'bg-blue-50/50' : ''
+                          } ${isDeleted ? 'bg-red-50/30 cursor-default' : ''}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <p className={`font-bold text-sm ${
+                                isDeleted ? 'text-red-600 line-through' : (selectedSession?.id === session.id ? 'text-blue-700' : 'text-gray-900')
+                              }`}>
+                                {session.name}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                  <Calendar size={12} />
+                                  {new Date(session.record_date).toLocaleDateString()}
+                                </p>
+                                {isDeleted && (
+                                  <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                    Deleted Offline
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isDeleted ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRestoreSession(session.id);
+                                }}
+                                className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                title="Restore Session"
+                              >
+                                <RotateCcw size={16} />
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSession(session.id);
+                                  }}
+                                  className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete Session"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                                <ChevronRight 
+                                  size={16} 
+                                  className={`transition-transform ${
+                                    selectedSession?.id === session.id ? 'text-blue-500 translate-x-1' : 'text-gray-300 group-hover:translate-x-1'
+                                  }`} 
+                                />
+                              </>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>

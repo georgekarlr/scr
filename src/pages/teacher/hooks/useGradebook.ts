@@ -457,6 +457,12 @@ export const useGradebook = () => {
       showMessage('error', error.message || 'Failed to delete assignment');
     } else {
       showMessage('success', 'Assignment deleted successfully!');
+      
+      // Clear cache and refetch
+      const assignKey = `assignments_${selectedClassId}_${selectedGradingPeriodId}`;
+      const gradesKey = `grades_${selectedClassId}_${selectedGradingPeriodId}`;
+      await offlineSync.clearCache([assignKey, gradesKey, `assignments_${selectedClassId}`]);
+
       if (focusedAssignmentId === assignmentId) setFocusedAssignmentId(null);
       fetchGradesAndAssignments();
     }

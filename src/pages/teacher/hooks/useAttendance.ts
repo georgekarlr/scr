@@ -32,6 +32,7 @@ export const useAttendance = () => {
   const [gridLoading, setGridLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [deletedSessionIds, setDeletedSessionIds] = useState<string[]>([])
 
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newSessionForm, setNewSessionForm] = useState({
@@ -72,6 +73,9 @@ export const useAttendance = () => {
     const cacheKey = `sessions_${selectedClassId}`
     const cached = await offlineSync.getCachedData(cacheKey) as TeacherAttendanceSession[] | null
     const pending = await offlineSync.getPendingAttendances(selectedClassId)
+    const deleted = await offlineSync.getDeletedAttendances(selectedClassId)
+    
+    setDeletedSessionIds(deleted.map(d => d.id))
     
     let displaySessions = cached || []
     pending.forEach(p => {
@@ -336,6 +340,64 @@ export const useAttendance = () => {
     setTimeout(() => setMessage(null), 3000)
   }
 
+  const handleDeleteSession = async (attendanceId: string) => {
+    if (!confirm('Are you sure you want to delete this session and all its records?')) return
+    setSaveLoading(true)
+
+    if (!navigator.onLine) {
+        const isPending = (await offlineSync.getPendingAttendances(selectedClassId)).some(a => a.id === attendanceId)
+        await offlineSync.deleteAttendanceLocally(attendanceId, selectedClassId, isPending)
+        
+        if (isPending) {
+            setSessions(prev => prev.filter(s => s.id !== attendanceId))
+            setAllRecords(prev => prev.filter(r => r.attendance_id !== attendanceId))
+            if (selectedSession?.id === attendanceId) {
+                setSelectedSession(null)
+                setRecords([])
+            }
+        } else {
+            setDeletedSessionIds(prev => [...prev, attendanceId])
+        }
+        
+        setMessage({ type: 'success', text: isPending ? 'Session deleted locally (Offline)' : 'Session marked for deletion (Offline)' })
+        setSaveLoading(false)
+        setTimeout(() => setMessage(null), 3000)
+        return
+    }
+
+    const { error } = await teacherService.deleteAttendance(attendanceId)
+    if (error) {
+        setMessage({ type: 'error', text: error.message || 'Failed to delete session' })
+    } else {
+        setMessage({ type: 'success', text: 'Session deleted successfully!' })
+        // Clear cache and refetch
+        const cacheKey = `sessions_${selectedClassId}`
+        const recordsKey = `records_${attendanceId}`
+        const allRecordsKey = `all_attendance_records_${selectedClassId}`
+        await offlineSync.clearCache([cacheKey, recordsKey, allRecordsKey])
+        
+        fetchSessions()
+        if (viewMode === 'grid') {
+            fetchGridData()
+        }
+        if (selectedSession?.id === attendanceId) {
+            setSelectedSession(null)
+            setRecords([])
+        }
+    }
+    setSaveLoading(false)
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleRestoreSession = async (attendanceId: string) => {
+    setSaveLoading(true)
+    await offlineSync.restoreAttendanceLocally(attendanceId)
+    setDeletedSessionIds(prev => prev.filter(id => id !== attendanceId))
+    setMessage({ type: 'success', text: 'Session restored' })
+    setSaveLoading(false)
+    setTimeout(() => setMessage(null), 3000)
+  }
+
   const attendanceMatrix = useMemo(() => {
     const matrix: Record<string, Record<string, string | undefined>> = {}
     allRecords.forEach(record => {
@@ -378,6 +440,9 @@ export const useAttendance = () => {
     handleCreateSession,
     attendanceMatrix,
     onExportExcel,
-    onExportSessionExcel
+    onExportSessionExcel,
+    handleDeleteSession,
+    handleRestoreSession,
+    deletedSessionIds
   }
 }
