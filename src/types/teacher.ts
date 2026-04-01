@@ -80,6 +80,12 @@ export interface TeacherCreateAttendanceParams {
   p_record_date: string // DATE
 }
 
+export interface TeacherUpdateAttendanceParams {
+  p_attendance_id: string
+  p_name: string
+  p_record_date: string // DATE
+}
+
 export interface TeacherSaveAttendanceRecordParams {
   p_attendance_id: string
   p_student_id: string
@@ -138,6 +144,7 @@ export interface TeacherSyncOfflineAttendanceFullParams {
     id: string
     name: string
     record_date: string // DATE
+    action_status?: 'updated' | 'deleted' | 'none'
   }[]
   records: {
     attendance_id: string

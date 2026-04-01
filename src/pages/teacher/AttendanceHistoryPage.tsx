@@ -20,7 +20,8 @@ import {
   X as XIcon,
   FileDown,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Pencil
 } from 'lucide-react'
 import { AttendanceStatus } from '../../types/teacher.ts'
 
@@ -32,6 +33,7 @@ const AttendanceHistoryPage: React.FC = () => {
     sessions,
     selectedSession,
     records,
+    sessionRecords,
     roster,
     viewMode,
     setViewMode,
@@ -45,9 +47,16 @@ const AttendanceHistoryPage: React.FC = () => {
     setShowCreateModal,
     newSessionForm,
     setNewSessionForm,
+    showEditModal,
+    setShowEditModal,
+    editingSession,
+    setEditingSession,
+    editSessionForm,
+    setEditSessionForm,
     handleSessionClick,
     handleUpdateStatus,
     handleCreateSession,
+    handleUpdateSession,
     attendanceMatrix,
     onExportExcel,
     onExportSessionExcel,
@@ -241,6 +250,71 @@ const AttendanceHistoryPage: React.FC = () => {
           </div>
         )}
 
+        {/* Edit Session Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="bg-blue-600 p-6 flex justify-between items-center text-white">
+                <div>
+                  <h3 className="text-xl font-bold">Edit Session</h3>
+                  <p className="text-blue-100 text-sm mt-1">Update attendance session details</p>
+                </div>
+                <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                  <XIcon size={24} />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpdateSession} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wider">Session Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Morning Session, Lab Day"
+                    value={editSessionForm.p_name}
+                    onChange={(e) => setEditSessionForm({ ...editSessionForm, p_name: e.target.value })}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wider">Record Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editSessionForm.p_record_date}
+                    onChange={(e) => setEditSessionForm({ ...editSessionForm, p_record_date: e.target.value })}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+                
+                <div className="flex gap-3 mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-bold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saveLoading}
+                    className="flex-2 bg-blue-600 text-white px-8 py-2.5 rounded-xl hover:bg-blue-700 font-bold transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"
+                  >
+                    {saveLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Save size={18} />
+                        Update Session
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {viewMode === 'sessions' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Sessions List */}
@@ -310,6 +384,22 @@ const AttendanceHistoryPage: React.FC = () => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    setEditingSession(session);
+                                    setEditSessionForm({
+                                      p_attendance_id: session.id,
+                                      p_name: session.name,
+                                      p_record_date: session.record_date
+                                    });
+                                    setShowEditModal(true);
+                                  }}
+                                  className="p-1.5 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Edit Session"
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     handleDeleteSession(session.id);
                                   }}
                                   className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -365,14 +455,14 @@ const AttendanceHistoryPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {records.length === 0 ? (
+                        {sessionRecords.length === 0 ? (
                           <tr>
                             <td colSpan={3} className="px-6 py-12 text-center text-gray-500 italic">
                               No records found for this session.
                             </td>
                           </tr>
                         ) : (
-                          records.map((record) => (
+                          sessionRecords.map((record) => (
                             <tr key={`${record.attendance_id}_${record.student_id}`} className="hover:bg-gray-50 transition-colors">
                               <td className="px-6 py-4 font-mono text-sm text-gray-600">{record.student_id_number}</td>
                               <td className="px-6 py-4 font-semibold text-gray-900">{record.first_name} {record.last_name}</td>

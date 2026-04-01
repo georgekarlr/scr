@@ -8,7 +8,8 @@ import {
   TeacherAttendanceRecordWithStudent,
   TeacherStudent,
   TeacherAttendanceRecord,
-  AttendanceStatus
+  AttendanceStatus,
+  TeacherUpdateAttendanceParams
 } from '../../../types/teacher.ts'
 import { handleExportExcel, handleExportSessionExcel } from '../utils/attendanceExport.ts'
 
@@ -38,6 +39,14 @@ export const useAttendance = () => {
   const [newSessionForm, setNewSessionForm] = useState({
     p_name: 'Daily Attendance',
     p_record_date: new Date().toISOString().split('T')[0]
+  })
+
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingSession, setEditingSession] = useState<TeacherAttendanceSession | null>(null)
+  const [editSessionForm, setEditSessionForm] = useState<TeacherUpdateAttendanceParams>({
+    p_attendance_id: '',
+    p_name: '',
+    p_record_date: ''
   })
 
   const fetchInitialData = useCallback(async () => {
@@ -134,18 +143,30 @@ export const useAttendance = () => {
     setRecordsLoading(false)
   }, [selectedClassId])
 
+  const fetchRoster = useCallback(async () => {
+    if (!selectedClassId) return
+    const rosterKey = `roster_${selectedClassId}`
+    const cachedRoster = await offlineSync.getCachedData(rosterKey)
+    if (cachedRoster) setRoster(cachedRoster)
+    
+    if (!navigator.onLine) return
+
+    const { data } = await teacherService.getClassRoster(selectedClassId)
+    if (data) {
+        setRoster(data)
+        offlineSync.cacheData(rosterKey, data)
+    }
+  }, [selectedClassId])
+
   const fetchGridData = useCallback(async () => {
     if (!selectedClassId) return
     setGridLoading(true)
     
-    const rosterKey = `roster_${selectedClassId}`
     const allRecordsKey = `all_attendance_records_${selectedClassId}`
-    
-    const cachedRoster = await offlineSync.getCachedData(rosterKey)
     const cachedAllRecords = await offlineSync.getCachedData(allRecordsKey) as TeacherAttendanceRecord[] | null
     const pendingRecords = await offlineSync.getPendingAttendanceRecords(selectedClassId)
     
-    if (cachedRoster) setRoster(cachedRoster)
+    fetchRoster()
     
     let displayAllRecords = cachedAllRecords || []
     pendingRecords.forEach(p => {
@@ -165,21 +186,16 @@ export const useAttendance = () => {
         return
     }
 
-    const [rosterRes, recordsRes] = await Promise.all([
-      teacherService.getClassRoster(selectedClassId),
+    const [recordsRes] = await Promise.all([
       teacherService.getAttendanceRecordsForClass(selectedClassId)
     ])
     
-    if (rosterRes.data) {
-        setRoster(rosterRes.data)
-        offlineSync.cacheData(rosterKey, rosterRes.data)
-    }
     if (recordsRes.data) {
         setAllRecords(recordsRes.data)
         offlineSync.cacheData(allRecordsKey, recordsRes.data)
     }
     setGridLoading(false)
-  }, [selectedClassId])
+  }, [selectedClassId, fetchRoster])
 
   useEffect(() => {
     fetchInitialData()
@@ -188,13 +204,14 @@ export const useAttendance = () => {
   useEffect(() => {
     if (selectedClassId) {
       fetchSessions()
+      fetchRoster()
       setSelectedSession(null)
       setRecords([])
       if (viewMode === 'grid') {
         fetchGridData()
       }
     }
-  }, [selectedClassId, fetchSessions, viewMode, fetchGridData])
+  }, [selectedClassId, fetchSessions, fetchRoster, viewMode, fetchGridData])
 
   useEffect(() => {
     // Listen for sync success to refetch online data
@@ -300,7 +317,8 @@ export const useAttendance = () => {
             id: tempId,
             name: newSessionForm.p_name,
             record_date: newSessionForm.p_record_date,
-            classId: selectedClassId
+            classId: selectedClassId,
+            action_status: 'none'
         })
         
         // Optimistic UI
@@ -335,6 +353,71 @@ export const useAttendance = () => {
       if (viewMode === 'grid') {
         fetchGridData()
       }
+    }
+    setSaveLoading(false)
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedClassId || !editingSession) return
+    setSaveLoading(true)
+
+    if (!navigator.onLine) {
+        const isPending = (await offlineSync.getPendingAttendances(selectedClassId)).some(a => a.id === editingSession.id)
+        if (isPending) {
+            await offlineSync.saveAttendanceLocally({
+                id: editingSession.id,
+                name: editSessionForm.p_name,
+                record_date: editSessionForm.p_record_date,
+                classId: selectedClassId,
+                action_status: 'updated'
+            })
+            setSessions(prev => prev.map(s => s.id === editingSession.id ? { ...s, name: editSessionForm.p_name, record_date: editSessionForm.p_record_date } : s))
+            if (selectedSession?.id === editingSession.id) {
+                setSelectedSession(prev => prev ? { ...prev, name: editSessionForm.p_name, record_date: editSessionForm.p_record_date } : null)
+            }
+            setMessage({ type: 'success', text: 'Session updated locally (Offline)' })
+        } else {
+            // For existing online sessions, we don't have a single-session offline update mechanism 
+            // that doesn't use the bulk sync. 
+            // However, we can use saveAttendanceLocally which uses the same STORES.ATTENDANCES
+            // The bulk sync will then use ON CONFLICT (id) DO UPDATE.
+            await offlineSync.saveAttendanceLocally({
+                id: editingSession.id,
+                name: editSessionForm.p_name,
+                record_date: editSessionForm.p_record_date,
+                classId: selectedClassId,
+                action_status: 'updated'
+            })
+            setSessions(prev => prev.map(s => s.id === editingSession.id ? { ...s, name: editSessionForm.p_name, record_date: editSessionForm.p_record_date } : s))
+            if (selectedSession?.id === editingSession.id) {
+                setSelectedSession(prev => prev ? { ...prev, name: editSessionForm.p_name, record_date: editSessionForm.p_record_date } : null)
+            }
+            setMessage({ type: 'success', text: 'Session update queued (Offline)' })
+        }
+        setShowEditModal(false)
+        setSaveLoading(false)
+        setTimeout(() => setMessage(null), 3000)
+        return
+    }
+
+    const { error } = await teacherService.updateAttendance(editSessionForm)
+
+    if (error) {
+        setMessage({ type: 'error', text: error.message || 'Failed to update session' })
+    } else {
+        setMessage({ type: 'success', text: 'Session updated successfully!' })
+        setShowEditModal(false)
+        
+        // Clear cache and refetch
+        const cacheKey = `sessions_${selectedClassId}`
+        await offlineSync.clearCache([cacheKey])
+        
+        fetchSessions()
+        if (selectedSession?.id === editingSession.id) {
+            setSelectedSession(prev => prev ? { ...prev, name: editSessionForm.p_name, record_date: editSessionForm.p_record_date } : null)
+        }
     }
     setSaveLoading(false)
     setTimeout(() => setMessage(null), 3000)
@@ -409,8 +492,23 @@ export const useAttendance = () => {
     return matrix
   }, [allRecords])
 
+  const sessionRecords = useMemo(() => {
+    if (!selectedSession) return []
+    return roster.map(student => {
+      const record = records.find(r => r.student_id === student.student_id)
+      return {
+        attendance_id: selectedSession.id,
+        student_id: student.student_id,
+        student_id_number: student.student_id_number,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        status: record?.status
+      } as TeacherAttendanceRecordWithStudent
+    })
+  }, [roster, records, selectedSession])
+
   const onExportExcel = () => handleExportExcel(classes, selectedClassId, roster, sessions, attendanceMatrix, setMessage)
-  const onExportSessionExcel = () => handleExportSessionExcel(classes, selectedClassId, selectedSession, records, setMessage)
+  const onExportSessionExcel = () => handleExportSessionExcel(classes, selectedClassId, selectedSession, sessionRecords, setMessage)
 
   return {
     classes,
@@ -420,6 +518,7 @@ export const useAttendance = () => {
     selectedSession,
     setSelectedSession,
     records,
+    sessionRecords,
     allRecords,
     roster,
     viewMode,
@@ -435,9 +534,16 @@ export const useAttendance = () => {
     setShowCreateModal,
     newSessionForm,
     setNewSessionForm,
+    showEditModal,
+    setShowEditModal,
+    editingSession,
+    setEditingSession,
+    editSessionForm,
+    setEditSessionForm,
     handleSessionClick,
     handleUpdateStatus,
     handleCreateSession,
+    handleUpdateSession,
     attendanceMatrix,
     onExportExcel,
     onExportSessionExcel,

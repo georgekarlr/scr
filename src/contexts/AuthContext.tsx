@@ -30,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session) {
         setSession(session)
         setUser(session.user)
+        // Set user email for offline sync DB name
+        offlineSync.setUserEmail(session.user.email ?? null)
         // Cache session for offline use
         await offlineSync.cacheData('auth_session_current', session)
         refreshProfile()
@@ -40,6 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Loaded session from cache:', cachedSession)
           setSession(cachedSession)
           setUser(cachedSession.user)
+          // Set user email for offline sync DB name
+          offlineSync.setUserEmail(cachedSession.user.email ?? null)
           refreshProfile()
         } else {
           setSession(null)
@@ -57,10 +61,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Recovered session from cache after error:', cachedSession)
         setSession(cachedSession)
         setUser(cachedSession.user)
+        // Set user email for offline sync DB name
+        offlineSync.setUserEmail(cachedSession.user.email ?? null)
         refreshProfile()
       } else {
         setSession(null)
         setUser(null)
+        offlineSync.setUserEmail(null)
       }
       setLoading(false)
     })
@@ -74,6 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null)
       
       if (session) {
+        // Set user email for offline sync DB name
+        offlineSync.setUserEmail(session.user.email ?? null)
         // Cache session for offline use
         await offlineSync.cacheData('auth_session_current', session)
         refreshProfile()
@@ -83,8 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // but we can set it to null or use cacheData with null
         await offlineSync.cacheData('auth_session_current', null)
         await offlineSync.cacheData('user_profile_current', null)
+        offlineSync.setUserEmail(null)
         setProfile(null)
       } else {
+        offlineSync.setUserEmail(null)
         setProfile(null)
       }
       setLoading(false)

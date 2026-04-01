@@ -15,7 +15,7 @@ import {
   TeacherAssignment,
   TeacherGrade,
   TeacherSyncOfflineAssignmentsAndGradesParams,
-  TeacherSyncOfflineAttendanceFullParams, TeacherUpdateAssignmentParams,
+  TeacherSyncOfflineAttendanceFullParams, TeacherUpdateAssignmentParams, TeacherUpdateAttendanceParams,
 } from '../types/teacher'
 
 export const teacherService = {
@@ -114,6 +114,14 @@ export const teacherService = {
         p_id: id // Pass p_id if it exists
     })
     return { data: data as string | null, error }
+  },
+
+  /**
+   * Update an existing attendance session
+   */
+  async updateAttendance(params: TeacherUpdateAttendanceParams) {
+    const { error } = await supabase.rpc('teacher_update_attendance', params)
+    return { error }
   },
 
   /**

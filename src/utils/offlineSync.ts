@@ -36,6 +36,7 @@ export interface PendingAttendance {
   name: string
   record_date: string
   classId: string
+  action_status: 'updated' | 'deleted' | 'none'
 }
 
 export interface PendingAttendanceRecord {
@@ -47,8 +48,8 @@ export interface PendingAttendanceRecord {
 
 // --- IndexedDB Helper ---
 
-const DB_NAME = 'OfflineSyncDB'
-const DB_VERSION = 3
+let currentDBName = 'OfflineSyncDB'
+const DB_VERSION = 1
 
 const STORES = {
   ASSIGNMENTS: 'pending_assignments',
@@ -62,12 +63,23 @@ const STORES = {
 
 class OfflineDB {
   private db: IDBDatabase | null = null
+  private dbName: string = currentDBName
 
   async getDB(): Promise<IDBDatabase> {
-    if (this.db) return this.db
+    const targetDBName = currentDBName
+    
+    if (this.db && this.dbName === targetDBName) return this.db
+
+    // If db name changed or first connection, close old connection if it exists
+    if (this.db) {
+      this.db.close()
+      this.db = null
+    }
+
+    this.dbName = targetDBName
 
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION)
+      const request = indexedDB.open(this.dbName, DB_VERSION)
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
@@ -150,6 +162,15 @@ type SyncCallback = () => void
 const syncCallbacks: SyncCallback[] = []
 
 export const offlineSync = {
+  setUserEmail(email: string | null) {
+    const newName = email ? `OfflineSyncDB_${email}` : 'OfflineSyncDB'
+    if (currentDBName !== newName) {
+      currentDBName = newName
+      // Force immediate re-connection check on next DB access
+      db.getDB().catch(err => console.error('Failed to pre-open DB:', err))
+    }
+  },
+
   onSyncSuccess(callback: SyncCallback) {
     syncCallbacks.push(callback)
     return () => {
@@ -297,7 +318,7 @@ export const offlineSync = {
 
     const assignments = await this.getPendingAssignments()
     const grades = await this.getPendingGrades()
-    const attendances = await this.getPendingAttendances()
+    const attendances = await this.getPendingAttendances() as PendingAttendance[]
     const records = await this.getPendingAttendanceRecords()
     const deletedAssignments = await this.getDeletedAssignments()
     const deletedAttendances = await this.getDeletedAttendances()
@@ -372,7 +393,8 @@ export const offlineSync = {
           attendances: classAttendances.map(({ classId, ...rest }) => ({
               id: rest.id,
               name: rest.name,
-              record_date: rest.record_date
+              record_date: rest.record_date,
+              action_status: rest.action_status
           })),
           records: classRecords.map(({ classId, id, ...rest }) => ({
               attendance_id: rest.attendance_id,
