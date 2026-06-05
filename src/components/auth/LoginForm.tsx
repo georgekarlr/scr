@@ -43,13 +43,13 @@ const LoginForm: React.FC = () => {
         <div className="max-w-md w-full">
           <div className="text-center mb-6 sm:mb-10">
             <div className="flex flex-col items-center justify-center gap-4 mb-4">
-              <img src="/icon.svg" alt="School Class Record" className="h-16 w-16 sm:h-20 sm:w-20" />
+              <img src="/icon.svg" alt="School Management System" className="h-16 w-16 sm:h-20 sm:w-20" />
               <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent text-center">
-                School Class Record
+                SMS
               </h1>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Efficiently manage your classes</h2>
-            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 px-4">Track students, attendance, and grades.</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">School Management System</h2>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 px-4">Streamlining school operations and academic tracking.</p>
           </div>
 
           <div className="bg-white p-6 sm:p-8 rounded-2xl sm:border sm:border-gray-100 sm:shadow-xl sm:shadow-blue-50/50">
@@ -128,21 +128,10 @@ const LoginForm: React.FC = () => {
             </form>
 
 
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-              <p className="text-gray-600">
-                New to School Class Record?{' '}
-                <Link
-                    to="/signup"
-                    className="font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  Sign up
-                </Link>
-              </p>
-            </div>
           </div>
 
           <p className="mt-8 text-center text-xs text-gray-400 px-10">
-            By signing up, you agree to the Terms of Service and Privacy Policy, including Cookie Use.
+            By signing in, you agree to the Terms of Service and Privacy Policy, including Cookie Use.
           </p>
         </div>
       </div>

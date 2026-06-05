@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -29,11 +29,18 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon, onClick }) => (
 );
 
 const Sidebar: React.FC = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile, loading: authLoading } = useAuth();
   const { isOpen, close } = useSidebar();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const role = profile?.role || user?.user_metadata?.role;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshProfile();
+    setIsRefreshing(false);
+  };
 
   // Close sidebar on navigation (mobile)
   React.useEffect(() => {
@@ -47,7 +54,7 @@ const Sidebar: React.FC = () => {
 
   const renderNavLinks = () => {
     switch (role) {
-      case 'school_admin':
+      case 'super_admin':
         return (
           <>
             <NavItem to="/dashboard/settings" label="Settings" icon={<Settings size={18} />} />
@@ -65,10 +72,10 @@ const Sidebar: React.FC = () => {
             <NavItem to="/dashboard/directory" label="Staff Directory" icon={<Users size={18} />} />
           </>
         );
-      case 'moderator':
+      case 'cashier':
         return (
           <>
-            <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
+            <NavItem to="/dashboard/payments" label="Payments" icon={<ClipboardList size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<Users size={18} />} />
             <NavItem to="/dashboard/requests" label="Requests Inbox" icon={<Inbox size={18} />} />
           </>
@@ -90,7 +97,21 @@ const Sidebar: React.FC = () => {
           </>
         );
       default:
-        return <p className="px-4 text-xs text-gray-400 italic">No role assigned</p>;
+        if (authLoading || isRefreshing) {
+          return <p className="px-4 text-xs text-gray-400 italic animate-pulse">Loading profile...</p>;
+        }
+        return (
+          <div className="px-4 flex flex-col gap-2">
+            <p className="text-xs text-gray-400 italic">No role assigned</p>
+            <button 
+              onClick={handleRefresh}
+              className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase hover:bg-blue-50 w-fit px-2 py-1 rounded transition-colors"
+            >
+              <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
+              Refresh Role
+            </button>
+          </div>
+        );
     }
   };
 
@@ -113,6 +134,10 @@ const Sidebar: React.FC = () => {
           flex flex-col p-4 gap-2 h-full lg:h-[calc(100vh-65px)]
         `}
       >
+        <div className="mb-6 px-4 hidden lg:block">
+          <h1 className="text-2xl font-black text-blue-600 tracking-tight">SMS</h1>
+          <p className="text-[10px] text-gray-400 font-bold uppercase">School Management</p>
+        </div>
         <div className="mb-4">
           <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
             Navigation
@@ -125,10 +150,20 @@ const Sidebar: React.FC = () => {
           {renderNavLinks()}
         </nav>
         <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-2">
-          <div className="px-4">
+          <div className="px-4 flex items-center justify-between">
             <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded block w-fit">
-              Role: {role?.replace('_', ' ') || 'Guest'}
+              Role: {role?.replace('_', ' ') || (authLoading || isRefreshing ? 'Loading...' : 'None')}
             </span>
+            {(!role || isRefreshing) && (
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50"
+                title="Refresh Profile"
+              >
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+              </button>
+            )}
           </div>
           <button
             onClick={handleSignOut}

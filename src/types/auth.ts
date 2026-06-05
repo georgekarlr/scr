@@ -3,19 +3,20 @@ export interface School {
   school_name: string
 }
 
-export type AppRole = 'school_admin' | 'registrar' | 'moderator' | 'teacher' | 'student'
+export type AppRole = 'registrar' | 'teacher' | 'cashier' | 'student' | 'super_admin'
 
 export type ProfileStatus = 'pending' | 'approved' | 'rejected'
 
 export interface UserProfile {
-  profile_id: string
+  id: string
+  role: AppRole
   first_name: string
   last_name: string
-  email: string
-  role: AppRole
-  status: ProfileStatus
-  school_id: string
-  school_name: string
+  student_type: string | null
+  year_level: string | null
+  school_id: string | null
+  section_id: string | null
+  created_at: string
 }
 
 export interface User {
@@ -45,11 +46,13 @@ export interface AuthContextType {
   profile: UserProfile | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; school_id: string }) => Promise<{ error: any | null }>
   signIn: (email: string, password: string) => Promise<{ error: any | null }>
   resetPassword: (email: string) => Promise<{ error: any | null }>
   updatePassword: (password: string) => Promise<{ error: any | null }>
   signOut: () => Promise<void>
-  getSchools: () => Promise<{ data: School[] | null; error: any | null }>
-  refreshProfile: () => Promise<void>
+  refreshProfile: (userId?: string) => Promise<void>
+  listSchoolUsers: () => Promise<{ data: UserProfile[] | null; error: any | null }>
+  listUsers: () => Promise<{ data: User[] | null; error: any | null }>
+  createUser: (email: string, password: string, metadata: any) => Promise<{ data: any | null; error: any | null }>
+  updateUser: (id: string, updates: { email?: string; password?: string; user_metadata?: any }) => Promise<{ data: any | null; error: any | null }>
 }
