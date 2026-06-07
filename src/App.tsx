@@ -13,7 +13,7 @@ import ConfirmAuth from './components/auth/ConfirmAuth';
 // Layout
 import Sidebar from './components/layout/Sidebar';
 import DashboardOverview from './pages/dashboard/DashboardOverview';
-import StaffManagement from './pages/dashboard/admin/StaffManagement';
+import UserManagement from './pages/dashboard/admin/UserManagement.tsx';
 import StudentRoster from './pages/dashboard/student/StudentRoster';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -81,7 +81,7 @@ const App: React.FC = () => {
                     <Routes>
                       <Route index element={<DashboardOverview />} />
                       <Route path="account" element={<div>Account Settings (Coming Soon)</div>} />
-                      <Route path="staff" element={<StaffManagement />} />
+                      <Route path="staff" element={<UserManagement />} />
                       <Route path="roster" element={<StudentRoster />} />
                       
                       {/* Generic Placeholders for other routes */}

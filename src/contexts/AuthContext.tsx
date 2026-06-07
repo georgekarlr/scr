@@ -92,8 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut()
   }
 
-  const listSchoolUsers = async () => {
-    return userService.listSchoolUsers()
+  const listSchoolUsers = async (role?: AppRole, search?: string) => {
+    return userService.listSchoolUsers(role, search)
   }
 
   const listUsers = async () => {
@@ -106,6 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = async (id: string, updates: { email?: string; password?: string; user_metadata?: any }) => {
     return userService.updateUser(id, updates)
+  }
+
+  const updateUserName = async (id: string, firstName: string, lastName: string) => {
+    return userService.updateUserName(id, firstName, lastName)
+  }
+
+  const updateUserRole = async (id: string, role: any) => {
+    return userService.updateUserRole(id, role)
   }
 
   const refreshProfile = async (userId?: string) => {
@@ -149,6 +157,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     listUsers,
     createUser,
     updateUser,
+    updateUserName,
+    updateUserRole,
     refreshProfile,
   }
 

@@ -51,8 +51,10 @@ export interface AuthContextType {
   updatePassword: (password: string) => Promise<{ error: any | null }>
   signOut: () => Promise<void>
   refreshProfile: (userId?: string) => Promise<void>
-  listSchoolUsers: () => Promise<{ data: UserProfile[] | null; error: any | null }>
+  listSchoolUsers: (role?: AppRole, search?: string) => Promise<{ data: UserProfile[] | null; error: any | null }>
   listUsers: () => Promise<{ data: User[] | null; error: any | null }>
   createUser: (email: string, password: string, metadata: any) => Promise<{ data: any | null; error: any | null }>
   updateUser: (id: string, updates: { email?: string; password?: string; user_metadata?: any }) => Promise<{ data: any | null; error: any | null }>
+  updateUserName: (id: string, firstName: string, lastName: string) => Promise<{ data: any | null; error: any | null }>
+  updateUserRole: (id: string, role: AppRole) => Promise<{ data: any | null; error: any | null }>
 }

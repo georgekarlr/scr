@@ -2,9 +2,13 @@ import { supabase, supabaseAdmin } from '../lib/supabase'
 import { User, UserProfile } from '../types/auth'
 
 export const userService = {
-  async listSchoolUsers() {
+  async listSchoolUsers(role?: string, search?: string) {
     try {
-      const { data, error } = await supabase.rpc('get_my_school_users')
+      const { data, error } = await supabase.rpc('get_my_school_users', {
+        filter_role: role || null,
+        search_term: search || null
+      })
+      console.log('School users fetched:', data)
       if (error) {
         console.error('Error fetching school users:', error)
         return { data: null, error }
@@ -63,6 +67,25 @@ export const userService = {
       }
     }
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, updates)
+    return { data, error }
+  },
+
+  async updateUserName(id: string, firstName: string, lastName: string) {
+    const { data, error } = await supabase.rpc('update_user_name', {
+      target_user_id: id,
+      new_first_name: firstName,
+      new_last_name: lastName
+    })
+    return { data, error }
+  },
+
+  async updateUserRole(id: string, role: string) {
+    console.log('Updating user role:', id, role)
+    const { data, error } = await supabase.rpc('update_user_role', {
+      target_user_id: id,
+      new_role: role
+    })
+    console.log(error)
     return { data, error }
   }
 }

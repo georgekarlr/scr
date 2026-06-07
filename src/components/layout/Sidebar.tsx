@@ -60,7 +60,7 @@ const Sidebar: React.FC = () => {
             <NavItem to="/dashboard/settings" label="Settings" icon={<Settings size={18} />} />
             <NavItem to="/dashboard/departments" label="Departments" icon={<Users size={18} />} />
             <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
-            <NavItem to="/dashboard/staff" label="Staff" icon={<Users size={18} />} />
+            <NavItem to="/dashboard/staff" label="Users" icon={<Users size={18} />} />
           </>
         );
       case 'registrar':
