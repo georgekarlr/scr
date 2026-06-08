@@ -14,7 +14,9 @@ import ConfirmAuth from './components/auth/ConfirmAuth';
 import Sidebar from './components/layout/Sidebar';
 import DashboardOverview from './pages/dashboard/DashboardOverview';
 import UserManagement from './pages/dashboard/admin/UserManagement.tsx';
-import StudentRoster from './pages/dashboard/student/StudentRoster';
+import SubjectManagement from './pages/dashboard/admin/SubjectManagement';
+import CourseManagement from './pages/dashboard/admin/CourseManagement';
+import StudentProfiles from './pages/dashboard/admin/StudentProfiles';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -82,11 +84,12 @@ const App: React.FC = () => {
                       <Route index element={<DashboardOverview />} />
                       <Route path="account" element={<div>Account Settings (Coming Soon)</div>} />
                       <Route path="staff" element={<UserManagement />} />
-                      <Route path="roster" element={<StudentRoster />} />
+                      <Route path="student-profiles" element={<StudentProfiles />} />
                       
                       {/* Generic Placeholders for other routes */}
                       <Route path="departments" element={<div>Departments Management (Coming Soon)</div>} />
-                      <Route path="subjects" element={<div>Subjects Management (Coming Soon)</div>} />
+                      <Route path="subjects" element={<SubjectManagement />} />
+                      <Route path="courses" element={<CourseManagement />} />
                       <Route path="settings" element={<div>System Settings (Coming Soon)</div>} />
                       <Route path="approvals" element={<div>User Approvals (Coming Soon)</div>} />
                       <Route path="directory" element={<div>Staff Directory (Coming Soon)</div>} />

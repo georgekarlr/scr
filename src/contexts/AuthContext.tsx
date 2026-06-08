@@ -92,8 +92,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut()
   }
 
-  const listSchoolUsers = async (role?: AppRole, search?: string) => {
-    return userService.listSchoolUsers(role, search)
+  const listSchoolUsers = async (
+    role?: AppRole,
+    search?: string,
+    filters?: {
+      year_level?: string | null
+      section_id?: string | null
+      course_id?: string | null
+    }
+  ) => {
+    return userService.listSchoolUsers(role, search, filters)
   }
 
   const listUsers = async () => {

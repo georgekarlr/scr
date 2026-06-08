@@ -16,6 +16,8 @@ export interface UserProfile {
   year_level: string | null
   school_id: string | null
   section_id: string | null
+  course_id: string | null
+  course_code: string | null
   created_at: string
 }
 
@@ -51,10 +53,14 @@ export interface AuthContextType {
   updatePassword: (password: string) => Promise<{ error: any | null }>
   signOut: () => Promise<void>
   refreshProfile: (userId?: string) => Promise<void>
-  listSchoolUsers: (role?: AppRole, search?: string) => Promise<{ data: UserProfile[] | null; error: any | null }>
-  listUsers: () => Promise<{ data: User[] | null; error: any | null }>
-  createUser: (email: string, password: string, metadata: any) => Promise<{ data: any | null; error: any | null }>
-  updateUser: (id: string, updates: { email?: string; password?: string; user_metadata?: any }) => Promise<{ data: any | null; error: any | null }>
-  updateUserName: (id: string, firstName: string, lastName: string) => Promise<{ data: any | null; error: any | null }>
   updateUserRole: (id: string, role: AppRole) => Promise<{ data: any | null; error: any | null }>
+  listSchoolUsers: (
+    role?: AppRole,
+    search?: string,
+    filters?: {
+      year_level?: string | null
+      section_id?: string | null
+      course_id?: string | null
+    }
+  ) => Promise<{ data: UserProfile[] | null; error: any | null }>
 }

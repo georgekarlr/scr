@@ -2,11 +2,22 @@ import { supabase, supabaseAdmin } from '../lib/supabase'
 import { User, UserProfile } from '../types/auth'
 
 export const userService = {
-  async listSchoolUsers(role?: string, search?: string) {
+  async listSchoolUsers(
+    role?: string,
+    search?: string,
+    filters?: {
+      year_level?: string | null
+      section_id?: string | null
+      course_id?: string | null
+    }
+  ) {
     try {
       const { data, error } = await supabase.rpc('get_my_school_users', {
         filter_role: role || null,
-        search_term: search || null
+        search_term: search || null,
+        filter_year_level: filters?.year_level || null,
+        filter_section_id: filters?.section_id || null,
+        filter_course_id: filters?.course_id || null
       })
       console.log('School users fetched:', data)
       if (error) {

@@ -5,7 +5,7 @@ import { User, AppRole, UserProfile } from '../../../types/auth';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const UserManagement: React.FC = () => {
-  const { listSchoolUsers, listUsers, createUser, updateUser, updateUserName, updateUserRole } = useAuth();
+  const { listSchoolUsers, listUsers, createUser, updateUser, updateUserName, updateUserRole, profile } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -173,7 +173,7 @@ const UserManagement: React.FC = () => {
       first_name: formData.firstName,
       last_name: formData.lastName,
       role: formData.role,
-      school_id: '7ea28e4e-1c9c-40fb-a9b9-583236a8a9d2'
+      school_id: profile?.school_id || ''
     };
 
     const result = await createUser(formData.email, formData.password, metadata);
