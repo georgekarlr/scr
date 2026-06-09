@@ -6,17 +6,20 @@ import { Student } from '../../../types/student';
 import { Course } from '../../../types/course';
 import { courseService } from '../../../services/courseService';
 import { studentService } from '../../../services/studentService';
+import { sectionService, Section } from '../../../services/sectionService';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const StudentProfiles: React.FC = () => {
   const { listSchoolUsers, listUsers, createUser, updateUser, profile } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterYearLevel, setFilterYearLevel] = useState('');
   const [filterCourseId, setFilterCourseId] = useState('');
+  const [filterSectionId, setFilterSectionId] = useState('');
   const [filterStudentType, setFilterStudentType] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,6 +30,7 @@ const StudentProfiles: React.FC = () => {
     password: '',
     firstName: '',
     lastName: '',
+    studentIdNumber: '',
     studentType: '',
     yearLevel: '',
     sectionId: '',
@@ -40,6 +44,7 @@ const StudentProfiles: React.FC = () => {
       search_term: searchTerm || null,
       filter_year_level: filterYearLevel || null,
       filter_course_id: filterCourseId || null,
+      filter_section_id: filterSectionId || null,
       filter_student_type: filterStudentType || null
     });
     if (error) {
@@ -55,8 +60,14 @@ const StudentProfiles: React.FC = () => {
     if (data) setCourses(data);
   };
 
+  const fetchSections = async (courseId?: string | null) => {
+    const { data } = await sectionService.getSections(courseId);
+    if (data) setSections(data);
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchSections();
   }, []);
 
   useEffect(() => {
@@ -64,7 +75,7 @@ const StudentProfiles: React.FC = () => {
       fetchUsers();
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, filterYearLevel, filterCourseId, filterStudentType]);
+  }, [searchTerm, filterYearLevel, filterCourseId, filterSectionId, filterStudentType]);
 
   const handleOpenModal = (student?: Student) => {
     if (student) {
@@ -76,6 +87,7 @@ const StudentProfiles: React.FC = () => {
         password: '',
         firstName: student.first_name || '',
         lastName: student.last_name || '',
+        studentIdNumber: student.student_id_number || '',
         studentType: student.student_type || '',
         yearLevel: student.year_level || '',
         sectionId: student.section_id || '',
@@ -88,6 +100,7 @@ const StudentProfiles: React.FC = () => {
         password: '',
         firstName: '',
         lastName: '',
+        studentIdNumber: '',
         studentType: '',
         yearLevel: '',
         sectionId: '',
@@ -114,28 +127,30 @@ const StudentProfiles: React.FC = () => {
     setSubmitting(true);
     setError('');
 
-    const metadata = {
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      role: 'student',
-      school_id: profile?.school_id || '',
-      student_type: formData.studentType,
-      year_level: formData.yearLevel,
-      section_id: formData.sectionId,
-      course_id: formData.courseId
-    };
-
     let result;
     if (editingUser) {
-      const updates: any = {
-        email: formData.email,
-        user_metadata: metadata
-      };
-      if (formData.password) {
-        updates.password = formData.password;
-      }
-      result = await updateUser(editingUser.id, updates);
+      result = await studentService.updateStudentProfile({
+        studentId: editingUser.id,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        studentIdNumber: formData.studentIdNumber,
+        studentType: formData.studentType,
+        yearLevel: formData.yearLevel,
+        courseId: formData.courseId,
+        sectionId: formData.sectionId
+      });
     } else {
+      const metadata = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        role: 'student',
+        school_id: profile?.school_id || '',
+        student_type: formData.studentType,
+        student_id_number: formData.studentIdNumber,
+        year_level: formData.yearLevel,
+        section_id: formData.sectionId,
+        course_id: formData.courseId
+      };
       result = await createUser(formData.email, formData.password, metadata);
     }
 
@@ -156,13 +171,6 @@ const StudentProfiles: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Student Profiles</h1>
           <p className="text-gray-600">View and manage student information and academic records.</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={18} />
-          Enroll Student
-        </button>
       </div>
 
       {error && <StatusMessage status="error" message={error} />}
@@ -201,12 +209,26 @@ const StudentProfiles: React.FC = () => {
           </select>
           <select 
             value={filterCourseId}
-            onChange={(e) => setFilterCourseId(e.target.value)}
+            onChange={(e) => {
+              setFilterCourseId(e.target.value);
+              setFilterSectionId(''); // Reset section when course changes
+              fetchSections(e.target.value || null);
+            }}
             className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             <option value="">All Courses</option>
             {courses.map(course => (
               <option key={course.id} value={course.id}>{course.code}</option>
+            ))}
+          </select>
+          <select 
+            value={filterSectionId}
+            onChange={(e) => setFilterSectionId(e.target.value)}
+            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="">All Sections</option>
+            {sections.map(section => (
+              <option key={section.id} value={section.id}>{section.name}</option>
             ))}
           </select>
         </div>
@@ -291,30 +313,55 @@ const StudentProfiles: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700">Email Address</label>
+                <label className="text-sm font-semibold text-gray-700">Student ID Number</label>
                 <input
                   required
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  type="text"
+                  value={formData.studentIdNumber}
+                  onChange={(e) => setFormData({...formData, studentIdNumber: e.target.value})}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700">
-                  {editingUser ? 'New Password (leave blank to keep current)' : 'Password'}
-                </label>
-                <input
-                  required={!editingUser}
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
+              {!editingUser && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Email Address</label>
+                    <input
+                      required
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Password</label>
+                    <input
+                      required
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700">Student Type</label>
+                  <select
+                    value={formData.studentType}
+                    onChange={(e) => setFormData({...formData, studentType: e.target.value})}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="regular">Regular</option>
+                    <option value="irregular">Irregular</option>
+                  </select>
+                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-700">Year Level</label>
                   <select
@@ -333,7 +380,10 @@ const StudentProfiles: React.FC = () => {
                   <label className="text-sm font-semibold text-gray-700">Course</label>
                   <select
                     value={formData.courseId}
-                    onChange={(e) => setFormData({...formData, courseId: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, courseId: e.target.value, sectionId: ''});
+                      fetchSections(e.target.value || null);
+                    }}
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">Select Course</option>
@@ -342,6 +392,20 @@ const StudentProfiles: React.FC = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">Section</label>
+                <select
+                  value={formData.sectionId}
+                  onChange={(e) => setFormData({...formData, sectionId: e.target.value})}
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">Select Section</option>
+                  {sections.map(section => (
+                    <option key={section.id} value={section.id}>{section.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="pt-4 flex gap-3">
