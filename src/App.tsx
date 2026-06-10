@@ -23,6 +23,9 @@ import AcademicYearManagement from './pages/dashboard/admin/AcademicYearManageme
 import GradingPeriodManagement from './pages/dashboard/admin/GradingPeriodManagement';
 import RoomManagement from './pages/dashboard/admin/RoomManagement';
 import EnrollmentManagement from './pages/dashboard/admin/EnrollmentManagement';
+import FeeItems from './pages/dashboard/finance/FeeItems';
+import Ledger from './pages/dashboard/finance/Ledger';
+import MyLedger from './pages/dashboard/finance/MyLedger';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -105,6 +108,10 @@ const App: React.FC = () => {
                       <Route path="directory" element={<div>Staff Directory (Coming Soon)</div>} />
                       <Route path="classes" element={<ClassManagement />} />
                       <Route path="enrollment" element={<EnrollmentManagement />} />
+                      <Route path="fee-items" element={<FeeItems />} />
+                      <Route path="ledger" element={<Ledger />} />
+                      <Route path="payments" element={<Ledger />} />
+                      <Route path="my-ledger" element={<MyLedger />} />
                       <Route path="requests" element={<div>Requests Inbox (Coming Soon)</div>} />
                       <Route path="my-classes" element={<div>My Classes (Coming Soon)</div>} />
                       <Route path="student-request" element={<div>Add Student Request (Coming Soon)</div>} />

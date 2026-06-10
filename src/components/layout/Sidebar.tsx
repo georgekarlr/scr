@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw, LayoutGrid, Calendar, DoorOpen, UserPlus } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw, LayoutGrid, Calendar, DoorOpen, UserPlus, Wallet, ReceiptText, CreditCard } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -68,6 +68,8 @@ const Sidebar: React.FC = () => {
             <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
             <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
+            <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
+            <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
             <NavItem to="/dashboard/staff" label="Users" icon={<Users size={18} />} />
           </>
         );
@@ -84,13 +86,17 @@ const Sidebar: React.FC = () => {
             <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
             <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
+            <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
+            <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
             <NavItem to="/dashboard/directory" label="Staff Directory" icon={<Users size={18} />} />
           </>
         );
       case 'cashier':
         return (
           <>
-            <NavItem to="/dashboard/payments" label="Payments" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
+            <NavItem to="/dashboard/payments" label="Payments" icon={<CreditCard size={18} />} />
+            <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<Users size={18} />} />
             <NavItem to="/dashboard/requests" label="Requests Inbox" icon={<Inbox size={18} />} />
           </>
@@ -107,6 +113,7 @@ const Sidebar: React.FC = () => {
       case 'student':
         return (
           <>
+            <NavItem to="/dashboard/my-ledger" label="My Ledger" icon={<ReceiptText size={18} />} />
             <NavItem to="/dashboard/my-grades" label="My Grades" icon={<GraduationCap size={18} />} />
             <NavItem to="/dashboard/my-attendance" label="My Attendance" icon={<ClipboardList size={18} />} />
           </>
