@@ -19,4 +19,5 @@ export interface StudentFilters {
   filter_section_id?: string | null;
   filter_year_level?: string | null;
   filter_student_type?: string | null;
+  filter_student_id_number?: string | null;
 }

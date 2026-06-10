@@ -9,7 +9,8 @@ export const studentService = {
         filter_course_id: filters.filter_course_id || null,
         filter_section_id: filters.filter_section_id || null,
         filter_year_level: filters.filter_year_level || null,
-        filter_student_type: filters.filter_student_type || null
+        filter_student_type: filters.filter_student_type || null,
+        filter_student_id_number: filters.filter_student_id_number || null
       })
 
       if (error) {

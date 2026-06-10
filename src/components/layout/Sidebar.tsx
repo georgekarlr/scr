@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw, LayoutGrid } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw, LayoutGrid, Calendar, DoorOpen, UserPlus } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -58,11 +58,16 @@ const Sidebar: React.FC = () => {
         return (
           <>
             <NavItem to="/dashboard/settings" label="Settings" icon={<Settings size={18} />} />
+            <NavItem to="/dashboard/academic-years" label="Academic Years" icon={<Calendar size={18} />} />
+            <NavItem to="/dashboard/grading-periods" label="Grading Periods" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/rooms" label="Rooms" icon={<DoorOpen size={18} />} />
             <NavItem to="/dashboard/departments" label="Departments" icon={<Users size={18} />} />
             <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<GraduationCap size={18} />} />
             <NavItem to="/dashboard/courses" label="Courses" icon={<GraduationCap size={18} />} />
             <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
             <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
+            <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
+            <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
             <NavItem to="/dashboard/staff" label="Users" icon={<Users size={18} />} />
           </>
         );
@@ -70,10 +75,15 @@ const Sidebar: React.FC = () => {
         return (
           <>
             <NavItem to="/dashboard/approvals" label="User Approvals" icon={<CheckSquare size={18} />} />
+            <NavItem to="/dashboard/academic-years" label="Academic Years" icon={<Calendar size={18} />} />
+            <NavItem to="/dashboard/grading-periods" label="Grading Periods" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/rooms" label="Rooms" icon={<DoorOpen size={18} />} />
             <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<ClipboardList size={18} />} />
             <NavItem to="/dashboard/courses" label="Courses" icon={<GraduationCap size={18} />} />
             <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
             <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
+            <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
+            <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
             <NavItem to="/dashboard/directory" label="Staff Directory" icon={<Users size={18} />} />
           </>
         );

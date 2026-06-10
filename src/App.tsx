@@ -18,6 +18,11 @@ import SubjectManagement from './pages/dashboard/admin/SubjectManagement';
 import CourseManagement from './pages/dashboard/admin/CourseManagement';
 import SectionManagement from './pages/dashboard/admin/SectionManagement';
 import StudentProfiles from './pages/dashboard/admin/StudentProfiles';
+import ClassManagement from './pages/dashboard/admin/ClassManagement';
+import AcademicYearManagement from './pages/dashboard/admin/AcademicYearManagement';
+import GradingPeriodManagement from './pages/dashboard/admin/GradingPeriodManagement';
+import RoomManagement from './pages/dashboard/admin/RoomManagement';
+import EnrollmentManagement from './pages/dashboard/admin/EnrollmentManagement';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -92,11 +97,14 @@ const App: React.FC = () => {
                       <Route path="subjects" element={<SubjectManagement />} />
                       <Route path="courses" element={<CourseManagement />} />
                       <Route path="sections" element={<SectionManagement />} />
+                      <Route path="academic-years" element={<AcademicYearManagement />} />
+                      <Route path="grading-periods" element={<GradingPeriodManagement />} />
+                      <Route path="rooms" element={<RoomManagement />} />
                       <Route path="settings" element={<div>System Settings (Coming Soon)</div>} />
                       <Route path="approvals" element={<div>User Approvals (Coming Soon)</div>} />
                       <Route path="directory" element={<div>Staff Directory (Coming Soon)</div>} />
-                      <Route path="classes" element={<div>Classes Management (Coming Soon)</div>} />
-                      <Route path="enrollment" element={<div>Enrollment Management (Coming Soon)</div>} />
+                      <Route path="classes" element={<ClassManagement />} />
+                      <Route path="enrollment" element={<EnrollmentManagement />} />
                       <Route path="requests" element={<div>Requests Inbox (Coming Soon)</div>} />
                       <Route path="my-classes" element={<div>My Classes (Coming Soon)</div>} />
                       <Route path="student-request" element={<div>Add Student Request (Coming Soon)</div>} />

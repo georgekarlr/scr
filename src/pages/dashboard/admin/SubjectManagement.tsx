@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BookOpen, Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { subjectService } from '../../../services/subjectService';
 import { Subject } from '../../../types/subject';
+import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const SubjectManagement: React.FC = () => {
@@ -112,7 +113,11 @@ const SubjectManagement: React.FC = () => {
         </button>
       </div>
 
-      {error && <StatusMessage status="error" message={error} />}
+      <ErrorModal 
+        isOpen={!!error} 
+        message={error} 
+        onClose={() => setError('')} 
+      />
 
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="relative">

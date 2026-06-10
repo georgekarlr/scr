@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Users, Search, Filter, Plus, Mail, Lock, User as UserIcon, Shield, School, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { User, AppRole, UserProfile } from '../../../types/auth';
+import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const UserManagement: React.FC = () => {
@@ -207,7 +208,11 @@ const UserManagement: React.FC = () => {
         </button>
       </div>
 
-      {error && <StatusMessage status="error" message={error} />}
+      <ErrorModal 
+        isOpen={!!error} 
+        message={error} 
+        onClose={() => setError('')} 
+      />
 
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">

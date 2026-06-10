@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { GraduationCap, Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { courseService } from '../../../services/courseService';
 import { Course } from '../../../types/course';
+import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const CourseManagement: React.FC = () => {
@@ -125,7 +126,11 @@ const CourseManagement: React.FC = () => {
         </div>
       </div>
 
-      {error && <StatusMessage status="error" message={error} />}
+      <ErrorModal 
+        isOpen={!!error} 
+        message={error} 
+        onClose={() => setError('')} 
+      />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">

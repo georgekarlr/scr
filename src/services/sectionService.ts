@@ -6,7 +6,7 @@ export const sectionService = {
     try {
       const { data, error } = await supabase.rpc('get_sections', {
         search_term: filters?.search_term || null,
-        filter_academic_year: filters?.filter_academic_year || null
+        filter_academic_year_id: filters?.filter_academic_year_id || null
       });
 
       if (error) {
@@ -21,12 +21,12 @@ export const sectionService = {
     }
   },
 
-  async createSection(name: string, gradeLevel: string, academicYear: string, adviserId?: string | null) {
+  async createSection(name: string, gradeLevel: string, academicYearId: string, adviserId?: string | null) {
     try {
       const { data, error } = await supabase.rpc('create_section', {
         p_name: name,
         p_grade_level: gradeLevel,
-        p_academic_year: academicYear,
+        p_academic_year_id: academicYearId,
         p_adviser_id: adviserId || null
       });
 
@@ -42,13 +42,13 @@ export const sectionService = {
     }
   },
 
-  async updateSection(id: string, name: string, gradeLevel: string, academicYear: string, adviserId?: string | null) {
+  async updateSection(id: string, name: string, gradeLevel: string, academicYearId: string, adviserId?: string | null) {
     try {
       const { data, error } = await supabase.rpc('update_section', {
         p_section_id: id,
         p_name: name,
         p_grade_level: gradeLevel,
-        p_academic_year: academicYear,
+        p_academic_year_id: academicYearId,
         p_adviser_id: adviserId || null
       });
 

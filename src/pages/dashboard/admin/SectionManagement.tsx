@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { LayoutGrid, Search, Plus, X, Edit2, Trash2, User } from 'lucide-react';
 import { sectionService } from '../../../services/sectionService';
 import { userService } from '../../../services/userService';
+import { academicYearService } from '../../../services/academicYearService';
 import { Section } from '../../../types/section';
 import { UserProfile } from '../../../types/auth';
+import { AcademicYear } from '../../../types/academicYear';
+import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const SectionManagement: React.FC = () => {
   const [sections, setSections] = useState<Section[]>([]);
   const [teachers, setTeachers] = useState<UserProfile[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +21,7 @@ const SectionManagement: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     grade_level: '',
-    academic_year: '',
+    academic_year_id: '',
     adviser_id: ''
   });
   const [submitting, setSubmitting] = useState(false);
@@ -40,6 +44,18 @@ const SectionManagement: React.FC = () => {
     }
   };
 
+  const fetchAcademicYears = async () => {
+    const { data, error } = await academicYearService.getAcademicYears();
+    if (!error && data) {
+      setAcademicYears(data);
+      // Set default academic year if creating new
+      if (!selectedSection && data.length > 0) {
+        const activeYear = data.find(y => y.is_active) || data[0];
+        setFormData(prev => ({ ...prev, academic_year_id: activeYear.id }));
+      }
+    }
+  };
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchSections();
@@ -49,6 +65,7 @@ const SectionManagement: React.FC = () => {
 
   useEffect(() => {
     fetchTeachers();
+    fetchAcademicYears();
   }, []);
 
   const handleOpenModal = (section?: Section) => {
@@ -57,15 +74,16 @@ const SectionManagement: React.FC = () => {
       setFormData({
         name: section.name,
         grade_level: section.grade_level,
-        academic_year: section.academic_year,
+        academic_year_id: section.academic_year_id,
         adviser_id: section.adviser_id || ''
       });
     } else {
       setSelectedSection(null);
+      const activeYear = academicYears.find(y => y.is_active) || academicYears[0];
       setFormData({
         name: '',
         grade_level: '',
-        academic_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+        academic_year_id: activeYear?.id || '',
         adviser_id: ''
       });
     }
@@ -77,20 +95,26 @@ const SectionManagement: React.FC = () => {
     setSubmitting(true);
     setError('');
 
+    if (!formData.academic_year_id) {
+      setError('Please select an academic year');
+      setSubmitting(false);
+      return;
+    }
+
     let result;
     if (selectedSection) {
       result = await sectionService.updateSection(
         selectedSection.id,
         formData.name,
         formData.grade_level,
-        formData.academic_year,
+        formData.academic_year_id,
         formData.adviser_id || null
       );
     } else {
       result = await sectionService.createSection(
         formData.name,
         formData.grade_level,
-        formData.academic_year,
+        formData.academic_year_id,
         formData.adviser_id || null
       );
     }
@@ -144,7 +168,11 @@ const SectionManagement: React.FC = () => {
         </div>
       </div>
 
-      {error && <StatusMessage status="error" message={error} />}
+      <ErrorModal 
+        isOpen={!!error} 
+        message={error} 
+        onClose={() => setError('')} 
+      />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -179,7 +207,7 @@ const SectionManagement: React.FC = () => {
                   <tr key={section.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900">{section.name}</td>
                     <td className="px-6 py-4 text-gray-600">{section.grade_level}</td>
-                    <td className="px-6 py-4 text-gray-600">{section.academic_year}</td>
+                    <td className="px-6 py-4 text-gray-600">{section.academic_year_name}</td>
                     <td className="px-6 py-4 text-gray-600">
                       {section.adviser_first_name ? (
                         <div className="flex items-center gap-2">
@@ -261,14 +289,19 @@ const SectionManagement: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Academic Year
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. 2023-2024"
-                  value={formData.academic_year}
-                  onChange={(e) => setFormData({ ...formData, academic_year: e.target.value })}
-                />
+                  value={formData.academic_year_id}
+                  onChange={(e) => setFormData({ ...formData, academic_year_id: e.target.value })}
+                >
+                  <option value="">Select academic year</option>
+                  {academicYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.name} {year.is_active ? '(Current)' : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

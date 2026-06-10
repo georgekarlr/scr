@@ -7,6 +7,7 @@ import { Course } from '../../../types/course';
 import { courseService } from '../../../services/courseService';
 import { studentService } from '../../../services/studentService';
 import { sectionService, Section } from '../../../services/sectionService';
+import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const StudentProfiles: React.FC = () => {
@@ -61,7 +62,7 @@ const StudentProfiles: React.FC = () => {
   };
 
   const fetchSections = async (courseId?: string | null) => {
-    const { data } = await sectionService.getSections(courseId);
+    const { data } = await sectionService.getSections({ search_term: courseId });
     if (data) setSections(data);
   };
 
@@ -173,7 +174,11 @@ const StudentProfiles: React.FC = () => {
         </div>
       </div>
 
-      {error && <StatusMessage status="error" message={error} />}
+      <ErrorModal 
+        isOpen={!!error} 
+        message={error} 
+        onClose={() => setError('')} 
+      />
 
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
