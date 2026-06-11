@@ -18,6 +18,7 @@ import SubjectManagement from './pages/dashboard/admin/SubjectManagement';
 import CourseManagement from './pages/dashboard/admin/CourseManagement';
 import SectionManagement from './pages/dashboard/admin/SectionManagement';
 import StudentProfiles from './pages/dashboard/admin/StudentProfiles';
+import TeacherProfiles from './pages/dashboard/admin/TeacherProfiles';
 import ClassManagement from './pages/dashboard/admin/ClassManagement';
 import AcademicYearManagement from './pages/dashboard/admin/AcademicYearManagement';
 import GradingPeriodManagement from './pages/dashboard/admin/GradingPeriodManagement';
@@ -111,6 +112,7 @@ const App: React.FC = () => {
                       <Route path="account" element={<div>Account Settings (Coming Soon)</div>} />
                       <Route path="staff" element={<UserManagement />} />
                       <Route path="student-profiles" element={<StudentProfiles />} />
+                      <Route path="teacher-profiles" element={<TeacherProfiles />} />
                       
                       {/* Generic Placeholders for other routes */}
                       <Route path="departments" element={<div>Departments Management (Coming Soon)</div>} />

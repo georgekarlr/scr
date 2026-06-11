@@ -59,6 +59,7 @@ const Sidebar: React.FC = () => {
           <>
               <NavItem to="/dashboard/staff" label="Users" icon={<Users size={18} />} />
               <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<GraduationCap size={18} />} />
+              <NavItem to="/dashboard/teacher-profiles" label="Teacher Profiles" icon={<Users size={18} />} />
               <NavItem to="/dashboard/academic-years" label="Academic Years" icon={<Calendar size={18} />} />
               <NavItem to="/dashboard/grading-periods" label="Grading Periods" icon={<ClipboardList size={18} />} />
               <NavItem to="/dashboard/courses" label="Courses" icon={<GraduationCap size={18} />} />
@@ -75,6 +76,7 @@ const Sidebar: React.FC = () => {
         return (
           <>
             <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/teacher-profiles" label="Teacher Profiles" icon={<Users size={18} />} />
             <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
             <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />

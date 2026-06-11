@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { TeachingSchedule } from '../types/teacher'
+import { TeachingSchedule, TeacherListItem, TeacherProfileData } from '../types/teacher'
 import { ClassGradebook } from '../types/grade'
 
 export interface ClassGrade {
@@ -88,6 +88,43 @@ export const teacherService = {
       return { data: data as boolean, error: null }
     } catch (error: any) {
       console.error('Unexpected error in upsertStudentGrade:', error)
+      return { data: null, error }
+    }
+  },
+
+  async getTeachersList(searchTerm?: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_teachers_list', {
+        search_term: searchTerm || null
+      })
+
+      if (error) {
+        console.error('Error fetching teachers list:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as TeacherListItem[], error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in getTeachersList:', error)
+      return { data: null, error }
+    }
+  },
+
+  async getTeacherProfile(teacherId: string, academicYearId: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_teacher_profile', {
+        p_teacher_id: teacherId,
+        p_academic_year_id: academicYearId
+      })
+
+      if (error) {
+        console.error('Error fetching teacher profile:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as TeacherProfileData, error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in getTeacherProfile:', error)
       return { data: null, error }
     }
   }
