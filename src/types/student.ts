@@ -21,3 +21,73 @@ export interface StudentFilters {
   filter_student_type?: string | null;
   filter_student_id_number?: string | null;
 }
+
+export interface StudentDashboardSummary {
+  profile: {
+    student_id_number: string | null;
+    full_name: string;
+    course_code: string | null;
+    course_name: string | null;
+    year_level: string | null;
+    student_type: string | null;
+  };
+  academics: {
+    total_enrolled_units: number;
+    current_gwa: number;
+  };
+  finance: {
+    remaining_balance: number;
+    is_cleared: boolean;
+  };
+}
+
+export interface GradeEntry {
+  period_name: string;
+  grade: number;
+  remarks: string | null;
+}
+
+export interface StudentReportCard {
+  class_id: string;
+  subject_code: string;
+  subject_name: string;
+  units: number;
+  grades_list: GradeEntry[];
+  final_average: number;
+}
+
+export interface StudentSchedule {
+  enrollment_id: string;
+  class_id: string;
+  subject_code: string;
+  subject_name: string;
+  units: number;
+  section_name: string;
+  teacher_first_name: string;
+  teacher_last_name: string;
+  room_name: string | null;
+  room_building: string | null;
+  days_of_week: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface StudentTOR {
+  student: {
+    student_id_number: string | null;
+    full_name: string;
+    current_course: string | null;
+    date_generated: string;
+  };
+  records: Array<{
+    academic_year: string;
+    semester: string;
+    year_level_taken: string;
+    course_taken: string;
+    subject_code: string;
+    subject_name: string;
+    units: number;
+    final_grade: number | null;
+    remarks: string | null;
+  }>;
+}

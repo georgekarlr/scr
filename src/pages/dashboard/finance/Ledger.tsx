@@ -6,7 +6,7 @@ import { studentService } from '../../../services/studentService';
 import { courseService } from '../../../services/courseService';
 import { subjectService } from '../../../services/subjectService';
 import { useAuth } from '../../../contexts/AuthContext';
-import { LedgerEntry, TransactionType, FeeItem } from '../../../types/finance';
+import { LedgerEntry, TransactionType, FeeItem, SOAResult } from '../../../types/finance';
 import { AcademicYear } from '../../../types/academicYear';
 import { Student } from '../../../types/student';
 import ErrorModal from '../../../components/ui/ErrorModal';
@@ -21,8 +21,9 @@ const Ledger: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedAY, setSelectedAY] = useState<string>('');
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [balance, setBalance] = useState<number>(0);
+  const [soaData, setSoaData] = useState<SOAResult | null>(null);
   const [feeItems, setFeeItems] = useState<FeeItem[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>('1st Semester');
   
   const [loading, setLoading] = useState(true);
   const [ledgerLoading, setLedgerLoading] = useState(false);
@@ -115,21 +116,25 @@ const Ledger: React.FC = () => {
   const fetchLedger = async (studentId: string, ayId: string) => {
     setLedgerLoading(true);
     try {
-      const [ledgerRes, balanceRes] = await Promise.all([
+      const [ledgerRes, soaRes] = await Promise.all([
         financeService.getTransactions({
           filter_academic_year_id: ayId,
           filter_student_id: studentId,
           filter_type: filterType || null,
           filter_date: filterDate || null
         }),
-        financeService.getStudentBalance(studentId, ayId)
+        financeService.generateStudentSOA({
+          p_student_id: studentId,
+          p_academic_year_id: ayId,
+          p_semester: selectedSemester
+        })
       ]);
 
       if (ledgerRes.error) throw ledgerRes.error;
-      if (balanceRes.error) throw balanceRes.error;
-
+      if (soaRes.error) throw soaRes.error;
+      
       setLedger(ledgerRes.data || []);
-      setBalance(balanceRes.data || 0);
+      setSoaData(soaRes.data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -169,7 +174,7 @@ const Ledger: React.FC = () => {
     if (selectedStudent && selectedAY) {
       fetchLedger(selectedStudent.student_id, selectedAY);
     }
-  }, [selectedAY, filterType, filterDate]);
+  }, [selectedAY, selectedSemester, filterType, filterDate]);
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -435,43 +440,57 @@ const Ledger: React.FC = () => {
           ) : (
             <>
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-500">Current Balance</span>
                     <Wallet className="w-5 h-5 text-blue-500" />
                   </div>
-                  <div className={`text-2xl font-bold ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ₱{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <div className={`text-2xl font-bold ${(soaData?.summary.remaining_balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    ₱{(soaData?.summary.remaining_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Outstanding amount for the selected year</p>
                 </div>
+
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-500">Amount Due Now</span>
+                    <CreditCard className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <div className={`text-2xl font-bold ${soaData?.summary.amount_due_now && soaData.summary.amount_due_now > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    ₱{(soaData?.summary.amount_due_now || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {soaData?.summary.active_grading_period ? `Period: ${soaData.summary.active_grading_period}` : 'No active grading period'}
+                  </p>
+                </div>
+
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center">
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-1 xl:grid-cols-3 gap-2">
                     <button
                       onClick={() => setIsChargeModalOpen(true)}
-                      className="flex-1 bg-red-50 text-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                      className="bg-red-50 text-red-600 px-3 py-2 rounded-lg font-semibold hover:bg-red-100 transition-colors flex items-center justify-center gap-2 text-sm"
                     >
-                      <Plus size={18} /> Charge
+                      <Plus size={16} /> Charge
                     </button>
                     <button
                       onClick={() => setIsPaymentModalOpen(true)}
-                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                      className="bg-green-600 text-white px-3 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm"
                     >
-                      <CreditCard size={18} /> Payment
+                      <CreditCard size={16} /> Payment
                     </button>
                     <button
                       onClick={() => setIsDiscountModalOpen(true)}
-                      className="flex-1 bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-semibold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                      className="bg-indigo-50 text-indigo-600 px-3 py-2 rounded-lg font-semibold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 text-sm"
                     >
-                      <Plus size={18} /> Discount
+                      <Plus size={16} /> Discount
                     </button>
                   </div>
                   <button
                     onClick={() => setIsAutoBillModalOpen(true)}
-                    className="mt-2 w-full bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                    className="mt-2 w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg font-semibold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 text-sm"
                   >
-                    <History size={18} /> Auto-Bill Tuition
+                    <History size={16} /> Auto-Bill Tuition
                   </button>
                 </div>
               </div>
@@ -499,6 +518,15 @@ const Ledger: React.FC = () => {
                       {academicYears.map(ay => (
                         <option key={ay.id} value={ay.id}>{ay.name}</option>
                       ))}
+                    </select>
+                    <select
+                      value={selectedSemester}
+                      onChange={(e) => setSelectedSemester(e.target.value)}
+                      className="text-sm border-gray-300 rounded-md focus:ring-blue-500"
+                    >
+                      <option value="1st Semester">1st Semester</option>
+                      <option value="2nd Semester">2nd Semester</option>
+                      <option value="Summer">Summer</option>
                     </select>
                   </div>
                 </div>
@@ -685,7 +713,7 @@ const Ledger: React.FC = () => {
                   type="number"
                   step="0.01"
                   required
-                  max={balance > 0 ? balance : undefined}
+                  max={(soaData?.summary.remaining_balance || 0) > 0 ? soaData?.summary.remaining_balance : undefined}
                   value={paymentData.p_amount}
                   onChange={(e) => setPaymentData({ ...paymentData, p_amount: parseFloat(e.target.value) })}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"

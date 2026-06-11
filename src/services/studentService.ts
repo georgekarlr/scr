@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { Student, StudentFilters } from '../types/student'
+import { Student, StudentFilters, StudentDashboardSummary, StudentReportCard, StudentSchedule, StudentTOR } from '../types/student'
 
 export const studentService = {
   async getStudentsList(filters: StudentFilters = {}) {
@@ -75,6 +75,84 @@ export const studentService = {
       return { data: updatedProfiles.length > 0 ? updatedProfiles[0] : null, error: null }
     } catch (error: any) {
       console.error('Unexpected error in updateStudentProfile:', error)
+      return { data: null, error }
+    }
+  },
+
+  async getStudentDashboardSummary(studentId: string, academicYearId: string, semester: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_student_dashboard_summary', {
+        p_student_id: studentId,
+        p_academic_year_id: academicYearId,
+        p_semester: semester
+      })
+
+      if (error) {
+        console.error('Error fetching student dashboard summary:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as StudentDashboardSummary, error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in getStudentDashboardSummary:', error)
+      return { data: null, error }
+    }
+  },
+
+  async getStudentReportCard(studentId: string, academicYearId: string, semester: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_student_report_card', {
+        p_student_id: studentId,
+        p_academic_year_id: academicYearId,
+        p_semester: semester
+      })
+
+      if (error) {
+        console.error('Error fetching student report card:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as StudentReportCard[], error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in getStudentReportCard:', error)
+      return { data: null, error }
+    }
+  },
+
+  async getStudentSchedule(studentId: string, academicYearId: string, semester: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_student_schedule', {
+        p_student_id: studentId,
+        p_academic_year_id: academicYearId,
+        p_semester: semester
+      })
+
+      if (error) {
+        console.error('Error fetching student schedule:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as StudentSchedule[], error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in getStudentSchedule:', error)
+      return { data: null, error }
+    }
+  },
+
+  async generateStudentTOR(studentId: string) {
+    try {
+      const { data, error } = await supabase.rpc('generate_student_tor', {
+        p_student_id: studentId
+      })
+
+      if (error) {
+        console.error('Error generating student TOR:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as StudentTOR, error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in generateStudentTOR:', error)
       return { data: null, error }
     }
   }

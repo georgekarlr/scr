@@ -22,6 +22,7 @@ const GradingPeriodManagement: React.FC = () => {
     name: '',
     academic_year_id: '',
     semester: '1st Semester',
+    required_payment_percentage: 100,
     is_active: true
   });
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +64,7 @@ const GradingPeriodManagement: React.FC = () => {
         name: period.name,
         academic_year_id: period.academic_year_id,
         semester: period.semester,
+        required_payment_percentage: period.required_payment_percentage,
         is_active: period.is_active
       });
     } else {
@@ -72,6 +74,7 @@ const GradingPeriodManagement: React.FC = () => {
         name: '',
         academic_year_id: activeYear?.id || '',
         semester: '1st Semester',
+        required_payment_percentage: 100,
         is_active: true
       });
     }
@@ -90,6 +93,7 @@ const GradingPeriodManagement: React.FC = () => {
         formData.name,
         formData.academic_year_id,
         formData.semester,
+        formData.required_payment_percentage,
         formData.is_active
       );
     } else {
@@ -97,6 +101,7 @@ const GradingPeriodManagement: React.FC = () => {
         formData.name,
         formData.academic_year_id,
         formData.semester,
+        formData.required_payment_percentage,
         formData.is_active
       );
     }
@@ -189,6 +194,7 @@ const GradingPeriodManagement: React.FC = () => {
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Name</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Academic Year</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Semester</th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Payment %</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Actions</th>
               </tr>
@@ -219,6 +225,7 @@ const GradingPeriodManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-gray-600">{period.academic_year_name}</td>
                     <td className="px-6 py-4 text-gray-600">{period.semester}</td>
+                    <td className="px-6 py-4 text-gray-600">{period.required_payment_percentage}%</td>
                     <td className="px-6 py-4">
                       {period.is_active ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -319,6 +326,23 @@ const GradingPeriodManagement: React.FC = () => {
                   <option value="2nd Semester">2nd Semester</option>
                   <option value="Summer">Summer</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Required Payment Percentage *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.required_payment_percentage}
+                  onChange={(e) => setFormData({ ...formData, required_payment_percentage: parseFloat(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  placeholder="e.g., 50.0"
+                />
               </div>
 
               <div className="flex items-center gap-2">

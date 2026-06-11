@@ -14,7 +14,9 @@ import {
   BatchAutoBillTuitionResult,
   ApplyDiscountParams,
   BatchChargeSpecificFeeParams,
-  BatchChargeSpecificFeeResult
+  BatchChargeSpecificFeeResult,
+  GenerateStudentSOAParams,
+  SOAResult
 } from '../types/finance'
 
 export const financeService = {
@@ -83,27 +85,12 @@ export const financeService = {
     }
   },
 
-  async getStudentLedger(studentId: string, academicYearId: string) {
+  async generateStudentSOA(params: GenerateStudentSOAParams) {
     try {
-      const { data, error } = await supabase.rpc('get_student_ledger', {
-        p_student_id: studentId,
-        p_academic_year_id: academicYearId
-      })
+      const { data, error } = await supabase.rpc('generate_student_soa', params)
+      console.log("data", data)
       if (error) return { data: null, error }
-      return { data: data as LedgerEntry[], error: null }
-    } catch (err) {
-      return { data: null, error: err }
-    }
-  },
-
-  async getStudentBalance(studentId: string, academicYearId: string) {
-    try {
-      const { data, error } = await supabase.rpc('get_student_balance', {
-        p_student_id: studentId,
-        p_academic_year_id: academicYearId
-      })
-      if (error) return { data: null, error }
-      return { data: data as number, error: null }
+      return { data: data as SOAResult, error: null }
     } catch (err) {
       return { data: null, error: err }
     }
@@ -179,5 +166,6 @@ export const financeService = {
     } catch (err) {
       return { data: null, error: err }
     }
-  }
+  },
+
 }

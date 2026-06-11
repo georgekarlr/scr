@@ -57,65 +57,51 @@ const Sidebar: React.FC = () => {
       case 'super_admin':
         return (
           <>
-            <NavItem to="/dashboard/settings" label="Settings" icon={<Settings size={18} />} />
-            <NavItem to="/dashboard/academic-years" label="Academic Years" icon={<Calendar size={18} />} />
-            <NavItem to="/dashboard/grading-periods" label="Grading Periods" icon={<ClipboardList size={18} />} />
-            <NavItem to="/dashboard/rooms" label="Rooms" icon={<DoorOpen size={18} />} />
-            <NavItem to="/dashboard/departments" label="Departments" icon={<Users size={18} />} />
-            <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<GraduationCap size={18} />} />
-            <NavItem to="/dashboard/courses" label="Courses" icon={<GraduationCap size={18} />} />
-            <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
-            <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
-            <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
-            <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
-            <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
+              <NavItem to="/dashboard/staff" label="Users" icon={<Users size={18} />} />
+              <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<GraduationCap size={18} />} />
+              <NavItem to="/dashboard/academic-years" label="Academic Years" icon={<Calendar size={18} />} />
+              <NavItem to="/dashboard/grading-periods" label="Grading Periods" icon={<ClipboardList size={18} />} />
+              <NavItem to="/dashboard/courses" label="Courses" icon={<GraduationCap size={18} />} />
+              <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
+              <NavItem to="/dashboard/rooms" label="Rooms" icon={<DoorOpen size={18} />} />
+              <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
+              <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
+              <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
+              <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
             <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
-            <NavItem to="/dashboard/staff" label="Users" icon={<Users size={18} />} />
           </>
         );
       case 'registrar':
         return (
           <>
-            <NavItem to="/dashboard/approvals" label="User Approvals" icon={<CheckSquare size={18} />} />
-            <NavItem to="/dashboard/academic-years" label="Academic Years" icon={<Calendar size={18} />} />
-            <NavItem to="/dashboard/grading-periods" label="Grading Periods" icon={<ClipboardList size={18} />} />
-            <NavItem to="/dashboard/rooms" label="Rooms" icon={<DoorOpen size={18} />} />
             <NavItem to="/dashboard/student-profiles" label="Student Profiles" icon={<ClipboardList size={18} />} />
-            <NavItem to="/dashboard/courses" label="Courses" icon={<GraduationCap size={18} />} />
             <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
-            <NavItem to="/dashboard/subjects" label="Subjects" icon={<BookOpen size={18} />} />
             <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
-            <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
-            <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
-            <NavItem to="/dashboard/directory" label="Staff Directory" icon={<Users size={18} />} />
           </>
         );
       case 'cashier':
         return (
           <>
             <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
-            <NavItem to="/dashboard/payments" label="Payments" icon={<CreditCard size={18} />} />
             <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
-            <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<Users size={18} />} />
-            <NavItem to="/dashboard/requests" label="Requests Inbox" icon={<Inbox size={18} />} />
           </>
         );
       case 'teacher':
         return (
           <>
-            <NavItem to="/dashboard/my-classes" label="My Classes" icon={<ListTodo size={18} />} />
-            <NavItem to="/dashboard/student-request" label="Add Student Request" icon={<GraduationCap size={18} />} />
-            <NavItem to="/dashboard/gradebook" label="Gradebook" icon={<BookOpen size={18} />} />
-            <NavItem to="/dashboard/attendance-history" label="Attendance Records" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/my-classes" label="Teaching Schedule" icon={<Calendar size={18} />} />
+            <NavItem to="/dashboard/gradebook" label="Grade Entry" icon={<ClipboardList size={18} />} />
+            <NavItem to="/dashboard/full-gradebook" label="Full Gradebook" icon={<BookOpen size={18} />} />
           </>
         );
       case 'student':
         return (
           <>
+            <NavItem to="/dashboard" label="Dashboard" icon={<LayoutDashboard size={18} />} />
             <NavItem to="/dashboard/my-ledger" label="My Ledger" icon={<ReceiptText size={18} />} />
+            <NavItem to="/dashboard/my-schedule" label="My Schedule" icon={<Calendar size={18} />} />
             <NavItem to="/dashboard/my-grades" label="My Grades" icon={<GraduationCap size={18} />} />
-            <NavItem to="/dashboard/my-attendance" label="My Attendance" icon={<ClipboardList size={18} />} />
           </>
         );
       default:
@@ -166,9 +152,9 @@ const Sidebar: React.FC = () => {
           </h3>
         </div>
         <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
-          <NavItem to="/dashboard" label="Overview" icon={<LayoutDashboard size={18} />} />
+          {/*<NavItem to="/dashboard" label="Overview" icon={<LayoutDashboard size={18} />} />
           <NavItem to="/dashboard/account" label="Account" icon={<User size={18} />} />
-          <hr className="my-2 border-gray-100" />
+          <hr className="my-2 border-gray-100" />*/}
           {renderNavLinks()}
         </nav>
         <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-2">

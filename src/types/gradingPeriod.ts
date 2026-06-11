@@ -4,6 +4,7 @@ export interface GradingPeriod {
   academic_year_id: string;
   academic_year_name: string;
   semester: string;
+  required_payment_percentage: number;
   is_active: boolean;
 }
 

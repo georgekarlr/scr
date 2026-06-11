@@ -23,9 +23,15 @@ import AcademicYearManagement from './pages/dashboard/admin/AcademicYearManageme
 import GradingPeriodManagement from './pages/dashboard/admin/GradingPeriodManagement';
 import RoomManagement from './pages/dashboard/admin/RoomManagement';
 import EnrollmentManagement from './pages/dashboard/admin/EnrollmentManagement';
+import TeachingSchedule from './pages/dashboard/teacher/TeachingSchedule';
+import Gradebook from './pages/dashboard/teacher/Gradebook';
+import FullGradebook from './pages/dashboard/teacher/FullGradebook';
 import FeeItems from './pages/dashboard/finance/FeeItems';
 import Ledger from './pages/dashboard/finance/Ledger';
 import MyLedger from './pages/dashboard/finance/MyLedger';
+import StudentDashboard from './pages/dashboard/student/StudentDashboard';
+import MyGrades from './pages/dashboard/student/MyGrades';
+import MySchedule from './pages/dashboard/student/MySchedule';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -71,6 +77,17 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
+const StudentDashboardRedirect: React.FC = () => {
+  const { user } = useAuth();
+  const role = user?.user_metadata?.role;
+  
+  if (role === 'student') {
+    return <StudentDashboard />;
+  }
+  
+  return <DashboardOverview />;
+};
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -90,7 +107,7 @@ const App: React.FC = () => {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Routes>
-                      <Route index element={<DashboardOverview />} />
+                      <Route index element={<StudentDashboardRedirect />} />
                       <Route path="account" element={<div>Account Settings (Coming Soon)</div>} />
                       <Route path="staff" element={<UserManagement />} />
                       <Route path="student-profiles" element={<StudentProfiles />} />
@@ -110,14 +127,18 @@ const App: React.FC = () => {
                       <Route path="enrollment" element={<EnrollmentManagement />} />
                       <Route path="fee-items" element={<FeeItems />} />
                       <Route path="ledger" element={<Ledger />} />
-                      <Route path="payments" element={<Ledger />} />
+                      {/*<Route path="payments" element={<Ledger />} />*/}
                       <Route path="my-ledger" element={<MyLedger />} />
                       <Route path="requests" element={<div>Requests Inbox (Coming Soon)</div>} />
-                      <Route path="my-classes" element={<div>My Classes (Coming Soon)</div>} />
+                      <Route path="my-classes" element={<TeachingSchedule />} />
+                      <Route path="teacher/gradebook/:classId" element={<Gradebook />} />
                       <Route path="student-request" element={<div>Add Student Request (Coming Soon)</div>} />
-                      <Route path="gradebook" element={<div>Gradebook (Coming Soon)</div>} />
+                      <Route path="gradebook" element={<Gradebook />} />
+                      <Route path="full-gradebook" element={<FullGradebook />} />
+                      <Route path="full-gradebook/:classId" element={<FullGradebook />} />
                       <Route path="attendance-history" element={<div>Attendance Records (Coming Soon)</div>} />
-                      <Route path="my-grades" element={<div>My Grades (Coming Soon)</div>} />
+                      <Route path="my-grades" element={<MyGrades />} />
+                      <Route path="my-schedule" element={<MySchedule />} />
                       <Route path="my-attendance" element={<div>My Attendance (Coming Soon)</div>} />
                       
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -3,7 +3,7 @@ import { ReceiptText, Calendar, Wallet, History, AlertCircle } from 'lucide-reac
 import { financeService } from '../../../services/financeService';
 import { academicYearService } from '../../../services/academicYearService';
 import { useAuth } from '../../../contexts/AuthContext';
-import { LedgerEntry } from '../../../types/finance';
+import { SOAResult } from '../../../types/finance';
 import { AcademicYear } from '../../../types/academicYear';
 import ErrorModal from '../../../components/ui/ErrorModal';
 
@@ -11,8 +11,8 @@ const MyLedger: React.FC = () => {
   const { user } = useAuth();
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [selectedAY, setSelectedAY] = useState<string>('');
-  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [balance, setBalance] = useState<number>(0);
+  const [selectedSemester, setSelectedSemester] = useState<string>('1st Semester');
+  const [soaData, setSoaData] = useState<SOAResult | null>(null);
   
   const [loading, setLoading] = useState(true);
   const [ledgerLoading, setLedgerLoading] = useState(false);
@@ -40,16 +40,14 @@ const MyLedger: React.FC = () => {
     if (!user?.id) return;
     setLedgerLoading(true);
     try {
-      const [ledgerRes, balanceRes] = await Promise.all([
-        financeService.getStudentLedger(user.id, ayId),
-        financeService.getStudentBalance(user.id, ayId)
-      ]);
+      const { data, error } = await financeService.generateStudentSOA({
+        p_student_id: user.id,
+        p_academic_year_id: ayId,
+        p_semester: selectedSemester
+      });
 
-      if (ledgerRes.error) throw ledgerRes.error;
-      if (balanceRes.error) throw balanceRes.error;
-
-      setLedger(ledgerRes.data || []);
-      setBalance(balanceRes.data || 0);
+      if (error) throw error;
+      setSoaData(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -65,7 +63,7 @@ const MyLedger: React.FC = () => {
     if (selectedAY && user?.id) {
       fetchLedger(selectedAY);
     }
-  }, [selectedAY, user?.id]);
+  }, [selectedAY, selectedSemester, user?.id]);
 
   if (loading) {
     return (
@@ -97,32 +95,53 @@ const MyLedger: React.FC = () => {
               <option key={ay.id} value={ay.id}>{ay.name} {ay.is_active ? '(Current)' : ''}</option>
             ))}
           </select>
+          <div className="w-px h-4 bg-gray-200 mx-1"></div>
+          <select
+            value={selectedSemester}
+            onChange={(e) => setSelectedSemester(e.target.value)}
+            className="text-sm border-none focus:ring-0 bg-transparent"
+          >
+            <option value="1st Semester">1st Semester</option>
+            <option value="2nd Semester">2nd Semester</option>
+            <option value="Summer">Summer</option>
+          </select>
         </div>
       </div>
 
       {/* Summary Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 col-span-1 md:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center gap-4">
-            <div className={`p-4 rounded-full ${balance > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+            <div className={`p-4 rounded-full flex-shrink-0 ${(soaData?.summary.remaining_balance || 0) > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
               <Wallet size={32} />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Remaining Balance</p>
-              <h2 className={`text-3xl font-black ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                ₱{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider truncate">Remaining Balance</p>
+              <h2 className={`text-2xl font-black truncate ${(soaData?.summary.remaining_balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                ₱{(soaData?.summary.remaining_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </h2>
             </div>
           </div>
-          {balance > 0 && (
-            <div className="mt-4 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100">
-              <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-              <p>Please settle your outstanding balance at the Cashier's office to avoid any inconvenience during enrollment or graduation.</p>
-            </div>
-          )}
         </div>
 
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-xl shadow-md text-white">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className={`p-4 rounded-full flex-shrink-0 ${soaData?.summary.amount_due_now && soaData.summary.amount_due_now > 0 ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>
+              <Calendar size={32} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider truncate">Amount Due Now</p>
+              <h2 className={`text-2xl font-black truncate ${soaData?.summary.amount_due_now && soaData.summary.amount_due_now > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                ₱{(soaData?.summary.amount_due_now || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </h2>
+              <p className="text-[10px] text-gray-400 uppercase mt-1 truncate">
+                {soaData?.summary.active_grading_period ? `Period: ${soaData.summary.active_grading_period}` : 'No active period'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-xl shadow-md text-white sm:col-span-2 lg:col-span-1">
           <h3 className="text-lg font-bold mb-2">Quick Info</h3>
           <ul className="space-y-2 text-blue-50 text-sm">
             <li className="flex justify-between">
@@ -163,7 +182,7 @@ const MyLedger: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : ledger.length === 0 ? (
+              ) : !soaData || soaData.transactions.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-20 text-center text-gray-500">
                     <History className="w-12 h-12 mx-auto mb-4 opacity-10" />
@@ -171,34 +190,34 @@ const MyLedger: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                ledger.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
+                soaData.transactions.map((entry, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(entry.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      {new Date(entry.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       <div className="font-medium">{entry.description}</div>
-                      {entry.cashier_name && (
-                        <div className="text-[10px] text-gray-400 uppercase tracking-tight">Processed by {entry.cashier_name}</div>
+                      {entry.cashier && (
+                        <div className="text-[10px] text-gray-400 uppercase tracking-tight">Processed by {entry.cashier}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
-                        entry.transaction_type === 'charge' 
+                        entry.type === 'charge' 
                           ? 'bg-red-50 text-red-700 border border-red-100' 
-                          : entry.transaction_type === 'payment'
+                          : entry.type === 'payment'
                             ? 'bg-green-50 text-green-700 border border-green-100'
                             : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                       }`}>
-                        {entry.transaction_type}
+                        {entry.type}
                       </span>
                     </td>
                     <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-black ${
-                      entry.transaction_type === 'charge' ? 'text-red-600' : 
-                      entry.transaction_type === 'payment' ? 'text-green-600' :
+                      entry.type === 'charge' ? 'text-red-600' : 
+                      entry.type === 'payment' ? 'text-green-600' :
                       'text-indigo-600'
                     }`}>
-                      {entry.transaction_type === 'charge' ? '+' : '-'} ₱{entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {entry.type === 'charge' ? '+' : '-'} ₱{entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))
@@ -209,8 +228,8 @@ const MyLedger: React.FC = () => {
         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
           <div className="text-right">
             <span className="text-sm text-gray-500 mr-4 font-medium">TOTAL BALANCE:</span>
-            <span className={`text-xl font-black ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              ₱{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <span className={`text-xl font-black ${(soaData?.summary.remaining_balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              ₱{(soaData?.summary.remaining_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>

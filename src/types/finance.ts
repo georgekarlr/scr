@@ -113,6 +113,37 @@ export interface BatchChargeSpecificFeeResult {
   total_revenue_generated: number;
 }
 
+export interface GenerateStudentSOAParams {
+  p_student_id: string;
+  p_academic_year_id: string;
+  p_semester: string;
+}
+
+export interface SOAResult {
+  student: {
+    student_id_number: string;
+    full_name: string;
+    year_level: string;
+    course_code: string;
+    semester: string;
+  };
+  transactions: {
+    date: string;
+    type: TransactionType;
+    description: string;
+    amount: number;
+    cashier: string | null;
+  }[];
+  summary: {
+    total_charges: number;
+    total_discounts: number;
+    total_payments: number;
+    remaining_balance: number;
+    active_grading_period: string;
+    amount_due_now: number;
+  };
+}
+
 export interface FinanceFilters {
   filter_academic_year_id: string;
 }

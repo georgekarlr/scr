@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Search, Filter, Plus, GraduationCap, School, X, BookOpen, Hash, UserCircle, Eye } from 'lucide-react';
+import { Users, Search, Filter, Plus, GraduationCap, School, X, BookOpen, Hash, UserCircle, Eye, FileText, ClipboardList, Calendar } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { UserProfile } from '../../../types/auth';
-import { Student } from '../../../types/student';
+import { Student, StudentTOR } from '../../../types/student';
 import { Course } from '../../../types/course';
 import { courseService } from '../../../services/courseService';
 import { studentService } from '../../../services/studentService';
 import { sectionService, Section } from '../../../services/sectionService';
 import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
+import StudentTORModal from '../../../components/dashboard/StudentTORModal';
+import StudentReportCardModal from '../../../components/dashboard/StudentReportCardModal';
+import StudentScheduleModal from '../../../components/dashboard/StudentScheduleModal';
 
 const StudentProfiles: React.FC = () => {
   const { listSchoolUsers, listUsers, createUser, updateUser, profile } = useAuth();
@@ -25,6 +28,11 @@ const StudentProfiles: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isTORModalOpen, setIsTORModalOpen] = useState(false);
+  const [isReportCardModalOpen, setIsReportCardModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [torData, setTorData] = useState<StudentTOR | null>(null);
+  const [torLoading, setTorLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -121,6 +129,29 @@ const StudentProfiles: React.FC = () => {
       setIsViewModalOpen(true);
     }
     setLoading(false);
+  };
+
+  const handleViewTOR = async (studentId: string) => {
+    setTorLoading(true);
+    setIsTORModalOpen(true);
+    const { data, error } = await studentService.generateStudentTOR(studentId);
+    if (error) {
+      setError(error.message);
+      setIsTORModalOpen(false);
+    } else if (data) {
+      setTorData(data);
+    }
+    setTorLoading(false);
+  };
+
+  const handleViewReportCard = (student: Student) => {
+    setSelectedStudent(student);
+    setIsReportCardModalOpen(true);
+  };
+
+  const handleViewSchedule = (student: Student) => {
+    setSelectedStudent(student);
+    setIsScheduleModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,6 +304,9 @@ const StudentProfiles: React.FC = () => {
                     student={student} 
                     onEdit={() => handleOpenModal(student)} 
                     onView={() => handleViewStudent(student.student_id)}
+                    onViewTOR={() => handleViewTOR(student.student_id)}
+                    onViewReportCard={() => handleViewReportCard(student)}
+                    onViewSchedule={() => handleViewSchedule(student)}
                   />
                 ))
               )}
@@ -280,6 +314,34 @@ const StudentProfiles: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <StudentTORModal 
+        isOpen={isTORModalOpen}
+        onClose={() => {
+          setIsTORModalOpen(false);
+          setTorData(null);
+        }}
+        torData={torData}
+        loading={torLoading}
+      />
+
+      <StudentReportCardModal 
+        isOpen={isReportCardModalOpen}
+        onClose={() => {
+          setIsReportCardModalOpen(false);
+          setSelectedStudent(null);
+        }}
+        student={selectedStudent}
+      />
+
+      <StudentScheduleModal 
+        isOpen={isScheduleModalOpen}
+        onClose={() => {
+          setIsScheduleModalOpen(false);
+          setSelectedStudent(null);
+        }}
+        student={selectedStudent}
+      />
 
       {/* Modal */}
       {isModalOpen && (
@@ -510,7 +572,14 @@ const StudentProfiles: React.FC = () => {
   );
 };
 
-const StudentRow: React.FC<{ student: Student; onEdit: () => void; onView: () => void }> = ({ student, onEdit, onView }) => (
+const StudentRow: React.FC<{ 
+  student: Student; 
+  onEdit: () => void; 
+  onView: () => void; 
+  onViewTOR: () => void;
+  onViewReportCard: () => void;
+  onViewSchedule: () => void;
+}> = ({ student, onEdit, onView, onViewTOR, onViewReportCard, onViewSchedule }) => (
   <tr className="hover:bg-gray-50 transition-colors">
     <td className="px-6 py-4">
       <div className="flex items-center gap-3">
@@ -540,6 +609,27 @@ const StudentRow: React.FC<{ student: Student; onEdit: () => void; onView: () =>
     </td>
     <td className="px-6 py-4 text-right">
       <div className="flex justify-end gap-3">
+        <button 
+          onClick={onViewSchedule}
+          className="text-gray-600 hover:text-blue-600 transition-colors"
+          title="View Schedule"
+        >
+          <Calendar size={18} />
+        </button>
+        <button 
+          onClick={onViewReportCard}
+          className="text-gray-600 hover:text-blue-600 transition-colors"
+          title="View Report Card"
+        >
+          <ClipboardList size={18} />
+        </button>
+        <button 
+          onClick={onViewTOR}
+          className="text-gray-600 hover:text-blue-600 transition-colors"
+          title="View Transcript"
+        >
+          <FileText size={18} />
+        </button>
         <button 
           onClick={onView}
           className="text-gray-600 hover:text-blue-600 transition-colors"
