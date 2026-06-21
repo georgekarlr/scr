@@ -7,6 +7,7 @@ import { Course } from '../../../types/course';
 import { courseService } from '../../../services/courseService';
 import { studentService } from '../../../services/studentService';
 import { sectionService, Section } from '../../../services/sectionService';
+import { YEAR_LEVELS } from '../../../constants/academic';
 import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 import StudentTORModal from '../../../components/dashboard/StudentTORModal';
@@ -25,6 +26,7 @@ const StudentProfiles: React.FC = () => {
   const [filterCourseId, setFilterCourseId] = useState('');
   const [filterSectionId, setFilterSectionId] = useState('');
   const [filterStudentType, setFilterStudentType] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -43,7 +45,8 @@ const StudentProfiles: React.FC = () => {
     studentType: '',
     yearLevel: '',
     sectionId: '',
-    courseId: ''
+    courseId: '',
+    department: ''
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,7 +68,7 @@ const StudentProfiles: React.FC = () => {
   };
 
   const fetchCourses = async () => {
-    const { data } = await courseService.getCourses();
+    const { data } = await courseService.getCourses(undefined, filterDepartment || undefined);
     if (data) setCourses(data);
   };
 
@@ -76,6 +79,9 @@ const StudentProfiles: React.FC = () => {
 
   useEffect(() => {
     fetchCourses();
+  }, [filterDepartment]);
+
+  useEffect(() => {
     fetchSections();
   }, []);
 
@@ -84,7 +90,7 @@ const StudentProfiles: React.FC = () => {
       fetchUsers();
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, filterYearLevel, filterCourseId, filterSectionId, filterStudentType]);
+  }, [searchTerm, filterYearLevel, filterCourseId, filterSectionId, filterStudentType, filterDepartment]);
 
   const handleOpenModal = (student?: Student) => {
     if (student) {
@@ -100,8 +106,17 @@ const StudentProfiles: React.FC = () => {
         studentType: student.student_type || '',
         yearLevel: student.year_level || '',
         sectionId: student.section_id || '',
-        courseId: student.course_id || ''
+        courseId: student.course_id || '',
+        department: '' // We'll need to find this from courses if editing
       });
+      
+      // Try to find the department for the current student's course
+      if (student.course_id) {
+        const studentCourse = courses.find(c => c.id === student.course_id);
+        if (studentCourse) {
+          setFormData(prev => ({ ...prev, department: studentCourse.department }));
+        }
+      }
     } else {
       setEditingUser(null);
       setFormData({
@@ -113,7 +128,8 @@ const StudentProfiles: React.FC = () => {
         studentType: '',
         yearLevel: '',
         sectionId: '',
-        courseId: ''
+        courseId: '',
+        department: 'College'
       });
     }
     setIsModalOpen(true);
@@ -224,6 +240,21 @@ const StudentProfiles: React.FC = () => {
         </div>
         <div className="flex flex-wrap gap-4">
           <select 
+            value={filterDepartment}
+            onChange={(e) => {
+              setFilterDepartment(e.target.value);
+              setFilterCourseId('');
+              setFilterSectionId('');
+              setFilterYearLevel('');
+            }}
+            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="">All Departments</option>
+            <option value="College">College</option>
+            <option value="Junior High School">Junior High School</option>
+            <option value="Senior High School">Senior High School</option>
+          </select>
+          <select 
             value={filterStudentType}
             onChange={(e) => setFilterStudentType(e.target.value)}
             className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -238,10 +269,16 @@ const StudentProfiles: React.FC = () => {
             className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             <option value="">All Years</option>
-            <option value="1st Year">1st Year</option>
-            <option value="2nd Year">2nd Year</option>
-            <option value="3rd Year">3rd Year</option>
-            <option value="4th Year">4th Year</option>
+            {filterDepartment ? (
+              YEAR_LEVELS[filterDepartment]?.map(level => (
+                <option key={level} value={level}>{level}</option>
+              ))
+            ) : (
+              // Default to all year levels if no department selected
+              Object.values(YEAR_LEVELS).flat().map(level => (
+                <option key={level} value={level}>{level}</option>
+              ))
+            )}
           </select>
           <select 
             value={filterCourseId}
@@ -416,6 +453,26 @@ const StudentProfiles: React.FC = () => {
                 </>
               )}
 
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">Department</label>
+                <select
+                  required
+                  value={formData.department}
+                  onChange={(e) => {
+                    setFormData({...formData, department: e.target.value, courseId: '', sectionId: '', yearLevel: ''});
+                    // We need to fetch courses for this department
+                    courseService.getCourses(undefined, e.target.value).then(({ data }) => {
+                      if (data) setCourses(data);
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="College">College</option>
+                  <option value="Junior High School">Junior High School</option>
+                  <option value="Senior High School">Senior High School</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-700">Student Type</label>
@@ -437,10 +494,9 @@ const StudentProfiles: React.FC = () => {
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">Select Year</option>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
+                    {formData.department && YEAR_LEVELS[formData.department]?.map(level => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">

@@ -7,6 +7,7 @@ export const classService = {
       const { data, error } = await supabase.rpc('get_classes', {
         filter_academic_year_id: filters.filter_academic_year_id || null,
         filter_semester: filters.filter_semester || null,
+        filter_department: filters.filter_department || null,
         filter_teacher_id: filters.filter_teacher_id || null,
         filter_subject_id: filters.filter_subject_id || null,
         search_term: filters.search_term || null
@@ -29,6 +30,7 @@ export const classService = {
       const { data, error } = await supabase.rpc('create_class', {
         p_subject_id: params.subject_id,
         p_teacher_id: params.teacher_id,
+        p_department: params.department,
         p_semester: params.semester,
         p_academic_year_id: params.academic_year_id,
         p_section_name: params.section_name || 'A',

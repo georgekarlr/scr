@@ -24,7 +24,8 @@ const ClassManagement: React.FC = () => {
   const [filters, setFilters] = useState<ClassFilters>({
     search_term: '',
     filter_academic_year_id: '',
-    filter_semester: ''
+    filter_semester: '',
+    filter_department: ''
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
@@ -32,6 +33,7 @@ const ClassManagement: React.FC = () => {
     subject_id: '',
     teacher_id: '',
     co_teacher_id: '',
+    department: 'College',
     semester: '1st Semester',
     academic_year_id: '',
     section_name: 'A',
@@ -80,6 +82,7 @@ const ClassManagement: React.FC = () => {
 
   useEffect(() => {
     fetchInitialData();
+    // Re-fetch classes if filters change, but initial data only once
   }, []);
 
   useEffect(() => {
@@ -96,6 +99,7 @@ const ClassManagement: React.FC = () => {
         subject_id: cls.subject_id,
         teacher_id: cls.teacher_id,
         co_teacher_id: cls.co_teacher_id || '',
+        department: cls.department,
         semester: cls.semester,
         academic_year_id: cls.academic_year_id,
         section_name: cls.section_name,
@@ -112,6 +116,7 @@ const ClassManagement: React.FC = () => {
         subject_id: '',
         teacher_id: '',
         co_teacher_id: '',
+        department: filters.filter_department || 'College',
         semester: '1st Semester',
         academic_year_id: activeYear?.id || '',
         section_name: 'A',
@@ -150,6 +155,7 @@ const ClassManagement: React.FC = () => {
         const { error } = await classService.createClass({
           subject_id: formData.subject_id,
           teacher_id: formData.teacher_id,
+          department: formData.department,
           semester: formData.semester,
           academic_year_id: formData.academic_year_id,
           section_name: formData.section_name,
@@ -215,6 +221,16 @@ const ClassManagement: React.FC = () => {
             onChange={(e) => setFilters({ ...filters, search_term: e.target.value })}
           />
         </div>
+        <select
+          className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          value={filters.filter_department || ''}
+          onChange={(e) => setFilters({ ...filters, filter_department: e.target.value })}
+        >
+          <option value="">All Departments</option>
+          <option value="College">College</option>
+          <option value="Junior High School">Junior High School</option>
+          <option value="Senior High School">Senior High School</option>
+        </select>
         <select
           className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           value={filters.filter_academic_year_id || ''}
@@ -401,6 +417,21 @@ const ClassManagement: React.FC = () => {
                     {teachers.map(t => (
                       <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-gray-700">Department</label>
+                  <select
+                    required
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    disabled={!!selectedClass}
+                  >
+                    <option value="College">College</option>
+                    <option value="Junior High School">Junior High School</option>
+                    <option value="Senior High School">Senior High School</option>
                   </select>
                 </div>
 

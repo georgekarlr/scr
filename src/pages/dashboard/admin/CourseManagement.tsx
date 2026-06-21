@@ -15,13 +15,14 @@ const CourseManagement: React.FC = () => {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
+    department: '',
     description: ''
   });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchCourses = async () => {
     setLoading(true);
-    const { data, error } = await courseService.getCourses(searchTerm);
+    const { data, error } = await courseService.getCourses(searchTerm, formData.department || undefined);
     if (error) {
       setError(error.message || 'Failed to fetch courses');
     } else if (data) {
@@ -35,7 +36,7 @@ const CourseManagement: React.FC = () => {
       fetchCourses();
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, formData.department]);
 
   const handleOpenModal = (course?: Course) => {
     if (course) {
@@ -43,6 +44,7 @@ const CourseManagement: React.FC = () => {
       setFormData({
         code: course.code,
         name: course.name,
+        department: course.department,
         description: course.description || ''
       });
     } else {
@@ -50,6 +52,7 @@ const CourseManagement: React.FC = () => {
       setFormData({
         code: '',
         name: '',
+        department: 'College',
         description: ''
       });
     }
@@ -67,12 +70,14 @@ const CourseManagement: React.FC = () => {
         selectedCourse.id,
         formData.code,
         formData.name,
+        formData.department,
         formData.description
       );
     } else {
       result = await courseService.createCourse(
         formData.code,
         formData.name,
+        formData.department,
         formData.description
       );
     }
@@ -113,8 +118,8 @@ const CourseManagement: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-        <div className="relative">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
@@ -123,6 +128,21 @@ const CourseManagement: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+        <div className="w-full md:w-48">
+          <select
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            value={formData.department}
+            onChange={(e) => {
+              setFormData({ ...formData, department: e.target.value });
+              setSearchTerm(''); // Optional: clear search when changing department
+            }}
+          >
+            <option value="">All Departments</option>
+            <option value="College">College</option>
+            <option value="Junior High School">Junior High School</option>
+            <option value="Senior High School">Senior High School</option>
+          </select>
         </div>
       </div>
 
@@ -139,6 +159,7 @@ const CourseManagement: React.FC = () => {
               <tr className="bg-gray-50 border-bottom border-gray-200">
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600">Code</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600">Course Name</th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Department</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600">Description</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
               </tr>
@@ -146,7 +167,7 @@ const CourseManagement: React.FC = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     <div className="flex flex-col items-center gap-2">
                       <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                       <span>Loading courses...</span>
@@ -155,7 +176,7 @@ const CourseManagement: React.FC = () => {
                 </tr>
               ) : courses.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     No courses found.
                   </td>
                 </tr>
@@ -164,6 +185,15 @@ const CourseManagement: React.FC = () => {
                   <tr key={course.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900">{course.code}</td>
                     <td className="px-6 py-4 text-gray-600">{course.name}</td>
+                    <td className="px-6 py-4 text-gray-600">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      course.department === 'College' ? 'bg-blue-100 text-blue-700' : 
+                      course.department === 'Senior High School' ? 'bg-orange-100 text-orange-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {course.department}
+                    </span>
+                    </td>
                     <td className="px-6 py-4 text-gray-500 max-w-xs truncate">
                       {course.description || '-'}
                     </td>
@@ -232,6 +262,22 @@ const CourseManagement: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <select
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                >
+                  <option value="College">College</option>
+                  <option value="Junior High School">Junior High School</option>
+                  <option value="Senior High School">Senior High School</option>
+                </select>
               </div>
 
               <div>

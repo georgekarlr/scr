@@ -1,5 +1,6 @@
 export interface Class {
   id: string;
+  department: string;
   subject_id: string;
   subject_code: string;
   subject_name: string;
@@ -27,6 +28,7 @@ export interface Class {
 export interface ClassFilters {
   filter_academic_year_id?: string | null;
   filter_semester?: string | null;
+  filter_department?: string | null;
   filter_teacher_id?: string | null;
   filter_subject_id?: string | null;
   search_term?: string | null;
@@ -35,6 +37,7 @@ export interface ClassFilters {
 export interface CreateClassParams {
   subject_id: string;
   teacher_id: string;
+  department: string;
   semester: string;
   academic_year_id: string;
   section_name?: string;

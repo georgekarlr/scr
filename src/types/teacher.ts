@@ -1,5 +1,6 @@
 export interface TeachingSchedule {
   class_id: string;
+  department: string;
   subject_code: string;
   subject_name: string;
   subject_units: number;

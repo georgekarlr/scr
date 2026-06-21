@@ -17,9 +17,11 @@ const GradingPeriodManagement: React.FC = () => {
   const [filters, setFilters] = useState<GradingPeriodFilters>({
     filter_academic_year_id: '',
     filter_semester: '',
+    filter_department: ''
   });
   const [formData, setFormData] = useState({
     name: '',
+    department: 'College',
     academic_year_id: '',
     semester: '1st Semester',
     required_payment_percentage: 100,
@@ -62,6 +64,7 @@ const GradingPeriodManagement: React.FC = () => {
       setSelectedPeriod(period);
       setFormData({
         name: period.name,
+        department: period.department,
         academic_year_id: period.academic_year_id,
         semester: period.semester,
         required_payment_percentage: period.required_payment_percentage,
@@ -72,6 +75,7 @@ const GradingPeriodManagement: React.FC = () => {
       const activeYear = academicYears.find(y => y.is_active) || academicYears[0];
       setFormData({
         name: '',
+        department: filters.filter_department || 'College',
         academic_year_id: activeYear?.id || '',
         semester: '1st Semester',
         required_payment_percentage: 100,
@@ -91,6 +95,7 @@ const GradingPeriodManagement: React.FC = () => {
       result = await gradingPeriodService.updateGradingPeriod(
         selectedPeriod.id,
         formData.name,
+        formData.department,
         formData.academic_year_id,
         formData.semester,
         formData.required_payment_percentage,
@@ -99,6 +104,7 @@ const GradingPeriodManagement: React.FC = () => {
     } else {
       result = await gradingPeriodService.createGradingPeriod(
         formData.name,
+        formData.department,
         formData.academic_year_id,
         formData.semester,
         formData.required_payment_percentage,
@@ -150,6 +156,19 @@ const GradingPeriodManagement: React.FC = () => {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[150px]">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+          <select 
+            value={filters.filter_department || ''}
+            onChange={(e) => setFilters({ ...filters, filter_department: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          >
+            <option value="">All Departments</option>
+            <option value="College">College</option>
+            <option value="Junior High School">Junior High School</option>
+            <option value="Senior High School">Senior High School</option>
+          </select>
+        </div>
         <div className="flex-1 min-w-[200px]">
           <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
             <Filter size={14} /> Academic Year
@@ -179,7 +198,7 @@ const GradingPeriodManagement: React.FC = () => {
           </select>
         </div>
         <button 
-          onClick={() => setFilters({ filter_academic_year_id: '', filter_semester: '' })}
+          onClick={() => setFilters({ filter_academic_year_id: '', filter_semester: '', filter_department: 'College' })}
           className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition-colors"
         >
           Reset
@@ -192,6 +211,7 @@ const GradingPeriodManagement: React.FC = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Name</th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Department</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Academic Year</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Semester</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Payment %</th>
@@ -202,13 +222,13 @@ const GradingPeriodManagement: React.FC = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     Loading grading periods...
                   </td>
                 </tr>
               ) : gradingPeriods.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     No grading periods found.
                   </td>
                 </tr>
@@ -222,6 +242,15 @@ const GradingPeriodManagement: React.FC = () => {
                         </div>
                         <span className="font-medium text-gray-900">{period.name}</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        period.department === 'College' ? 'bg-blue-100 text-blue-700' : 
+                        period.department === 'Senior High School' ? 'bg-orange-100 text-orange-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        {period.department}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">{period.academic_year_name}</td>
                     <td className="px-6 py-4 text-gray-600">{period.semester}</td>
@@ -293,6 +322,23 @@ const GradingPeriodManagement: React.FC = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   placeholder="e.g., Midterm, Final"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Department *
+                </label>
+                <select
+                  required
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  disabled={!!selectedPeriod}
+                >
+                  <option value="College">College</option>
+                  <option value="Junior High School">Junior High School</option>
+                  <option value="Senior High School">Senior High School</option>
+                </select>
               </div>
 
               <div>

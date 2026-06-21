@@ -112,9 +112,18 @@ const TeachingSchedulePage: React.FC = () => {
               <div className="p-5">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mb-2">
-                      {item.subject_code}
-                    </span>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        {item.subject_code}
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        item.department === 'College' ? 'bg-blue-100 text-blue-800' :
+                        item.department === 'Senior High School' ? 'bg-orange-100 text-orange-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {item.department}
+                      </span>
+                    </div>
                     <h3 className="text-lg font-bold text-gray-900 leading-tight">{item.subject_name}</h3>
                   </div>
                   {item.is_co_teacher && (
