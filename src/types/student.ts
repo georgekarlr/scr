@@ -8,6 +8,7 @@ export interface Student {
   course_id: string | null;
   course_code: string | null;
   course_name?: string | null;
+  department: string | null;
   section_id: string | null;
   section_name: string | null;
   created_at?: string;
@@ -20,6 +21,7 @@ export interface StudentFilters {
   filter_year_level?: string | null;
   filter_student_type?: string | null;
   filter_student_id_number?: string | null;
+  filter_department?: string | null;
 }
 
 export interface StudentDashboardSummary {

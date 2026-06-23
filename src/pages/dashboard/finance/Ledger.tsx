@@ -5,8 +5,10 @@ import { academicYearService } from '../../../services/academicYearService';
 import { studentService } from '../../../services/studentService';
 import { courseService } from '../../../services/courseService';
 import { subjectService } from '../../../services/subjectService';
+import { YEAR_LEVELS } from '../../../constants/academic';
 import { useAuth } from '../../../contexts/AuthContext';
-import { LedgerEntry, TransactionType, FeeItem, SOAResult } from '../../../types/finance';
+import { sectionService } from '../../../services/sectionService';
+import { LedgerEntry, TransactionType, FeeItem, SOAResult, BatchProcessPaymentResult } from '../../../types/finance';
 import { AcademicYear } from '../../../types/academicYear';
 import { Student } from '../../../types/student';
 import ErrorModal from '../../../components/ui/ErrorModal';
@@ -20,7 +22,6 @@ const Ledger: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedAY, setSelectedAY] = useState<string>('');
-  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [soaData, setSoaData] = useState<SOAResult | null>(null);
   const [feeItems, setFeeItems] = useState<FeeItem[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>('1st Semester');
@@ -51,16 +52,31 @@ const Ledger: React.FC = () => {
   const [isBatchSuccessModalOpen, setIsBatchSuccessModalOpen] = useState(false);
 
   const [isBatchChargeModalOpen, setIsBatchChargeModalOpen] = useState(false);
+  const [isBatchPaymentModalOpen, setIsBatchPaymentModalOpen] = useState(false);
   const [batchChargeData, setBatchChargeData] = useState({
     p_fee_item_id: '',
     p_semester: '1st Semester',
+    p_filter_department: '',
     p_filter_course_id: '',
     p_filter_year_level: '',
     p_filter_subject_id: '',
     p_filter_student_type: ''
   });
+  const [batchPaymentData, setBatchPaymentData] = useState({
+    p_amount: 0,
+    p_transaction_type: 'payment' as 'payment' | 'discount',
+    p_description: '',
+    p_semester: '1st Semester',
+    p_filter_department: '',
+    p_filter_course_id: '',
+    p_filter_year_level: '',
+    p_filter_section_id: ''
+  });
   const [courses, setCourses] = useState<any[]>([]);
   const [subjectsList, setSubjectsList] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
+
+  const [batchPaymentResult, setBatchPaymentResult] = useState<BatchProcessPaymentResult | null>(null);
 
   const [chargeData, setChargeData] = useState({
     p_amount: 0,
@@ -116,24 +132,13 @@ const Ledger: React.FC = () => {
   const fetchLedger = async (studentId: string, ayId: string) => {
     setLedgerLoading(true);
     try {
-      const [ledgerRes, soaRes] = await Promise.all([
-        financeService.getTransactions({
-          filter_academic_year_id: ayId,
-          filter_student_id: studentId,
-          filter_type: filterType || null,
-          filter_date: filterDate || null
-        }),
-        financeService.generateStudentSOA({
-          p_student_id: studentId,
-          p_academic_year_id: ayId,
-          p_semester: selectedSemester
-        })
-      ]);
+      const soaRes = await financeService.generateStudentSOA({
+        p_student_id: studentId,
+        p_academic_year_id: ayId,
+        p_semester: selectedSemester
+      });
 
-      if (ledgerRes.error) throw ledgerRes.error;
       if (soaRes.error) throw soaRes.error;
-      
-      setLedger(ledgerRes.data || []);
       setSoaData(soaRes.data);
     } catch (err: any) {
       setError(err.message);
@@ -149,12 +154,14 @@ const Ledger: React.FC = () => {
   };
 
   const fetchFilters = async () => {
-    const [coursesRes, subjectsRes] = await Promise.all([
+    const [coursesRes, subjectsRes, sectionsRes] = await Promise.all([
       courseService.getCourses(),
-      subjectService.getSubjects()
+      subjectService.getSubjects(),
+      sectionService.getSections()
     ]);
     if (coursesRes.data) setCourses(coursesRes.data);
     if (subjectsRes.data) setSubjectsList(subjectsRes.data);
+    if (sectionsRes.data) setSections(sectionsRes.data);
   };
 
   useEffect(() => {
@@ -191,6 +198,7 @@ const Ledger: React.FC = () => {
     const { error } = await financeService.chargeStudent({
       p_student_id: selectedStudent.student_id,
       p_academic_year_id: selectedAY,
+      p_semester: selectedSemester,
       p_amount: chargeData.p_amount,
       p_description: chargeData.p_description,
       p_fee_item_id: chargeData.p_fee_item_id || null
@@ -210,6 +218,7 @@ const Ledger: React.FC = () => {
     const { error } = await financeService.processPayment({
       p_student_id: selectedStudent.student_id,
       p_academic_year_id: selectedAY,
+      p_semester: selectedSemester,
       p_amount: paymentData.p_amount,
       p_description: paymentData.p_description
     });
@@ -228,6 +237,7 @@ const Ledger: React.FC = () => {
     const { error } = await financeService.applyDiscount({
       p_student_id: selectedStudent.student_id,
       p_academic_year_id: selectedAY,
+      p_semester: selectedSemester,
       p_amount: discountData.p_amount,
       p_description: discountData.p_description
     });
@@ -325,6 +335,7 @@ const Ledger: React.FC = () => {
       p_fee_item_id: batchChargeData.p_fee_item_id,
       p_academic_year_id: selectedAY,
       p_semester: batchChargeData.p_semester,
+      p_filter_department: batchChargeData.p_filter_department || null,
       p_filter_course_id: batchChargeData.p_filter_course_id || null,
       p_filter_year_level: batchChargeData.p_filter_year_level || null,
       p_filter_subject_id: batchChargeData.p_filter_subject_id || null,
@@ -335,6 +346,34 @@ const Ledger: React.FC = () => {
     else if (data) {
       setBatchAutoBillResult(data); // Reusing the same success state/type for consistency
       setIsBatchChargeModalOpen(false);
+      setIsBatchSuccessModalOpen(true);
+      if (selectedStudent) {
+        fetchLedger(selectedStudent.student_id, selectedAY);
+      }
+    }
+    setSubmitting(false);
+  };
+
+  const handleBatchPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAY) return;
+    setSubmitting(true);
+    const { data, error } = await financeService.batchProcessPayment({
+      p_amount: batchPaymentData.p_amount,
+      p_transaction_type: batchPaymentData.p_transaction_type,
+      p_description: batchPaymentData.p_description,
+      p_academic_year_id: selectedAY,
+      p_semester: batchPaymentData.p_semester,
+      p_filter_department: batchPaymentData.p_filter_department || null,
+      p_filter_course_id: batchPaymentData.p_filter_course_id || null,
+      p_filter_year_level: batchPaymentData.p_filter_year_level || null,
+      p_filter_section_id: batchPaymentData.p_filter_section_id || null
+    });
+
+    if (error) setError(error.message);
+    else if (data) {
+      setBatchPaymentResult(data);
+      setIsBatchPaymentModalOpen(false);
       setIsBatchSuccessModalOpen(true);
       if (selectedStudent) {
         fetchLedger(selectedStudent.student_id, selectedAY);
@@ -384,6 +423,13 @@ const Ledger: React.FC = () => {
             >
               <History size={18} />
               Batch Auto-Bill
+            </button>
+            <button
+              onClick={() => setIsBatchPaymentModalOpen(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <Wallet size={18} />
+              Batch Payment/Discount
             </button>
           </div>
         )}
@@ -578,53 +624,64 @@ const Ledger: React.FC = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {ledgerLoading ? (
                         <tr><td colSpan={4} className="px-6 py-4 text-center">Loading...</td></tr>
-                      ) : ledger.length === 0 ? (
+                      ) : (soaData?.transactions || []).length === 0 ? (
                         <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-500">No transactions found.</td></tr>
                       ) : (
-                        ledger.map((entry) => (
-                          <tr key={entry.id}>
+                        (soaData?.transactions || []).map((entry, idx) => (
+                          <tr key={entry.id || idx}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(entry.created_at).toLocaleDateString()}
+                              {new Date(entry.date).toLocaleDateString()}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {entry.description}
-                              {entry.cashier_name && (
-                                <div className="text-[10px] text-gray-400 uppercase">By {entry.cashier_name}</div>
+                              {entry.cashier && (
+                                <div className="text-[10px] text-gray-400 uppercase">By {entry.cashier}</div>
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                entry.transaction_type === 'charge' ? 'bg-red-100 text-red-800' : 
-                                entry.transaction_type === 'payment' ? 'bg-green-100 text-green-800' :
+                                entry.type === 'charge' ? 'bg-red-100 text-red-800' : 
+                                entry.type === 'payment' ? 'bg-green-100 text-green-800' :
                                 'bg-indigo-100 text-indigo-800'
                               }`}>
-                                {entry.transaction_type}
+                                {entry.type}
                               </span>
                             </td>
                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold ${
-                              entry.transaction_type === 'charge' ? 'text-red-600' : 
-                              entry.transaction_type === 'payment' ? 'text-green-600' :
+                              entry.type === 'charge' ? 'text-red-600' : 
+                              entry.type === 'payment' ? 'text-green-600' :
                               'text-indigo-600'
                             }`}>
-                              {entry.transaction_type === 'charge' ? '+' : '-'} ₱{entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              {entry.type === 'charge' ? '+' : '-'} ₱{entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
                             {isSuperAdmin && (
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div className="flex justify-end gap-2">
-                                  <button 
-                                    onClick={() => handleEditOpen(entry)}
-                                    className="text-blue-600 hover:text-blue-900" 
-                                    title="Edit Record"
-                                  >
-                                    <Edit2 size={16} />
-                                  </button>
-                                  <button 
-                                    onClick={() => handleDeleteRecord(entry.id)}
-                                    className="text-red-600 hover:text-red-900" 
-                                    title="Delete Record"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
+                                  {entry.id && (
+                                    <>
+                                      <button 
+                                        onClick={() => handleEditOpen({
+                                          id: entry.id,
+                                          created_at: entry.date,
+                                          transaction_type: entry.type,
+                                          description: entry.description,
+                                          amount: entry.amount,
+                                          cashier_name: entry.cashier
+                                        })}
+                                        className="text-blue-600 hover:text-blue-900" 
+                                        title="Edit Record"
+                                      >
+                                        <Edit2 size={16} />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDeleteRecord(entry.id)}
+                                        className="text-red-600 hover:text-red-900" 
+                                        title="Delete Record"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             )}
@@ -954,6 +1011,19 @@ const Ledger: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-900 mb-2">Filters (Optional)</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700">Department</label>
+                    <select
+                      value={batchChargeData.p_filter_department}
+                      onChange={(e) => setBatchChargeData({ ...batchChargeData, p_filter_department: e.target.value, p_filter_year_level: '' })}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                    >
+                      <option value="">All Departments</option>
+                      {Object.keys(YEAR_LEVELS).map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700">Course</label>
                     <select
                       value={batchChargeData.p_filter_course_id}
@@ -974,17 +1044,15 @@ const Ledger: React.FC = () => {
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
                     >
                       <option value="">All Year Levels</option>
-                      <option value="1st Year">1st Year</option>
-                      <option value="2nd Year">2nd Year</option>
-                      <option value="3rd Year">3rd Year</option>
-                      <option value="4th Year">4th Year</option>
-                      <option value="5th Year">5th Year</option>
-                      <option value="Grade 7">Grade 7</option>
-                      <option value="Grade 8">Grade 8</option>
-                      <option value="Grade 9">Grade 9</option>
-                      <option value="Grade 10">Grade 10</option>
-                      <option value="Grade 11">Grade 11</option>
-                      <option value="Grade 12">Grade 12</option>
+                      {batchChargeData.p_filter_department && YEAR_LEVELS[batchChargeData.p_filter_department] ? (
+                        YEAR_LEVELS[batchChargeData.p_filter_department].map(yl => (
+                          <option key={yl} value={yl}>{yl}</option>
+                        ))
+                      ) : (
+                        Object.values(YEAR_LEVELS).flat().map(yl => (
+                          <option key={yl} value={yl}>{yl}</option>
+                        ))
+                      )}
                     </select>
                   </div>
                   <div>
@@ -1077,34 +1145,196 @@ const Ledger: React.FC = () => {
       )}
 
       {/* Batch Success Modal */}
-      {isBatchSuccessModalOpen && batchAutoBillResult && (
+      {isBatchSuccessModalOpen && (batchAutoBillResult || batchPaymentResult) && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                <History size={32} />
+                {batchPaymentResult ? <Wallet size={32} /> : <History size={32} />}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Batch Billing Complete</h3>
-              <p className="text-gray-600 mb-6">The automated billing process has finished successfully.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {batchPaymentResult ? 'Batch Processing Complete' : 'Batch Billing Complete'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {batchPaymentResult 
+                  ? 'Payments/Discounts have been applied to the filtered students.'
+                  : 'The automated billing process has finished successfully.'}
+              </p>
               
               <div className="w-full bg-gray-50 rounded-lg p-4 space-y-2 mb-6 text-left">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Students Billed:</span>
-                  <span className="font-semibold text-gray-900">{batchAutoBillResult.students_billed}</span>
+                  <span className="text-gray-500">
+                    {batchPaymentResult ? 'Students Processed:' : 'Students Billed:'}
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {batchPaymentResult ? batchPaymentResult.students_processed : batchAutoBillResult.students_billed}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
-                  <span className="text-gray-500">Total Revenue Generated:</span>
-                  <span className="font-bold text-blue-600">₱{batchAutoBillResult.total_revenue_generated.toLocaleString()}</span>
+                  <span className="text-gray-500">
+                    {batchPaymentResult ? 'Total Value Applied:' : 'Total Revenue Generated:'}
+                  </span>
+                  <span className="font-bold text-blue-600">
+                    ₱{batchPaymentResult 
+                      ? batchPaymentResult.total_value_applied.toLocaleString() 
+                      : batchAutoBillResult.total_revenue_generated.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
               <button
-                onClick={() => setIsBatchSuccessModalOpen(false)}
+                onClick={() => {
+                  setIsBatchSuccessModalOpen(false);
+                  setBatchAutoBillResult(null);
+                  setBatchPaymentResult(null);
+                }}
                 className="w-full py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
               >
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Process Payment/Discount Modal */}
+      {isBatchPaymentModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-xl font-semibold text-gray-900">Batch Process Payment/Discount</h3>
+              <button onClick={() => setIsBatchPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-4 bg-green-50 border-b border-green-100 text-green-800 text-xs text-center">
+              Apply a payment or discount to a filtered group of students in bulk.
+            </div>
+            <form onSubmit={handleBatchPaymentSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <select
+                    required
+                    value={batchPaymentData.p_transaction_type}
+                    onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_transaction_type: e.target.value as 'payment' | 'discount' })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                  >
+                    <option value="payment">Payment</option>
+                    <option value="discount">Discount</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Amount</label>
+                  <input
+                    type="number"
+                    required
+                    min="0.01"
+                    step="0.01"
+                    value={batchPaymentData.p_amount}
+                    onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_amount: parseFloat(e.target.value) })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., DepEd Voucher Subsidy"
+                  value={batchPaymentData.p_description}
+                  onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_description: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Semester</label>
+                <select
+                  required
+                  value={batchPaymentData.p_semester}
+                  onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_semester: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                >
+                  <option value="1st Semester">1st Semester</option>
+                  <option value="2nd Semester">2nd Semester</option>
+                  <option value="Summer">Summer</option>
+                </select>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Filters (Optional)</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Department</label>
+                    <select
+                      value={batchPaymentData.p_filter_department}
+                      onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_filter_department: e.target.value, p_filter_year_level: '' })}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                    >
+                      <option value="">All Departments</option>
+                      {Object.keys(YEAR_LEVELS).map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Course</label>
+                    <select
+                      value={batchPaymentData.p_filter_course_id}
+                      onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_filter_course_id: e.target.value })}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                    >
+                      <option value="">All Courses</option>
+                      {courses.map(c => (
+                        <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Year Level</label>
+                    <select
+                      value={batchPaymentData.p_filter_year_level}
+                      onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_filter_year_level: e.target.value })}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                    >
+                      <option value="">All Year Levels</option>
+                      {batchPaymentData.p_filter_department && YEAR_LEVELS[batchPaymentData.p_filter_department] ? (
+                        YEAR_LEVELS[batchPaymentData.p_filter_department].map(yl => (
+                          <option key={yl} value={yl}>{yl}</option>
+                        ))
+                      ) : (
+                        Object.values(YEAR_LEVELS).flat().map(yl => (
+                          <option key={yl} value={yl}>{yl}</option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Section</label>
+                    <select
+                      value={batchPaymentData.p_filter_section_id}
+                      onChange={(e) => setBatchPaymentData({ ...batchPaymentData, p_filter_section_id: e.target.value })}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                    >
+                      <option value="">All Sections</option>
+                      {sections.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.course_code})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button type="button" onClick={() => setIsBatchPaymentModalOpen(false)} className="px-4 py-2 border rounded-md">Cancel</button>
+                <button type="submit" disabled={submitting} className="px-4 py-2 bg-green-600 text-white rounded-md disabled:opacity-50">
+                  {submitting ? 'Processing Batch...' : 'Apply Batch Payment'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

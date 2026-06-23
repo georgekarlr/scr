@@ -5,6 +5,7 @@ import { subjectService } from '../../../services/subjectService';
 import { userService } from '../../../services/userService';
 import { academicYearService } from '../../../services/academicYearService';
 import { roomService } from '../../../services/roomService';
+import { YEAR_LEVELS } from '../../../constants/academic';
 import { Class, ClassFilters } from '../../../types/class';
 import { Subject } from '../../../types/subject';
 import { UserProfile } from '../../../types/auth';

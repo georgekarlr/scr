@@ -34,6 +34,7 @@ export interface ChargeStudentParams {
   p_amount: number;
   p_description: string;
   p_academic_year_id: string;
+  p_semester: string;
   p_fee_item_id?: string | null;
 }
 
@@ -42,6 +43,7 @@ export interface ProcessPaymentParams {
   p_amount: number;
   p_description: string;
   p_academic_year_id: string;
+  p_semester: string;
 }
 
 export interface LedgerEntry {
@@ -58,6 +60,7 @@ export interface LedgerEntry {
 
 export interface GetTransactionsParams {
   filter_academic_year_id: string;
+  filter_semester?: string | null;
   filter_student_id?: string | null;
   filter_type?: TransactionType | null;
   filter_date?: string | null;
@@ -96,12 +99,14 @@ export interface ApplyDiscountParams {
   p_amount: number;
   p_description: string;
   p_academic_year_id: string;
+  p_semester: string;
 }
 
 export interface BatchChargeSpecificFeeParams {
   p_fee_item_id: string;
   p_academic_year_id: string;
   p_semester: string;
+  p_filter_department?: string | null;
   p_filter_course_id?: string | null;
   p_filter_year_level?: string | null;
   p_filter_subject_id?: string | null;
@@ -111,6 +116,23 @@ export interface BatchChargeSpecificFeeParams {
 export interface BatchChargeSpecificFeeResult {
   students_billed: number;
   total_revenue_generated: number;
+}
+
+export interface BatchProcessPaymentParams {
+  p_amount: number;
+  p_transaction_type: 'payment' | 'discount';
+  p_description: string;
+  p_academic_year_id: string;
+  p_semester: string;
+  p_filter_department?: string | null;
+  p_filter_course_id?: string | null;
+  p_filter_year_level?: string | null;
+  p_filter_section_id?: string | null;
+}
+
+export interface BatchProcessPaymentResult {
+  students_processed: number;
+  total_value_applied: number;
 }
 
 export interface GenerateStudentSOAParams {
@@ -128,6 +150,7 @@ export interface SOAResult {
     semester: string;
   };
   transactions: {
+    id: string;
     date: string;
     type: TransactionType;
     description: string;

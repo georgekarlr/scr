@@ -32,11 +32,20 @@ export const teacherService = {
     }
   },
 
-  async getMyTeachingSchedule(academicYearId: string, semester: string) {
+  async getMyTeachingSchedule(filters: {
+    academicYearId?: string;
+    semester?: string;
+    department?: string;
+    searchTerm?: string;
+    daysOfWeek?: string;
+  }) {
     try {
       const { data, error } = await supabase.rpc('get_my_teaching_schedule', {
-        p_academic_year_id: academicYearId,
-        p_semester: semester
+        filter_academic_year_id: filters.academicYearId || null,
+        filter_semester: filters.semester || null,
+        filter_department: filters.department || null,
+        search_term: filters.searchTerm || null,
+        filter_days_of_week: filters.daysOfWeek || null
       })
       console.log(data)
 

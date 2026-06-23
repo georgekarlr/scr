@@ -1,32 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Plus, X, Trash2, Calendar, UserPlus, BookOpen, GraduationCap, Users } from 'lucide-react';
+import { Search, Plus, X, Trash2, Calendar, UserPlus, BookOpen, GraduationCap, Users, Filter } from 'lucide-react';
 import { enrollmentService } from '../../../services/enrollmentService';
 import { studentService } from '../../../services/studentService';
+import { academicYearService } from '../../../services/academicYearService';
 import { Class, ClassFilters } from '../../../types/class';
 import { Student } from '../../../types/student';
 import { ClassRosterItem } from '../../../types/enrollment';
+import { AcademicYear } from '../../../types/academicYear';
 import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const EnrollmentManagement: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [roster, setRoster] = useState<ClassRosterItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [loading, setLoading] = useState(true);
   const [rosterLoading, setRosterLoading] = useState(false);
   const [error, setError] = useState('');
   const [classSearch, setClassSearch] = useState('');
+  const [filters, setFilters] = useState<ClassFilters>({
+    filter_academic_year_id: '',
+    filter_semester: '',
+    filter_department: ''
+  });
   const [studentSearch, setStudentSearch] = useState('');
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [enrollSubmitting, setEnrollSubmitting] = useState(false);
 
   const fetchClasses = async () => {
     setLoading(true);
-    const { data, error } = await enrollmentService.getClasses({ search_term: classSearch });
+    const { data, error } = await enrollmentService.getClasses({ 
+      ...filters,
+      search_term: classSearch 
+    });
     if (error) setError(error.message);
     else if (data) setClasses(data);
     setLoading(false);
+  };
+
+  const fetchAcademicYears = async () => {
+    const { data, error } = await academicYearService.getAcademicYears();
+    if (error) setError(error.message);
+    else if (data) {
+      setAcademicYears(data);
+      const activeYear = data.find(ay => ay.is_active);
+      if (activeYear) {
+        setFilters(prev => ({ ...prev, filter_academic_year_id: activeYear.id }));
+      }
+    }
   };
 
   const fetchRoster = async (classId: string) => {
@@ -38,15 +61,20 @@ const EnrollmentManagement: React.FC = () => {
   };
 
   const fetchStudents = async () => {
-    const { data, error } = await studentService.getStudentsList({ search_term: studentSearch });
+    if (!selectedClass) return;
+    const { data, error } = await enrollmentService.getUnenrolledStudents(selectedClass.id, studentSearch);
     if (error) setError(error.message);
     else if (data) setStudents(data);
   };
 
   useEffect(() => {
+    fetchAcademicYears();
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(fetchClasses, 300);
     return () => clearTimeout(timer);
-  }, [classSearch]);
+  }, [classSearch, filters]);
 
   useEffect(() => {
     if (isEnrollModalOpen) {
@@ -114,6 +142,39 @@ const EnrollmentManagement: React.FC = () => {
               value={classSearch}
               onChange={(e) => setClassSearch(e.target.value)}
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+            <select
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              value={filters.filter_department || ''}
+              onChange={(e) => setFilters({ ...filters, filter_department: e.target.value })}
+            >
+              <option value="">All Departments</option>
+              <option value="College">College</option>
+              <option value="Junior High School">Junior High School</option>
+              <option value="Senior High School">Senior High School</option>
+            </select>
+            <select
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              value={filters.filter_academic_year_id || ''}
+              onChange={(e) => setFilters({ ...filters, filter_academic_year_id: e.target.value })}
+            >
+              <option value="">All Years</option>
+              {academicYears.map(ay => (
+                <option key={ay.id} value={ay.id}>{ay.name}</option>
+              ))}
+            </select>
+            <select
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              value={filters.filter_semester || ''}
+              onChange={(e) => setFilters({ ...filters, filter_semester: e.target.value })}
+            >
+              <option value="">All Semesters</option>
+              <option value="1st Semester">1st Semester</option>
+              <option value="2nd Semester">2nd Semester</option>
+              <option value="Summer">Summer</option>
+            </select>
           </div>
 
           <div className="space-y-3 max-h-[600px] overflow-y-auto">

@@ -15,6 +15,8 @@ import {
   ApplyDiscountParams,
   BatchChargeSpecificFeeParams,
   BatchChargeSpecificFeeResult,
+  BatchProcessPaymentParams,
+  BatchProcessPaymentResult,
   GenerateStudentSOAParams,
   SOAResult
 } from '../types/finance'
@@ -69,7 +71,7 @@ export const financeService = {
     try {
       const { data, error } = await supabase.rpc('charge_student', params)
       if (error) return { data: null, error }
-      return { data: data[0] as string, error: null }
+      return { data: data[0]?.id as string, error: null }
     } catch (err) {
       return { data: null, error: err }
     }
@@ -79,7 +81,7 @@ export const financeService = {
     try {
       const { data, error } = await supabase.rpc('process_payment', params)
       if (error) return { data: null, error }
-      return { data: data[0] as string, error: null }
+      return { data: data[0]?.id as string, error: null }
     } catch (err) {
       return { data: null, error: err }
     }
@@ -88,7 +90,7 @@ export const financeService = {
   async generateStudentSOA(params: GenerateStudentSOAParams) {
     try {
       const { data, error } = await supabase.rpc('generate_student_soa', params)
-      console.log("data", data)
+      console.log("datsa", data)
       if (error) return { data: null, error }
       return { data: data as SOAResult, error: null }
     } catch (err) {
@@ -98,7 +100,14 @@ export const financeService = {
 
   async getTransactions(params: GetTransactionsParams) {
     try {
-      const { data, error } = await supabase.rpc('get_transactions', params)
+      const { data, error } = await supabase.rpc('get_transactions', {
+        filter_academic_year_id: params.filter_academic_year_id,
+        filter_semester: params.filter_semester || null,
+        filter_student_id: params.filter_student_id || null,
+        filter_type: params.filter_type || null,
+        filter_date: params.filter_date || null
+      })
+      console.log('data get_transactions', data)
       if (error) return { data: null, error }
       return { data: data as LedgerEntry[], error: null }
     } catch (err) {
@@ -152,7 +161,7 @@ export const financeService = {
     try {
       const { data, error } = await supabase.rpc('apply_discount', params)
       if (error) return { data: null, error }
-      return { data: data[0] as string, error: null }
+      return { data: data[0]?.id as string, error: null }
     } catch (err) {
       return { data: null, error: err }
     }
@@ -163,6 +172,16 @@ export const financeService = {
       const { data, error } = await supabase.rpc('batch_charge_specific_fee', params)
       if (error) return { data: null, error }
       return { data: data[0] as BatchChargeSpecificFeeResult, error: null }
+    } catch (err) {
+      return { data: null, error: err }
+    }
+  },
+
+  async batchProcessPayment(params: BatchProcessPaymentParams) {
+    try {
+      const { data, error } = await supabase.rpc('batch_process_payment', params)
+      if (error) return { data: null, error }
+      return { data: data[0] as BatchProcessPaymentResult, error: null }
     } catch (err) {
       return { data: null, error: err }
     }

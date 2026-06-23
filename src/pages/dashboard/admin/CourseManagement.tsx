@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GraduationCap, Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { courseService } from '../../../services/courseService';
+import { YEAR_LEVELS } from '../../../constants/academic';
 import { Course } from '../../../types/course';
 import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';

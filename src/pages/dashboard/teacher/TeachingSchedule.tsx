@@ -12,6 +12,9 @@ const TeachingSchedulePage: React.FC = () => {
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [selectedAY, setSelectedAY] = useState<string>('');
   const [selectedSemester, setSelectedSemester] = useState<string>('1st Semester');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedDays, setSelectedDays] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,10 +23,10 @@ const TeachingSchedulePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedAY && selectedSemester) {
+    if (selectedAY) {
       fetchSchedule();
     }
-  }, [selectedAY, selectedSemester]);
+  }, [selectedAY, selectedSemester, selectedDepartment, searchTerm, selectedDays]);
 
   const fetchAcademicYears = async () => {
     try {
@@ -46,7 +49,13 @@ const TeachingSchedulePage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const { data, error } = await teacherService.getMyTeachingSchedule(selectedAY, selectedSemester);
+      const { data, error } = await teacherService.getMyTeachingSchedule({
+        academicYearId: selectedAY,
+        semester: selectedSemester,
+        department: selectedDepartment || undefined,
+        searchTerm: searchTerm || undefined,
+        daysOfWeek: selectedDays || undefined
+      });
       if (error) throw error;
       setSchedules(data || []);
     } catch (err: any) {
@@ -66,6 +75,17 @@ const TeachingSchedulePage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+            <Search className="w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-sm w-32 md:w-48"
+            />
+          </div>
+
           <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
             <Calendar className="w-4 h-4 text-gray-400" />
             <select
@@ -89,6 +109,38 @@ const TeachingSchedulePage: React.FC = () => {
               <option value="1st Semester">1st Semester</option>
               <option value="2nd Semester">2nd Semester</option>
               <option value="Summer">Summer</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+            <Users className="w-4 h-4 text-gray-400" />
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-sm"
+            >
+              <option value="">All Departments</option>
+              <option value="College">College</option>
+              <option value="Senior High School">Senior High School</option>
+              <option value="Junior High School">Junior High School</option>
+              <option value="Elementary">Elementary</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+            <Clock className="w-4 h-4 text-gray-400" />
+            <select
+              value={selectedDays}
+              onChange={(e) => setSelectedDays(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-sm"
+            >
+              <option value="">All Days</option>
+              <option value="M">Monday</option>
+              <option value="T">Tuesday</option>
+              <option value="W">Wednesday</option>
+              <option value="TH">Thursday</option>
+              <option value="F">Friday</option>
+              <option value="S">Saturday</option>
             </select>
           </div>
         </div>

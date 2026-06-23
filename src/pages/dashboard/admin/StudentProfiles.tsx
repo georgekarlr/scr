@@ -46,7 +46,7 @@ const StudentProfiles: React.FC = () => {
     yearLevel: '',
     sectionId: '',
     courseId: '',
-    department: ''
+    department: 'College'
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,7 +57,8 @@ const StudentProfiles: React.FC = () => {
       filter_year_level: filterYearLevel || null,
       filter_course_id: filterCourseId || null,
       filter_section_id: filterSectionId || null,
-      filter_student_type: filterStudentType || null
+      filter_student_type: filterStudentType || null,
+      filter_department: filterDepartment || null
     });
     if (error) {
       setError(error.message);
@@ -107,16 +108,11 @@ const StudentProfiles: React.FC = () => {
         yearLevel: student.year_level || '',
         sectionId: student.section_id || '',
         courseId: student.course_id || '',
-        department: '' // We'll need to find this from courses if editing
+        department: Object.keys(YEAR_LEVELS).find(level =>
+            YEAR_LEVELS[level].includes(student.year_level as string)
+        ) ?? 'College'
+
       });
-      
-      // Try to find the department for the current student's course
-      if (student.course_id) {
-        const studentCourse = courses.find(c => c.id === student.course_id);
-        if (studentCourse) {
-          setFormData(prev => ({ ...prev, department: studentCourse.department }));
-        }
-      }
     } else {
       setEditingUser(null);
       setFormData({
@@ -129,7 +125,7 @@ const StudentProfiles: React.FC = () => {
         yearLevel: '',
         sectionId: '',
         courseId: '',
-        department: 'College'
+        department: ''
       });
     }
     setIsModalOpen(true);
@@ -594,6 +590,10 @@ const StudentProfiles: React.FC = () => {
                     <p className="text-sm text-gray-500">{selectedStudent.course_code}</p>
                   </div>
                   <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Department</label>
+                    <p className="text-gray-900 font-semibold">{selectedStudent.department || 'N/A'}</p>
+                  </div>
+                  <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Year Level</label>
                     <p className="text-gray-900 font-semibold">{selectedStudent.year_level || 'N/A'}</p>
                   </div>
@@ -655,6 +655,7 @@ const StudentRow: React.FC<{
     <td className="px-6 py-4">
       <div className="flex flex-col">
         <span className="font-semibold text-sm text-gray-900">{student.course_code || 'N/A'}</span>
+        <span className="text-xs text-gray-500">{student.department || 'N/A'}</span>
       </div>
     </td>
     <td className="px-6 py-4">
