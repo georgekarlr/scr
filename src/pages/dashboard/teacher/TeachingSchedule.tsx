@@ -123,7 +123,6 @@ const TeachingSchedulePage: React.FC = () => {
               <option value="College">College</option>
               <option value="Senior High School">Senior High School</option>
               <option value="Junior High School">Junior High School</option>
-              <option value="Elementary">Elementary</option>
             </select>
           </div>
 
