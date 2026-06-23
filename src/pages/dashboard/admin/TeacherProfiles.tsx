@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, UserCircle, Calendar, BookOpen, Clock, MapPin, Users, ChevronLeft, Plus, X } from 'lucide-react';
+import { Search, UserCircle, Calendar, BookOpen, Clock, MapPin, Users, ChevronLeft, Plus, X, Edit2 } from 'lucide-react';
 import { teacherService } from '../../../services/teacherService';
 import { academicYearService } from '../../../services/academicYearService';
 import { subjectService } from '../../../services/subjectService';
@@ -18,10 +18,12 @@ const TeacherProfiles: React.FC = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [teacherProfile, setTeacherProfile] = useState<TeacherProfileData | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [selectedYearId, setSelectedYearId] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -86,13 +88,14 @@ const TeacherProfiles: React.FC = () => {
 
   useEffect(() => {
     if (selectedTeacherId && selectedYearId) {
-      fetchTeacherProfile(selectedTeacherId, selectedYearId);
+      fetchTeacherProfile(selectedTeacherId, selectedYearId, selectedDepartment);
     }
-  }, [selectedTeacherId, selectedYearId]);
+  }, [selectedTeacherId, selectedYearId, selectedDepartment]);
 
-  const fetchTeacherProfile = async (teacherId: string, yearId: string) => {
+  const fetchTeacherProfile = async (teacherId: string, yearId: string, department?: string) => {
     setProfileLoading(true);
-    const { data, error } = await teacherService.getTeacherProfile(teacherId, yearId);
+    const { data, error } = await teacherService.getTeacherProfile(teacherId, yearId, department);
+    console.log("Teacher Profile Data:", data);
     if (error) {
       setError(error.message);
     } else if (data) {
@@ -110,26 +113,34 @@ const TeacherProfiles: React.FC = () => {
     setTeacherProfile(null);
   };
 
-  const handleOpenAddClassModal = () => {
+  const handleOpenAddClassModal = (cls?: any) => {
     fetchClassFormData();
-    setIsAddClassModalOpen(true);
-  };
+    if (cls) {
+      setSelectedClassId(cls.class_id);
+      // We need to find the subject_id by subject_code since the schedule only has code/name
+      // But wait, creating/updating class needs subject_id. 
+      // Actually, if we are editing, we should probably have the subject_id.
+      // Let's check how ClassManagement does it.
+      // In ClassManagement, the class object has subject_id.
+      // Here, TeacherScheduleItem does NOT have subject_id. 
+      // This is a problem. I might need to fetch the class details or update the RPC.
+      // However, for now, let's see if I can find it in the subjects list.
+      const subject = subjects.find(s => s.code === cls.subject_code);
+      const room = rooms.find(r => r.name === cls.room_name);
 
-  const handleAddClass = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTeacherId || !selectedYearId) return;
-
-    setSubmitting(true);
-    const { error } = await classService.createClass({
-      ...formData,
-      teacher_id: selectedTeacherId,
-      academic_year_id: selectedYearId
-    });
-
-    if (error) {
-      setError(error.message);
+      setFormData({
+        subject_id: subject?.id || '',
+        department: cls.department,
+        semester: cls.semester,
+        section_name: cls.section_name,
+        room_id: room?.id || '',
+        days_of_week: cls.days_of_week || '',
+        start_time: cls.start_time || '',
+        end_time: cls.end_time || '',
+        capacity: cls.capacity
+      });
     } else {
-      setIsAddClassModalOpen(false);
+      setSelectedClassId(null);
       setFormData({
         subject_id: '',
         department: 'College',
@@ -141,7 +152,49 @@ const TeacherProfiles: React.FC = () => {
         end_time: '',
         capacity: 40
       });
-      fetchTeacherProfile(selectedTeacherId, selectedYearId);
+    }
+    setIsAddClassModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTeacherId || !selectedYearId) return;
+
+    setSubmitting(true);
+    
+    let result;
+    if (selectedClassId) {
+      result = await classService.updateClass({
+        class_id: selectedClassId,
+        ...formData,
+        teacher_id: selectedTeacherId,
+        academic_year_id: selectedYearId
+      });
+    } else {
+      result = await classService.createClass({
+        ...formData,
+        teacher_id: selectedTeacherId,
+        academic_year_id: selectedYearId
+      });
+    }
+
+    if (result.error) {
+      setError(result.error.message);
+    } else {
+      setIsAddClassModalOpen(false);
+      setSelectedClassId(null);
+      setFormData({
+        subject_id: '',
+        department: 'College',
+        semester: '1st Semester',
+        section_name: 'A',
+        room_id: '',
+        days_of_week: '',
+        start_time: '',
+        end_time: '',
+        capacity: 40
+      });
+      fetchTeacherProfile(selectedTeacherId, selectedYearId, selectedDepartment);
     }
     setSubmitting(false);
   };
@@ -158,19 +211,35 @@ const TeacherProfiles: React.FC = () => {
             <span className="font-medium">Back to Teachers List</span>
           </button>
           
-          <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
-            <Calendar size={18} className="text-gray-400" />
-            <select
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-              className="text-sm border-none focus:ring-0 bg-transparent font-medium text-gray-700"
-            >
-              {academicYears.map(year => (
-                <option key={year.id} value={year.id}>
-                  {year.name} {year.is_active ? '(Active)' : ''}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+              <BookOpen size={18} className="text-gray-400" />
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="text-sm border-none focus:ring-0 bg-transparent font-medium text-gray-700"
+              >
+                <option value="">All Departments</option>
+                <option value="College">College</option>
+                <option value="Junior High School">Junior High School</option>
+                <option value="Senior High School">Senior High School</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+              <Calendar size={18} className="text-gray-400" />
+              <select
+                value={selectedYearId}
+                onChange={(e) => setSelectedYearId(e.target.value)}
+                className="text-sm border-none focus:ring-0 bg-transparent font-medium text-gray-700"
+              >
+                {academicYears.map(year => (
+                  <option key={year.id} value={year.id}>
+                    {year.name} {year.is_active ? '(Active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -234,6 +303,7 @@ const TeacherProfiles: React.FC = () => {
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Room</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Enrollment</th>
+                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -254,7 +324,11 @@ const TeacherProfiles: React.FC = () => {
                             <td className="px-6 py-4">
                               <div className="flex flex-col text-sm">
                                 <span className="text-gray-900 font-medium">{cls.section_name}</span>
-                                <span className="text-gray-500">Sem {cls.semester}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500">Sem {cls.semester}</span>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="text-blue-600 font-medium text-[10px] uppercase">{cls.department}</span>
+                                </div>
                               </div>
                             </td>
                             <td className="px-6 py-4">
@@ -288,6 +362,15 @@ const TeacherProfiles: React.FC = () => {
                                 </div>
                               </div>
                             </td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => handleOpenAddClassModal(cls)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit Class"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                            </td>
                           </tr>
                         ))
                       ) : (
@@ -312,18 +395,18 @@ const TeacherProfiles: React.FC = () => {
 
         {isAddClassModalOpen && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh) overflow-y-auto shadow-2xl">
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                <h3 className="text-xl font-bold text-gray-900">Add New Class</h3>
-                <button
-                  onClick={() => setIsAddClassModalOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-xl font-bold text-gray-900">{selectedClassId ? 'Edit Class' : 'Add New Class'}</h3>
+              <button
+                onClick={() => setIsAddClassModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-              <form onSubmit={handleAddClass} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-sm font-bold text-gray-700">Subject</label>
@@ -455,7 +538,7 @@ const TeacherProfiles: React.FC = () => {
                     disabled={submitting}
                     className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200"
                   >
-                    {submitting ? 'Creating...' : 'Create Class'}
+                    {submitting ? (selectedClassId ? 'Updating...' : 'Creating...') : (selectedClassId ? 'Update Class' : 'Create Class')}
                   </button>
                 </div>
               </form>

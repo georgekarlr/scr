@@ -59,6 +59,7 @@ export const classService = {
       const { data, error } = await supabase.rpc('update_class', {
         p_class_id: params.class_id,
         p_teacher_id: params.teacher_id,
+        p_department: params.department,
         p_semester: params.semester,
         p_academic_year_id: params.academic_year_id,
         p_section_name: params.section_name,

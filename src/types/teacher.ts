@@ -34,6 +34,7 @@ export interface TeacherProfileBasic {
 
 export interface TeacherScheduleItem {
   class_id: string;
+  department: string;
   subject_code: string;
   subject_name: string;
   section_name: string;

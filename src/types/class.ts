@@ -52,6 +52,7 @@ export interface CreateClassParams {
 export interface UpdateClassParams {
   class_id: string;
   teacher_id: string;
+  department: string;
   semester: string;
   academic_year_id: string;
   section_name: string;

@@ -141,6 +141,7 @@ const ClassManagement: React.FC = () => {
         const { error } = await classService.updateClass({
           class_id: selectedClass.id,
           teacher_id: formData.teacher_id,
+          department: formData.department,
           semester: formData.semester,
           academic_year_id: formData.academic_year_id,
           section_name: formData.section_name,
@@ -296,11 +297,13 @@ const ClassManagement: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Section {cls.section_name}
-                      </span>
-                      <div className="text-[10px] text-gray-400 mt-1 uppercase">
-                        {cls.semester} • {cls.academic_year_name}
+                      <div className="flex flex-col">
+                        <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Section {cls.section_name}
+                        </span>
+                        <div className="text-[10px] text-gray-600 mt-1 uppercase">
+                          {cls.department} • {cls.semester} • {cls.academic_year_name}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
@@ -428,7 +431,6 @@ const ClassManagement: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    disabled={!!selectedClass}
                   >
                     <option value="College">College</option>
                     <option value="Junior High School">Junior High School</option>

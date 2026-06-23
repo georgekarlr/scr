@@ -118,13 +118,13 @@ export const teacherService = {
     }
   },
 
-  async getTeacherProfile(teacherId: string, academicYearId: string) {
+  async getTeacherProfile(teacherId: string, academic_year_id: string, department?: string) {
     try {
       const { data, error } = await supabase.rpc('get_teacher_profile', {
         p_teacher_id: teacherId,
-        p_academic_year_id: academicYearId
+        p_academic_year_id: academic_year_id,
+        filter_department: department || null
       })
-
       if (error) {
         console.error('Error fetching teacher profile:', error)
         return { data: null, error }
