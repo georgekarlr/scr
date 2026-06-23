@@ -90,7 +90,6 @@ export const financeService = {
   async generateStudentSOA(params: GenerateStudentSOAParams) {
     try {
       const { data, error } = await supabase.rpc('generate_student_soa', params)
-      console.log("datsa", data)
       if (error) return { data: null, error }
       return { data: data as SOAResult, error: null }
     } catch (err) {
@@ -107,7 +106,6 @@ export const financeService = {
         filter_type: params.filter_type || null,
         filter_date: params.filter_date || null
       })
-      console.log('data get_transactions', data)
       if (error) return { data: null, error }
       return { data: data as LedgerEntry[], error: null }
     } catch (err) {

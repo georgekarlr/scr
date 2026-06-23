@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Search, Filter, Plus, GraduationCap, School, X, BookOpen, Hash, UserCircle, Eye, FileText, ClipboardList, Calendar } from 'lucide-react';
+import {  Search, X, UserCircle, Eye, FileText, ClipboardList, Calendar } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { UserProfile } from '../../../types/auth';
 import { Student, StudentTOR } from '../../../types/student';
@@ -9,13 +9,12 @@ import { studentService } from '../../../services/studentService';
 import { sectionService, Section } from '../../../services/sectionService';
 import { YEAR_LEVELS } from '../../../constants/academic';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 import StudentTORModal from '../../../components/dashboard/StudentTORModal';
 import StudentReportCardModal from '../../../components/dashboard/StudentReportCardModal';
 import StudentScheduleModal from '../../../components/dashboard/StudentScheduleModal';
 
 const StudentProfiles: React.FC = () => {
-  const { listSchoolUsers, listUsers, createUser, updateUser, profile } = useAuth();
+  const { createUser, profile } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -489,7 +488,7 @@ const StudentProfiles: React.FC = () => {
                     onChange={(e) => setFormData({...formData, yearLevel: e.target.value})}
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   >
-                    <option value="">Select Year</option>
+                    {/*<option value="">Select Year</option>*/}
                     {formData.department && YEAR_LEVELS[formData.department]?.map(level => (
                       <option key={level} value={level}>{level}</option>
                     ))}

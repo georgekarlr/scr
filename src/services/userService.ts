@@ -19,7 +19,6 @@ export const userService = {
         filter_section_id: filters?.section_id || null,
         filter_course_id: filters?.course_id || null
       })
-      console.log('School users fetched:', data)
       if (error) {
         console.error('Error fetching school users:', error)
         return { data: null, error }
@@ -91,7 +90,6 @@ export const userService = {
   },
 
   async updateUserRole(id: string, role: string) {
-    console.log('Updating user role:', id, role)
     const { data, error } = await supabase.rpc('update_user_role', {
       target_user_id: id,
       new_role: role

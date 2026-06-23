@@ -30,6 +30,9 @@ const Ledger: React.FC = () => {
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const [error, setError] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState('');
+  const [filterCourseId, setFilterCourseId] = useState('');
+  const [filterYearLevel, setFilterYearLevel] = useState('');
 
   const [filterType, setFilterType] = useState<TransactionType | ''>('');
   const [filterDate, setFilterDate] = useState<string>('');
@@ -124,7 +127,12 @@ const Ledger: React.FC = () => {
   };
 
   const fetchStudents = async () => {
-    const { data, error } = await studentService.getStudentsList({ search_term: studentSearch });
+    const { data, error } = await studentService.getStudentsList({ 
+      search_term: studentSearch,
+      filter_department: filterDepartment || null,
+      filter_course_id: filterCourseId || null,
+      filter_year_level: filterYearLevel || null
+    });
     if (error) setError(error.message);
     else if (data) setStudents(data);
   };
@@ -172,7 +180,7 @@ const Ledger: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(fetchStudents, 300);
     return () => clearTimeout(timer);
-  }, [studentSearch]);
+  }, [studentSearch, filterDepartment, filterCourseId, filterYearLevel]);
 
   useEffect(() => {
     if (selectedAY) {
@@ -452,6 +460,56 @@ const Ledger: React.FC = () => {
               onChange={(e) => setStudentSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 mb-4">
+            <select
+              value={filterDepartment}
+              onChange={(e) => {
+                setFilterDepartment(e.target.value);
+                setFilterCourseId('');
+              }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Departments</option>
+              <option value="College">College</option>
+              <option value="Senior High School">Senior High School</option>
+              <option value="Junior High School">Junior High School</option>
+              <option value="Elementary">Elementary</option>
+            </select>
+
+            <select
+              value={filterCourseId}
+              onChange={(e) => setFilterCourseId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Courses/Programs</option>
+              {courses
+                .filter(c => !filterDepartment || c.department === filterDepartment)
+                .map(course => (
+                  <option key={course.id} value={course.id}>
+                    {course.code} - {course.name}
+                  </option>
+                ))
+              }
+            </select>
+
+            <select
+              value={filterYearLevel}
+              onChange={(e) => setFilterYearLevel(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Year Levels</option>
+              {filterDepartment && YEAR_LEVELS[filterDepartment] ? (
+                YEAR_LEVELS[filterDepartment].map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))
+              ) : (
+                Object.values(YEAR_LEVELS).flat().map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))
+              )}
+            </select>
           </div>
 
           <div className="space-y-2 max-h-[500px] overflow-y-auto">

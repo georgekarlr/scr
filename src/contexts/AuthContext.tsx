@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase, supabaseAdmin } from '../lib/supabase'
-import { AuthContextType, User, Session, School, UserProfile } from '../types/auth'
+import { supabase } from '../lib/supabase'
+import {AuthContextType, User, Session, UserProfile, AppRole} from '../types/auth'
 import { userService } from '../services/userService'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      console.log('Fetching profile for user:', currentUserId)
+      // console.log('Fetching profile for user:', currentUserId)
       const { data, error } = await supabase
         .rpc('get_my_profile')
         .single()
@@ -143,7 +143,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return
       }
       
-      console.log('Profile fetched successfully:', data)
       setProfile(data as UserProfile)
     } catch (err) {
       console.error('Unexpected error fetching profile:', err)

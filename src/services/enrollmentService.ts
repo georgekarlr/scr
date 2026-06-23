@@ -18,13 +18,11 @@ export const enrollmentService = {
   },
 
   async enrollStudent(params: EnrollStudentParams) {
-    console.log('params', params, 'student_id', params.student_id, 'class_id', params.class_id, '')
     try {
       const { data, error } = await supabase.rpc('enroll_student', {
         p_student_id: params.student_id,
         p_class_id: params.class_id
       })
-      console.log("error", error)
       if (error) return { data: null, error }
       return { data: data[0] as string, error: null }
     } catch (err) {

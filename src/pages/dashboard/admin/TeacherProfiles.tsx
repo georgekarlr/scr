@@ -28,6 +28,7 @@ const TeacherProfiles: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     subject_id: '',
+    department: 'College',
     semester: '1st Semester',
     section_name: 'A',
     room_id: '',
@@ -131,6 +132,7 @@ const TeacherProfiles: React.FC = () => {
       setIsAddClassModalOpen(false);
       setFormData({
         subject_id: '',
+        department: 'College',
         semester: '1st Semester',
         section_name: 'A',
         room_id: '',
@@ -337,6 +339,20 @@ const TeacherProfiles: React.FC = () => {
                           {sub.code} - {sub.name}
                         </option>
                       ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Department</label>
+                    <select
+                      required
+                      value={formData.department}
+                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    >
+                      <option value="College">College</option>
+                      <option value="Junior High School">Junior High School</option>
+                      <option value="Senior High School">Senior High School</option>
                     </select>
                   </div>
 

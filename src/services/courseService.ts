@@ -23,7 +23,6 @@ export const courseService = {
         search_term: search || null,
         filter_department: department || null
       })
-      console.log('Courses fetched:', data)
       if (error) return { data: null, error }
       return { data: data as Course[], error: null }
     } catch (err) {

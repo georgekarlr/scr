@@ -47,7 +47,6 @@ export const teacherService = {
         search_term: filters.searchTerm || null,
         filter_days_of_week: filters.daysOfWeek || null
       })
-      console.log(data)
 
       if (error) {
         console.error('Error fetching teaching schedule:', error)
