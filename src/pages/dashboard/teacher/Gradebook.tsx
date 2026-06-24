@@ -32,9 +32,19 @@ const Gradebook: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    fetchGradingPeriods();
     fetchMyClasses();
   }, []);
+
+  useEffect(() => {
+    if (selectedClass) {
+      const currentClass = classes.find(c => c.class_id === selectedClass);
+      if (currentClass) {
+        fetchGradingPeriods(currentClass.department);
+      } else {
+        fetchGradingPeriods();
+      }
+    }
+  }, [selectedClass, classes]);
 
   useEffect(() => {
     if (selectedClass && selectedGP) {
@@ -63,9 +73,9 @@ const Gradebook: React.FC = () => {
     }
   };
 
-  const fetchGradingPeriods = async () => {
+  const fetchGradingPeriods = async (department?: string) => {
     try {
-      const { data, error } = await gradingPeriodService.getGradingPeriods();
+      const { data, error } = await gradingPeriodService.getGradingPeriods({ filter_department: department });
       if (error) throw error;
       if (data) {
         setGradingPeriods(data);

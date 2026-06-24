@@ -1,14 +1,18 @@
 export interface GradeEntry {
+  period_id: string;
   period_name: string;
-  grade: number;
+  is_active: boolean;
+  grade: number | null;
   remarks: string | null;
 }
 
 export interface ClassGradebook {
   enrollment_id: string;
+  student_id: string;
   student_id_number: string;
   first_name: string;
   last_name: string;
+  course_code: string | null;
   grades_list: GradeEntry[];
-  running_average: number;
+  running_average: number | null;
 }
