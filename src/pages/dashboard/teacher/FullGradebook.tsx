@@ -8,7 +8,8 @@ import {
   Calendar,
   Download,
   Filter,
-  AlertCircle
+  AlertCircle,
+  GraduationCap
 } from 'lucide-react';
 import { useGradebook } from '../../../hooks/useGradebook';
 import { teacherService } from '../../../services/teacherService';
@@ -18,33 +19,63 @@ import * as XLSX from 'xlsx';
 const FullGradebook: React.FC = () => {
   const { classId: classIdParam } = useParams<{ classId: string }>();
   const navigate = useNavigate();
-  const { gradebook, loading, error, fetchGradebook } = useGradebook();
+  const { gradebook, loading, error, fetchGradebook, clearGradebook } = useGradebook();
   
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>(classIdParam || '');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState<string>('1st Semester');
+  const [academicYears, setAcademicYears] = useState<any[]>([]);
+  const [selectedAY, setSelectedAY] = useState<string>('');
 
   useEffect(() => {
-    fetchMyClasses();
+    fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    if (selectedAY) {
+      fetchMyClasses();
+    }
+  }, [selectedAY, selectedSemester]);
 
   useEffect(() => {
     if (selectedClass) {
       fetchGradebook(selectedClass);
+    } else {
+      clearGradebook();
     }
-  }, [selectedClass, fetchGradebook]);
+  }, [selectedClass, fetchGradebook, clearGradebook]);
+
+  const fetchInitialData = async () => {
+    try {
+      const { data: ayData } = await academicYearService.getAcademicYears();
+      if (ayData) {
+        setAcademicYears(ayData);
+        const activeAY = ayData.find(ay => ay.is_active) || ayData[0];
+        if (activeAY) {
+          setSelectedAY(activeAY.id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch initial data', err);
+    }
+  };
 
   const fetchMyClasses = async () => {
     try {
-      const { data: ayData } = await academicYearService.getAcademicYears();
-      const activeAY = ayData?.find(ay => ay.is_active) || ayData?.[0];
-      if (activeAY) {
-        const { data } = await teacherService.getMyTeachingSchedule(activeAY.id, '1st Semester');
-        if (data) {
-          setClasses(data);
-          if (!selectedClass && data.length > 0) {
+      const { data } = await teacherService.getMyTeachingSchedule({
+        academicYearId: selectedAY,
+        semester: selectedSemester
+      });
+      if (data) {
+        setClasses(data);
+        if (data.length > 0) {
+          const classExists = data.some(c => c.class_id === selectedClass);
+          if (!classExists) {
             setSelectedClass(data[0].class_id);
           }
+        } else {
+          setSelectedClass('');
         }
       }
     } catch (err) {
@@ -63,7 +94,7 @@ const FullGradebook: React.FC = () => {
       };
 
       student.grades_list.forEach(g => {
-        row[g.period_name] = g.grade;
+        row[g.period_name] = g.grade ?? '';
       });
 
       row['Running Average'] = student.running_average;
@@ -104,15 +135,47 @@ const FullGradebook: React.FC = () => {
           <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
             <Calendar className="w-4 h-4 text-gray-400" />
             <select
+              value={selectedAY}
+              onChange={(e) => setSelectedAY(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-sm font-medium"
+            >
+              {academicYears.map(ay => (
+                <option key={ay.id} value={ay.id}>
+                  {ay.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
+            <Filter className="w-4 h-4 text-gray-400" />
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-sm font-medium"
+            >
+              <option value="1st Semester">1st Semester</option>
+              <option value="2nd Semester">2nd Semester</option>
+              <option value="Summer">Summer</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
+            <GraduationCap className="w-4 h-4 text-gray-400" />
+            <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               className="bg-transparent border-none focus:ring-0 text-sm font-medium"
             >
-              {classes.map(c => (
-                <option key={c.class_id} value={c.class_id}>
-                  {c.subject_code} - {c.section_name}
-                </option>
-              ))}
+              {classes.length > 0 ? (
+                classes.map(c => (
+                  <option key={c.class_id} value={c.class_id}>
+                    {c.subject_code} - {c.section_name}
+                  </option>
+                ))
+              ) : (
+                <option value="">No classes found</option>
+              )}
             </select>
           </div>
 
@@ -194,8 +257,8 @@ const FullGradebook: React.FC = () => {
                       const gradeEntry = student.grades_list.find(g => g.period_name === period);
                       return (
                         <td key={period} className="px-6 py-4 text-center">
-                          <span className={`text-sm font-semibold ${gradeEntry ? 'text-gray-900' : 'text-gray-300'}`}>
-                            {gradeEntry ? gradeEntry.grade : 'N/A'}
+                          <span className={`text-sm font-semibold ${gradeEntry && gradeEntry.grade !== null ? 'text-gray-900' : 'text-gray-300'}`}>
+                            {gradeEntry?.grade ?? 'N/A'}
                           </span>
                         </td>
                       );

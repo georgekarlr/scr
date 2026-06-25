@@ -10,10 +10,9 @@ import {
   BookOpen,
   Calendar
 } from 'lucide-react';
-import { teacherService } from '../../../services/teacherService';
+import { teacherService, ClassGrade } from '../../../services/teacherService';
 import { gradingPeriodService } from '../../../services/gradingPeriodService';
 import { academicYearService } from '../../../services/academicYearService';
-import { ClassGrade } from '../../../types/grade';
 import { GradingPeriod } from '../../../types/gradingPeriod';
 
 const Gradebook: React.FC = () => {
@@ -107,9 +106,16 @@ const Gradebook: React.FC = () => {
   };
 
   const handleGradeChange = (enrollmentId: string, value: string) => {
-    setGrades(prev => prev.map(g => 
-      g.enrollment_id === enrollmentId ? { ...g, grade_value: value === '' ? null : parseFloat(value) } : g
-    ));
+    setGrades(prev => prev.map(g => {
+      if (g.enrollment_id === enrollmentId) {
+        const upperValue = value.trim().toUpperCase();
+        return { 
+          ...g, 
+          grade_value: value === '' ? null : upperValue
+        };
+      }
+      return g;
+    }));
   };
 
   const handleRemarksChange = (enrollmentId: string, value: string) => {
@@ -125,10 +131,15 @@ const Gradebook: React.FC = () => {
     setError('');
     
     try {
+      const isNumeric = !isNaN(parseFloat(grade.grade_value || '')) && isFinite(Number(grade.grade_value));
+      const gValue = isNumeric ? parseFloat(grade.grade_value!) : null;
+      const gCode = isNumeric ? null : (grade.grade_value === '' ? null : grade.grade_value);
+
       const { error } = await teacherService.upsertStudentGrade(
         grade.enrollment_id,
         selectedGP,
-        grade.grade_value || 0,
+        gValue,
+        gCode,
         grade.remarks
       );
       if (error) throw error;
@@ -146,6 +157,22 @@ const Gradebook: React.FC = () => {
     `${g.first_name} ${g.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     g.student_id_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const isNumeric = (val: string | null) => {
+    if (!val) return false;
+    return !isNaN(parseFloat(val)) && isFinite(Number(val));
+  };
+
+  const getGradeOptions = () => {
+    const baseOptions = ['INC', 'FA', 'WP', 'WF'];
+    const dynamicOptions = grades
+      .map(g => g.grade_value)
+      .filter((val): val is string => !!val && !isNumeric(val) && !baseOptions.includes(val));
+    
+    return Array.from(new Set([...baseOptions, ...dynamicOptions])).sort();
+  };
+
+  const gradeOptions = getGradeOptions();
 
   const isGPLocked = gradingPeriods.find(gp => gp.id === selectedGP)?.is_active === false;
 
@@ -238,7 +265,7 @@ const Gradebook: React.FC = () => {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID Number</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Grade</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-48">Grade</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Remarks</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
@@ -262,15 +289,27 @@ const Gradebook: React.FC = () => {
                       {grade.student_id_number}
                     </td>
                     <td className="px-6 py-4">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={grade.grade_value ?? ''}
-                        onChange={(e) => handleGradeChange(grade.enrollment_id, e.target.value)}
-                        disabled={isGPLocked || saving === grade.enrollment_id}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100"
-                        placeholder="0.00"
-                      />
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={grade.grade_value && !isNumeric(grade.grade_value) ? grade.grade_value : ''}
+                          onChange={(e) => handleGradeChange(grade.enrollment_id, e.target.value)}
+                          disabled={isGPLocked || saving === grade.enrollment_id}
+                          className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100 bg-white"
+                        >
+                          <option value="">Numeric</option>
+                          {gradeOptions.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          value={grade.grade_value && isNumeric(grade.grade_value) ? grade.grade_value : ''}
+                          onChange={(e) => handleGradeChange(grade.enrollment_id, e.target.value)}
+                          disabled={isGPLocked || saving === grade.enrollment_id || (!!grade.grade_value && !isNumeric(grade.grade_value))}
+                          className="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100"
+                          placeholder="0.00"
+                        />
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <input

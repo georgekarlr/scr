@@ -2,7 +2,7 @@ export interface GradeEntry {
   period_id: string;
   period_name: string;
   is_active: boolean;
-  grade: number | null;
+  grade: string | null;
   remarks: string | null;
 }
 

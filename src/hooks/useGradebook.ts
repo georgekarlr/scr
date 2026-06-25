@@ -12,6 +12,7 @@ export const useGradebook = () => {
     setError(null)
     try {
       const { data, error: fetchError } = await teacherService.getClassGradebook(classId)
+      console.log('Fetched gradebook:', data)
       if (fetchError) {
         setError(fetchError.message)
       } else {
@@ -24,10 +25,16 @@ export const useGradebook = () => {
     }
   }, [])
 
+  const clearGradebook = useCallback(() => {
+    setGradebook([])
+    setError(null)
+  }, [])
+
   return {
     gradebook,
     loading,
     error,
-    fetchGradebook
+    fetchGradebook,
+    clearGradebook
   }
 }

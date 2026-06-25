@@ -43,9 +43,9 @@ export interface StudentDashboardSummary {
   };
 }
 
-export interface GradeEntry {
+export interface ReportCardGradeEntry {
   period_name: string;
-  grade: number;
+  grade: string | null;
   remarks: string | null;
 }
 
@@ -54,7 +54,7 @@ export interface StudentReportCard {
   subject_code: string;
   subject_name: string;
   units: number;
-  grades_list: GradeEntry[];
+  grades_list: ReportCardGradeEntry[];
   final_average: number;
 }
 
