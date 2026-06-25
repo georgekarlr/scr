@@ -11,8 +11,6 @@ import {
   Filter,
   AlertCircle,
   FileText,
-  Calendar,
-  ChevronRight,
   Info
 } from 'lucide-react';
 
@@ -224,33 +222,6 @@ const MyGrades: React.FC = () => {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-blue-50 border border-blue-100 p-5 rounded-xl flex items-start gap-4">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Info className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-1">Grading System Note</h3>
-            <p className="text-sm text-blue-800 leading-relaxed">
-              Passing grade is 75.00. Grades are subject to verification by the Registrar's Office. 
-              The final average is calculated based on all grading periods.
-            </p>
-          </div>
-        </div>
-        
-        <div className="bg-gray-50 border border-gray-200 p-5 rounded-xl flex items-start gap-4">
-          <div className="p-2 bg-gray-200 rounded-lg">
-            <GraduationCap className="w-5 h-5 text-gray-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Academic Support</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Need help with your studies? Reach out to your instructors during their consultation hours or visit the Student Success Center.
-            </p>
-          </div>
         </div>
       </div>
     </div>

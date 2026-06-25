@@ -9,7 +9,8 @@ export interface ClassGrade {
   first_name: string;
   last_name: string;
   grade_id: string | null;
-  grade_value: string | null;
+  grade_value: number | null;
+  grade_code: string | null;
   remarks: string | null;
 }
 
@@ -80,11 +81,11 @@ export const teacherService = {
   },
 
   async upsertStudentGrade(
-    enrollmentId: string, 
-    gradingPeriodId: string, 
-    gradeValue: number | null, 
-    gradeCode: string | null,
-    remarks?: string | null
+      enrollmentId: string,
+      gradingPeriodId: string,
+      gradeValue: number | null,
+      gradeCode?: string | null,
+      remarks?: string | null
   ) {
     try {
       const { data, error } = await supabase.rpc('upsert_student_grade', {

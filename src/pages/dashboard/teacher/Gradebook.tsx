@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Save, 
-  AlertCircle, 
-  CheckCircle2, 
+import {
+  ArrowLeft,
+  Save,
+  AlertCircle,
+  CheckCircle2,
   Search,
   Users,
   BookOpen,
@@ -18,7 +18,7 @@ import { GradingPeriod } from '../../../types/gradingPeriod';
 const Gradebook: React.FC = () => {
   const { classId: classIdParam } = useParams<{ classId: string }>();
   const navigate = useNavigate();
-  
+
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>(classIdParam || '');
   const [grades, setGrades] = useState<ClassGrade[]>([]);
@@ -53,7 +53,7 @@ const Gradebook: React.FC = () => {
 
   const fetchMyClasses = async () => {
     try {
-      // We need academic year and semester for this. 
+      // We need academic year and semester for this.
       // For simplicity, let's just use what's in the schedule service if we can.
       // Or we might need to fetch academic years first.
       const { data: ayData } = await academicYearService.getAcademicYears();
@@ -108,10 +108,25 @@ const Gradebook: React.FC = () => {
   const handleGradeChange = (enrollmentId: string, value: string) => {
     setGrades(prev => prev.map(g => {
       if (g.enrollment_id === enrollmentId) {
-        const upperValue = value.trim().toUpperCase();
-        return { 
-          ...g, 
-          grade_value: value === '' ? null : upperValue
+        // If it's a number, set grade_value.
+        const isNumeric = !isNaN(parseFloat(value)) && isFinite(Number(value));
+        return {
+          ...g,
+          grade_value: isNumeric ? parseFloat(value) : null,
+          grade_code: isNumeric ? null : (value === '' ? null : value.toUpperCase())
+        };
+      }
+      return g;
+    }));
+  };
+
+  const handleGradeCodeChange = (enrollmentId: string, code: string) => {
+    setGrades(prev => prev.map(g => {
+      if (g.enrollment_id === enrollmentId) {
+        return {
+          ...g,
+          grade_code: code === '' ? null : code,
+          grade_value: code !== '' ? null : g.grade_value
         };
       }
       return g;
@@ -119,8 +134,8 @@ const Gradebook: React.FC = () => {
   };
 
   const handleRemarksChange = (enrollmentId: string, value: string) => {
-    setGrades(prev => prev.map(g => 
-      g.enrollment_id === enrollmentId ? { ...g, remarks: value } : g
+    setGrades(prev => prev.map(g =>
+        g.enrollment_id === enrollmentId ? { ...g, remarks: value } : g
     ));
   };
 
@@ -129,18 +144,14 @@ const Gradebook: React.FC = () => {
     setSaving(grade.enrollment_id);
     setSuccessMsg('');
     setError('');
-    
-    try {
-      const isNumeric = !isNaN(parseFloat(grade.grade_value || '')) && isFinite(Number(grade.grade_value));
-      const gValue = isNumeric ? parseFloat(grade.grade_value!) : null;
-      const gCode = isNumeric ? null : (grade.grade_value === '' ? null : grade.grade_value);
 
+    try {
       const { error } = await teacherService.upsertStudentGrade(
-        grade.enrollment_id,
-        selectedGP,
-        gValue,
-        gCode,
-        grade.remarks
+          grade.enrollment_id,
+          selectedGP,
+          grade.grade_value,
+          grade.grade_code,
+          grade.remarks
       );
       if (error) throw error;
       setSuccessMsg(`Grade saved for ${grade.first_name} ${grade.last_name}`);
@@ -153,115 +164,99 @@ const Gradebook: React.FC = () => {
     }
   };
 
-  const filteredGrades = grades.filter(g => 
-    `${g.first_name} ${g.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.student_id_number.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredGrades = grades.filter(g =>
+      `${g.first_name} ${g.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.student_id_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const isNumeric = (val: string | null) => {
-    if (!val) return false;
-    return !isNaN(parseFloat(val)) && isFinite(Number(val));
-  };
-
-  const getGradeOptions = () => {
-    const baseOptions = ['INC', 'FA', 'WP', 'WF'];
-    const dynamicOptions = grades
-      .map(g => g.grade_value)
-      .filter((val): val is string => !!val && !isNumeric(val) && !baseOptions.includes(val));
-    
-    return Array.from(new Set([...baseOptions, ...dynamicOptions])).sort();
-  };
-
-  const gradeOptions = getGradeOptions();
 
   const isGPLocked = gradingPeriods.find(gp => gp.id === selectedGP)?.is_active === false;
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gradebook</h1>
-            <p className="text-gray-500">Input and manage student grades</p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-            <BookOpen className="w-4 h-4 text-gray-400" />
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-sm"
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <div className="flex items-center gap-4">
+            <button
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <option value="" disabled>Select Class</option>
-              {classes.map(c => (
-                <option key={c.class_id} value={c.class_id}>
-                  {c.subject_code} - {c.section_name}
-                </option>
-              ))}
-            </select>
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Gradebook</h1>
+              <p className="text-gray-500">Input and manage student grades</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <select
-              value={selectedGP}
-              onChange={(e) => setSelectedGP(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-sm"
-            >
-              {gradingPeriods.map(gp => (
-                <option key={gp.id} value={gp.id}>
-                  {gp.name} {!gp.is_active && '(Locked)'}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+              <BookOpen className="w-4 h-4 text-gray-400" />
+              <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="bg-transparent border-none focus:ring-0 text-sm"
+              >
+                <option value="" disabled>Select Class</option>
+                {classes.map(c => (
+                    <option key={c.class_id} value={c.class_id}>
+                      {c.subject_code} - {c.section_name}
+                    </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <select
+                  value={selectedGP}
+                  onChange={(e) => setSelectedGP(e.target.value)}
+                  className="bg-transparent border-none focus:ring-0 text-sm"
+              >
+                {gradingPeriods.map(gp => (
+                    <option key={gp.id} value={gp.id}>
+                      {gp.name} {!gp.is_active && '(Locked)'}
+                    </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                  type="text"
+                  placeholder="Search students..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none w-64"
+              />
+            </div>
           </div>
-          
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search students..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none w-64"
-            />
-          </div>
         </div>
-      </div>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700">
-          <AlertCircle className="w-5 h-5" />
-          <p>{error}</p>
-        </div>
-      )}
+        {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700">
+              <AlertCircle className="w-5 h-5" />
+              <p>{error}</p>
+            </div>
+        )}
 
-      {successMsg && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-700 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="w-5 h-5" />
-          <p>{successMsg}</p>
-        </div>
-      )}
+        {successMsg && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-700 animate-in fade-in slide-in-from-top-2">
+              <CheckCircle2 className="w-5 h-5" />
+              <p>{successMsg}</p>
+            </div>
+        )}
 
-      {isGPLocked && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3 text-amber-700">
-          <AlertCircle className="w-5 h-5" />
-          <p>This grading period is locked. Grades cannot be modified.</p>
-        </div>
-      )}
+        {isGPLocked && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3 text-amber-700">
+              <AlertCircle className="w-5 h-5" />
+              <p>This grading period is locked. Grades cannot be modified.</p>
+            </div>
+        )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID Number</th>
@@ -269,88 +264,92 @@ const Gradebook: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Remarks</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
+              </thead>
+              <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredGrades.length > 0 ? (
-                filteredGrades.map((grade) => (
-                  <tr key={grade.enrollment_id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{grade.last_name}, {grade.first_name}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {grade.student_id_number}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={grade.grade_value && !isNumeric(grade.grade_value) ? grade.grade_value : ''}
-                          onChange={(e) => handleGradeChange(grade.enrollment_id, e.target.value)}
-                          disabled={isGPLocked || saving === grade.enrollment_id}
-                          className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100 bg-white"
-                        >
-                          <option value="">Numeric</option>
-                          {gradeOptions.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          value={grade.grade_value && isNumeric(grade.grade_value) ? grade.grade_value : ''}
-                          onChange={(e) => handleGradeChange(grade.enrollment_id, e.target.value)}
-                          disabled={isGPLocked || saving === grade.enrollment_id || (!!grade.grade_value && !isNumeric(grade.grade_value))}
-                          className="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100"
-                          placeholder="0.00"
-                        />
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <input
-                        type="text"
-                        value={grade.remarks ?? ''}
-                        onChange={(e) => handleRemarksChange(grade.enrollment_id, e.target.value)}
-                        disabled={isGPLocked || saving === grade.enrollment_id}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100"
-                        placeholder="Add remarks..."
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => saveGrade(grade)}
-                        disabled={isGPLocked || saving === grade.enrollment_id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {saving === grade.enrollment_id ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                          <Save className="w-4 h-4" />
-                        )}
-                        Save
-                      </button>
+                  </tr>
+              ) : filteredGrades.length > 0 ? (
+                  filteredGrades.map((grade) => (
+                      <tr key={grade.enrollment_id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900">{grade.last_name}, {grade.first_name}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {grade.student_id_number}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <select
+                                value={grade.grade_code || ''}
+                                onChange={(e) => handleGradeCodeChange(grade.enrollment_id, e.target.value)}
+                                disabled={isGPLocked || saving === grade.enrollment_id}
+                                className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100 bg-white"
+                            >
+                              <option value="">Numeric</option>
+                              <option value="INC">INC</option>
+                              <option value="FA">FA</option>
+                              <option value="WP">WP</option>
+                              <option value="WF">WF</option>
+                              {grade.grade_code && !['INC', 'FA', 'WP', 'WF'].includes(grade.grade_code) && (
+                                  <option value={grade.grade_code}>{grade.grade_code}</option>
+                              )}
+                            </select>
+                            <input
+                                type="text"
+                                value={grade.grade_value ?? ''}
+                                onChange={(e) => handleGradeChange(grade.enrollment_id, e.target.value)}
+                                disabled={isGPLocked || saving === grade.enrollment_id || !!grade.grade_code}
+                                className="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100"
+                                placeholder="0.00"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                              type="text"
+                              value={grade.remarks ?? ''}
+                              onChange={(e) => handleRemarksChange(grade.enrollment_id, e.target.value)}
+                              disabled={isGPLocked || saving === grade.enrollment_id}
+                              className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none disabled:bg-gray-100"
+                              placeholder="Add remarks..."
+                          />
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                              onClick={() => saveGrade(grade)}
+                              disabled={isGPLocked || saving === grade.enrollment_id}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {saving === grade.enrollment_id ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <Save className="w-4 h-4" />
+                            )}
+                            Save
+                          </button>
+                        </td>
+                      </tr>
+                  ))
+              ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-lg font-medium">No students found</p>
+                      <p className="text-sm">There are no students enrolled in this class.</p>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-lg font-medium">No students found</p>
-                    <p className="text-sm">There are no students enrolled in this class.</p>
-                  </td>
-                </tr>
               )}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 

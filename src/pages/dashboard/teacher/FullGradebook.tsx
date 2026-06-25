@@ -4,7 +4,6 @@ import {
   ArrowLeft, 
   Search,
   Users,
-  BookOpen,
   Calendar,
   Download,
   Filter,
@@ -264,9 +263,7 @@ const FullGradebook: React.FC = () => {
                       );
                     })}
                     <td className="px-6 py-4 text-center bg-indigo-50/30">
-                      <span className={`text-sm font-bold ${
-                        student.running_average >= 75 ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                      <span className={`text-sm font-bold text-blue-600`}>
                         {student.running_average ? student.running_average.toFixed(2) : '--'}
                       </span>
                     </td>
