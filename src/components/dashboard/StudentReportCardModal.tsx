@@ -165,7 +165,7 @@ const StudentReportCardModal: React.FC<StudentReportCardModalProps> = ({ isOpen,
                       </th>
                     ))}
                     <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wider text-center bg-blue-50/50">
-                      Final Average
+                      Final Grade
                     </th>
                   </tr>
                 </thead>

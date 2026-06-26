@@ -105,7 +105,7 @@ const StudentProfiles: React.FC = () => {
         lastName: student.last_name || '',
         studentIdNumber: student.student_id_number || '',
         studentType: student.student_type || '',
-        yearLevel: student.year_level || '',
+        yearLevel: student.year_level || '1st Year',
         sectionId: student.section_id || '',
         courseId: student.course_id || '',
         department: Object.keys(YEAR_LEVELS).find(level =>

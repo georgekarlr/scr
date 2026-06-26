@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Search, Filter, Plus, Mail, Lock, User as UserIcon, Shield, School, X } from 'lucide-react';
+import {  Search, Filter, Plus, Mail, Lock, User as UserIcon, Shield, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { User, AppRole, UserProfile } from '../../../types/auth';
+import { AppRole, UserProfile } from '../../../types/auth';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const UserManagement: React.FC = () => {
   const { listSchoolUsers, createUser, updateUser, updateUserName, updateUserRole, profile } = useAuth();
