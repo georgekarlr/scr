@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Plus, X, Trash2, Calendar, UserPlus, BookOpen, GraduationCap, Users, Filter } from 'lucide-react';
+import { Search, X, Trash2, Calendar, UserPlus, BookOpen, GraduationCap, Users, Filter } from 'lucide-react';
 import { enrollmentService } from '../../../services/enrollmentService';
-import { studentService } from '../../../services/studentService';
 import { academicYearService } from '../../../services/academicYearService';
 import { Class, ClassFilters } from '../../../types/class';
 import { Student } from '../../../types/student';
 import { ClassRosterItem } from '../../../types/enrollment';
 import { AcademicYear } from '../../../types/academicYear';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const EnrollmentManagement: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -329,7 +327,7 @@ const EnrollmentManagement: React.FC = () => {
         </div>
       )}
 
-      {error && <ErrorModal message={error} onClose={() => setError('')} />}
+      {error && <ErrorModal message={error} onClose={() => setError('')} isOpen={false} />}
     </div>
   );
 };

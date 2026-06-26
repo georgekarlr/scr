@@ -571,7 +571,7 @@ const TeacherProfiles: React.FC = () => {
         </div>
       </div>
 
-      {error && <StatusMessage message={error} type="error" onClose={() => setError('')} />}
+      {error && <StatusMessage message={error} status={"error"}  />}
 
       {loading ? (
         <div className="flex justify-center py-12">

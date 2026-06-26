@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LayoutGrid, Search, Plus, X, Edit2, Trash2, User } from 'lucide-react';
+import { Search, Plus, X, Edit2, Trash2, User } from 'lucide-react';
 import { sectionService } from '../../../services/sectionService';
 import { userService } from '../../../services/userService';
 import { academicYearService } from '../../../services/academicYearService';
@@ -7,7 +7,6 @@ import { Section } from '../../../types/section';
 import { UserProfile } from '../../../types/auth';
 import { AcademicYear } from '../../../types/academicYear';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const SectionManagement: React.FC = () => {
   const [sections, setSections] = useState<Section[]>([]);

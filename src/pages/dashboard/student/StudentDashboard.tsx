@@ -11,7 +11,6 @@ import {
   TrendingUp, 
   AlertCircle,
   CheckCircle2,
-  Calendar,
   User as UserIcon,
   Filter
 } from 'lucide-react';

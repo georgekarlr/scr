@@ -5,7 +5,6 @@ import { academicYearService } from '../../../services/academicYearService';
 import { GradingPeriod, GradingPeriodFilters } from '../../../types/gradingPeriod';
 import { AcademicYear } from '../../../types/academicYear';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const GradingPeriodManagement: React.FC = () => {
   const [gradingPeriods, setGradingPeriods] = useState<GradingPeriod[]>([]);

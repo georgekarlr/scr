@@ -78,7 +78,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
-const StudentDashboardRedirect: React.FC = () => {
+const   StudentDashboardRedirect: React.FC = () => {
   const { user } = useAuth();
   const role = user?.user_metadata?.role;
   

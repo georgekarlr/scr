@@ -3,7 +3,6 @@ import { DoorOpen, Plus, X, Edit2, Trash2, Search, Building, Users } from 'lucid
 import { roomService } from '../../../services/roomService';
 import { Room } from '../../../types/room';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const RoomManagement: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);

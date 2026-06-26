@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ReceiptText, Calendar, Wallet, History, AlertCircle } from 'lucide-react';
+import { ReceiptText, Calendar, Wallet, History } from 'lucide-react';
 import { financeService } from '../../../services/financeService';
 import { academicYearService } from '../../../services/academicYearService';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -146,7 +146,7 @@ const MyLedger: React.FC = () => {
           <ul className="space-y-2 text-blue-50 text-sm">
             <li className="flex justify-between">
               <span>Student ID:</span>
-              <span className="font-mono">{user?.user_metadata?.student_id_number || 'N/A'}</span>
+              <span className="font-mono">{soaData?.student?.student_id_number || 'N/A'}</span>
             </li>
             <li className="flex justify-between">
               <span>Academic Year:</span>
@@ -235,7 +235,7 @@ const MyLedger: React.FC = () => {
         </div>
       </div>
 
-      {error && <ErrorModal message={error} onClose={() => setError('')} />}
+      {error && <ErrorModal message={error} onClose={() => setError('')} isOpen={false} />}
     </div>
   );
 };

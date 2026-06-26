@@ -5,13 +5,11 @@ import { academicYearService } from '../../../services/academicYearService';
 import { StudentReportCard } from '../../../types/student';
 import { AcademicYear } from '../../../types/academicYear';
 import { 
-  GraduationCap, 
-  BookOpen, 
+  BookOpen,
   Search,
   Filter,
   AlertCircle,
   FileText,
-  Info
 } from 'lucide-react';
 
 const MyGrades: React.FC = () => {
@@ -201,9 +199,7 @@ const MyGrades: React.FC = () => {
                       );
                     })}
                     <td className="px-6 py-4 text-center bg-blue-50/30">
-                      <span className={`text-sm font-bold ${
-                        item.final_average >= 75 ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                      <span className={`text-sm font-bold  text-blue-600`}>
                         {item.final_average ? item.final_average.toFixed(2) : '--'}
                       </span>
                     </td>

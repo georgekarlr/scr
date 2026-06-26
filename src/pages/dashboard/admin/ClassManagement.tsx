@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { ListTodo, Search, Plus, X, Edit2, Trash2, Calendar, MapPin, Users as UsersIcon } from 'lucide-react';
+import {  Search, Plus, X, Edit2, Trash2, Calendar, MapPin, Users as UsersIcon } from 'lucide-react';
 import { classService } from '../../../services/classService';
 import { subjectService } from '../../../services/subjectService';
 import { userService } from '../../../services/userService';
 import { academicYearService } from '../../../services/academicYearService';
 import { roomService } from '../../../services/roomService';
-import { YEAR_LEVELS } from '../../../constants/academic';
 import { Class, ClassFilters } from '../../../types/class';
 import { Subject } from '../../../types/subject';
 import { UserProfile } from '../../../types/auth';
 import { AcademicYear } from '../../../types/academicYear';
 import { Room } from '../../../types/room';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const ClassManagement: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);

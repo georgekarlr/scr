@@ -3,7 +3,6 @@ import { Calendar, Plus, X, Edit2, Trash2, CheckCircle, Circle } from 'lucide-re
 import { academicYearService } from '../../../services/academicYearService';
 import { AcademicYear } from '../../../types/academicYear';
 import ErrorModal from '../../../components/ui/ErrorModal';
-import StatusMessage from '../../../components/ui/StatusMessage';
 
 const AcademicYearManagement: React.FC = () => {
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);

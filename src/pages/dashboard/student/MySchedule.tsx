@@ -8,10 +8,8 @@ import {
   Calendar, 
   Clock, 
   MapPin, 
-  User, 
   Filter,
   AlertCircle,
-  BookOpen,
   Search
 } from 'lucide-react';
 
@@ -91,7 +89,7 @@ const MySchedule: React.FC = () => {
       const ampm = hour >= 12 ? 'PM' : 'AM';
       const formattedHour = hour % 12 || 12;
       return `${formattedHour}:${minutes} ${ampm}`;
-    } catch (e) {
+    } catch {
       return time;
     }
   };

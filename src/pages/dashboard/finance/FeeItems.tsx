@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, Plus, Search, Trash2, Calendar, Filter, BookOpen, Edit2, X } from 'lucide-react';
+import { Wallet, Plus, Trash2, Calendar, Filter, Edit2, X } from 'lucide-react';
 import { financeService } from '../../../services/financeService';
 import { academicYearService } from '../../../services/academicYearService';
 import { subjectService } from '../../../services/subjectService';
-import { FeeItem, CreateFeeItemParams, FeeCategory } from '../../../types/finance';
+import { FeeItem, FeeCategory } from '../../../types/finance';
 import { AcademicYear } from '../../../types/academicYear';
 import { Subject } from '../../../types/subject';
 import ErrorModal from '../../../components/ui/ErrorModal';

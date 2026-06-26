@@ -6,7 +6,7 @@ import ErrorModal from '../../../components/ui/ErrorModal';
 import StatusMessage from '../../../components/ui/StatusMessage';
 
 const UserManagement: React.FC = () => {
-  const { listSchoolUsers, listUsers, createUser, updateUser, updateUserName, updateUserRole, profile } = useAuth();
+  const { listSchoolUsers, createUser, updateUser, updateUserName, updateUserRole, profile } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -187,10 +187,6 @@ const UserManagement: React.FC = () => {
     }
     setSubmitting(false);
   };
-
-  const filteredUsers = users.filter(u => 
-    `${u.first_name} ${u.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
@@ -581,17 +577,17 @@ const UserRow: React.FC<{
           <p className="font-medium text-gray-900">
             {user.first_name} {user.last_name}
           </p>
-          <p className="text-sm text-gray-500 flex items-center gap-1">
+          {/*<p className="text-sm text-gray-500 flex items-center gap-1">
             <Shield size={12} />
             {user.role}
-          </p>
+          </p>*/}
         </div>
       </div>
     </td>
     <td className="px-6 py-4">
       <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 capitalize">
         <Shield size={14} className="text-blue-500" />
-        {user.user_metadata?.role?.replace('_', ' ')}
+        {user.role?.replace('_', ' ')}
       </span>
     </td>
     <td className="px-6 py-4 text-right">
