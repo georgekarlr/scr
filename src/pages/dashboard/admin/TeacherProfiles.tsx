@@ -391,7 +391,7 @@ const TeacherProfiles: React.FC = () => {
             <p className="text-gray-500">Could not load teacher profile.</p>
           </div>
         )}
-        {error && <ErrorModal message={error} onClose={() => setError('')} />}
+        {error && <ErrorModal message={error} onClose={() => setError('')} isOpen={error !== ''} />}
 
         {isAddClassModalOpen && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
