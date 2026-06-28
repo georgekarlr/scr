@@ -34,12 +34,9 @@ export const classService = {
         p_semester: params.semester,
         p_academic_year_id: params.academic_year_id,
         p_section_name: params.section_name || 'A',
-        p_room_id: params.room_id || null,
-        p_days_of_week: params.days_of_week || null,
-        p_start_time: params.start_time || null,
-        p_end_time: params.end_time || null,
         p_capacity: params.capacity || 40,
-        p_co_teacher_id: params.co_teacher_id || null
+        p_co_teacher_id: params.co_teacher_id || null,
+        p_schedules_json: params.schedules // Passes the new array of schedules
       })
 
       if (error) {
@@ -58,17 +55,14 @@ export const classService = {
     try {
       const { data, error } = await supabase.rpc('update_class', {
         p_class_id: params.class_id,
-        p_teacher_id: params.teacher_id,
         p_department: params.department,
+        p_teacher_id: params.teacher_id,
         p_semester: params.semester,
         p_academic_year_id: params.academic_year_id,
         p_section_name: params.section_name,
-        p_room_id: params.room_id,
-        p_days_of_week: params.days_of_week,
-        p_start_time: params.start_time,
-        p_end_time: params.end_time,
         p_capacity: params.capacity,
-        p_co_teacher_id: params.co_teacher_id || null
+        p_co_teacher_id: params.co_teacher_id || null,
+        p_schedules_json: params.schedules // Passes the new array of schedules
       })
 
       if (error) {
@@ -97,6 +91,24 @@ export const classService = {
       return { data: data as boolean, error: null }
     } catch (error: any) {
       console.error('Unexpected error in deleteClass:', error)
+      return { data: null, error }
+    }
+  },
+
+  async deleteClassSchedule(scheduleId: string) {
+    try {
+      const { data, error } = await supabase.rpc('delete_class_schedule', {
+        p_schedule_id: scheduleId
+      })
+
+      if (error) {
+        console.error('Error deleting class schedule:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as boolean, error: null }
+    } catch (error: any) {
+      console.error('Unexpected error in deleteClassSchedule:', error)
       return { data: null, error }
     }
   }

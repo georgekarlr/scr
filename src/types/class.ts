@@ -1,3 +1,15 @@
+// types/class.ts
+
+export interface ClassSchedule {
+  schedule_id: string;
+  room_id: string | null;
+  room_name: string | null;
+  room_building: string | null;
+  days_of_week: string;
+  start_time: string;
+  end_time: string;
+}
+
 export interface Class {
   id: string;
   department: string;
@@ -15,14 +27,9 @@ export interface Class {
   semester: string;
   academic_year_id: string;
   academic_year_name: string;
-  room_id: string | null;
-  room_name: string | null;
-  room_building: string | null;
-  days_of_week: string | null;
-  start_time: string | null;
-  end_time: string | null;
   capacity: number;
   enrolled_count: number;
+  schedules: ClassSchedule[]; // Replaced individual fields with this array
 }
 
 export interface ClassFilters {
@@ -34,6 +41,13 @@ export interface ClassFilters {
   search_term?: string | null;
 }
 
+export interface ScheduleInput {
+  room_id: string | null;
+  days_of_week: string;
+  start_time: string;
+  end_time: string;
+}
+
 export interface CreateClassParams {
   subject_id: string;
   teacher_id: string;
@@ -41,12 +55,9 @@ export interface CreateClassParams {
   semester: string;
   academic_year_id: string;
   section_name?: string;
-  room_id?: string | null;
-  days_of_week?: string | null;
-  start_time?: string | null;
-  end_time?: string | null;
   capacity?: number;
   co_teacher_id?: string | null;
+  schedules: ScheduleInput[]; // Replaced individual fields
 }
 
 export interface UpdateClassParams {
@@ -56,10 +67,7 @@ export interface UpdateClassParams {
   semester: string;
   academic_year_id: string;
   section_name: string;
-  room_id: string | null;
-  days_of_week: string | null;
-  start_time: string | null;
-  end_time: string | null;
   capacity: number;
   co_teacher_id?: string | null;
+  schedules: ScheduleInput[]; // Replaced individual fields
 }
