@@ -81,7 +81,55 @@ const MySchedule: React.FC = () => {
     `${item.teacher_first_name} ${item.teacher_last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatTime = (time: string) => {
+  interface GroupedStudentSchedule {
+    enrollment_id: string;
+    class_id: string;
+    subject_code: string;
+    subject_name: string;
+    units: number;
+    section_name: string;
+    teacher_first_name: string;
+    teacher_last_name: string;
+    schedules: Array<{
+      schedule_id: string | null;
+      days_of_week: string | null;
+      start_time: string | null;
+      end_time: string | null;
+      room_name: string | null;
+      room_building: string | null;
+    }>;
+  }
+
+  const groupedSchedule: GroupedStudentSchedule[] = [];
+  filteredSchedule.forEach(item => {
+    let existing = groupedSchedule.find(g => g.class_id === item.class_id);
+    if (!existing) {
+      existing = {
+        enrollment_id: item.enrollment_id,
+        class_id: item.class_id,
+        subject_code: item.subject_code,
+        subject_name: item.subject_name,
+        units: item.units,
+        section_name: item.section_name,
+        teacher_first_name: item.teacher_first_name,
+        teacher_last_name: item.teacher_last_name,
+        schedules: []
+      };
+      groupedSchedule.push(existing);
+    }
+    if (item.days_of_week) {
+      existing.schedules.push({
+        schedule_id: item.schedule_id,
+        days_of_week: item.days_of_week,
+        start_time: item.start_time,
+        end_time: item.end_time,
+        room_name: item.room_name,
+        room_building: item.room_building
+      });
+    }
+  });
+
+  const formatTime = (time: string | null) => {
     if (!time) return '';
     try {
       const [hours, minutes] = time.split(':');
@@ -153,7 +201,7 @@ const MySchedule: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
             <Calendar className="w-4 h-4" />
-            <span>{filteredSchedule.length} Classes Scheduled</span>
+            <span>{groupedSchedule.length} Classes Scheduled</span>
           </div>
         </div>
 
@@ -162,24 +210,23 @@ const MySchedule: React.FC = () => {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Subject & Section</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Room</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule & Room</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Instructor</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center">
+                  <td colSpan={3} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                       <p className="text-sm text-gray-500">Loading your schedule...</p>
                     </div>
                   </td>
                 </tr>
-              ) : filteredSchedule.length > 0 ? (
-                filteredSchedule.map((item) => (
-                  <tr key={item.enrollment_id} className="hover:bg-gray-50/80 transition-colors">
+              ) : groupedSchedule.length > 0 ? (
+                groupedSchedule.map((item) => (
+                  <tr key={item.class_id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-gray-900">{item.subject_name}</span>
@@ -190,35 +237,39 @@ const MySchedule: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-                          <Calendar size={14} className="text-gray-400" />
-                          {item.days_of_week}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                          <Clock size={14} className="text-gray-400" />
-                          {formatTime(item.start_time)} - {formatTime(item.end_time)}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.room_name ? (
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                            <MapPin size={14} className="text-gray-400" />
-                            {item.room_name}
-                          </div>
-                          <span className="text-xs text-gray-500 ml-5">{item.room_building}</span>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {item.schedules && item.schedules.length > 0 ? (
+                        <div className="space-y-2">
+                          {item.schedules.map((sched, idx) => (
+                            <div key={sched.schedule_id || idx} className="flex flex-col border-l-2 border-blue-100 pl-2">
+                              <div className="flex items-center gap-1.5">
+                                <Clock size={13} className="text-gray-400" />
+                                <span className="font-semibold text-gray-700">{sched.days_of_week || 'TBA'}</span>
+                                <span className="text-xs text-gray-500">
+                                  ({sched.start_time ? formatTime(sched.start_time) : 'TBA'} - {sched.end_time ? formatTime(sched.end_time) : 'TBA'})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
+                                <MapPin size={12} className="text-gray-400" />
+                                <span>
+                                  {sched.room_name ? (
+                                    `${sched.room_name}${sched.room_building ? ` (${sched.room_building})` : ''}`
+                                  ) : (
+                                    'TBA'
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400 italic">No room assigned</span>
+                        <span className="text-gray-400 italic">No schedule set</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[10px]">
-                          {item.teacher_first_name[0]}{item.teacher_last_name[0]}
+                          {item.teacher_first_name[0] || ''}{item.teacher_last_name[0] || ''}
                         </div>
                         <span className="text-sm font-medium text-gray-700">
                           {item.teacher_first_name} {item.teacher_last_name}
@@ -229,7 +280,7 @@ const MySchedule: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={3} className="px-6 py-12 text-center text-gray-500">
                     <div className="flex flex-col items-center gap-2">
                       <Calendar className="w-10 h-10 text-gray-300" />
                       <p className="font-medium">No classes found for this period.</p>

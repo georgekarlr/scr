@@ -128,6 +128,7 @@ export const studentService = {
         p_semester: semester
       })
 
+      console.log("Student Schedule Data:", data);
       if (error) {
         console.error('Error fetching student schedule:', error)
         return { data: null, error }
@@ -146,6 +147,7 @@ export const studentService = {
         p_student_id: studentId
       })
 
+      console.log("Student TOR Data:", data);
       if (error) {
         console.error('Error generating student TOR:', error)
         return { data: null, error }

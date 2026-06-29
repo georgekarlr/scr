@@ -61,6 +61,7 @@ export interface StudentReportCard {
 export interface StudentSchedule {
   enrollment_id: string;
   class_id: string;
+  schedule_id: string | null;
   subject_code: string;
   subject_name: string;
   units: number;
@@ -69,9 +70,9 @@ export interface StudentSchedule {
   teacher_last_name: string;
   room_name: string | null;
   room_building: string | null;
-  days_of_week: string;
-  start_time: string;
-  end_time: string;
+  days_of_week: string | null;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 export interface StudentTOR {

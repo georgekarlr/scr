@@ -9,6 +9,7 @@ import { TeacherListItem, TeacherProfileData } from '../../../types/teacher';
 import { AcademicYear } from '../../../types/academicYear';
 import { Subject } from '../../../types/subject';
 import { Room } from '../../../types/room';
+import { ScheduleInput } from '../../../types/class';
 import StatusMessage from '../../../components/ui/StatusMessage';
 import ErrorModal from '../../../components/ui/ErrorModal';
 
@@ -30,15 +31,31 @@ const TeacherProfiles: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     subject_id: '',
+    co_teacher_id: '',
     department: 'College',
     semester: '1st Semester',
     section_name: 'A',
-    room_id: '',
-    days_of_week: '',
-    start_time: '',
-    end_time: '',
-    capacity: 40
+    capacity: 40,
+    schedules: [] as ScheduleInput[]
   });
+
+  const handleScheduleChange = (index: number, field: keyof ScheduleInput, value: string) => {
+    const newSchedules = [...formData.schedules];
+    newSchedules[index] = { ...newSchedules[index], [field]: value };
+    setFormData({ ...formData, schedules: newSchedules });
+  };
+
+  const addSchedule = () => {
+    setFormData({
+      ...formData,
+      schedules: [...formData.schedules, { room_id: '', days_of_week: '', start_time: '', end_time: '' }]
+    });
+  };
+
+  const removeSchedule = (index: number) => {
+    const newSchedules = formData.schedules.filter((_, i) => i !== index);
+    setFormData({ ...formData, schedules: newSchedules });
+  };
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -113,44 +130,65 @@ const TeacherProfiles: React.FC = () => {
     setTeacherProfile(null);
   };
 
-  const handleOpenAddClassModal = (cls?: any) => {
+  const handleOpenAddClassModal = async (cls?: any) => {
     fetchClassFormData();
     if (cls) {
       setSelectedClassId(cls.class_id);
-      // We need to find the subject_id by subject_code since the schedule only has code/name
-      // But wait, creating/updating class needs subject_id. 
-      // Actually, if we are editing, we should probably have the subject_id.
-      // Let's check how ClassManagement does it.
-      // In ClassManagement, the class object has subject_id.
-      // Here, TeacherScheduleItem does NOT have subject_id. 
-      // This is a problem. I might need to fetch the class details or update the RPC.
-      // However, for now, let's see if I can find it in the subjects list.
-      const subject = subjects.find(s => s.code === cls.subject_code);
-      const room = rooms.find(r => r.name === cls.room_name);
 
-      setFormData({
-        subject_id: subject?.id || '',
-        department: cls.department,
-        semester: cls.semester,
-        section_name: cls.section_name,
-        room_id: room?.id || '',
-        days_of_week: cls.days_of_week || '',
-        start_time: cls.start_time || '',
-        end_time: cls.end_time || '',
-        capacity: cls.capacity
+      const { data } = await classService.getClasses({
+        filter_academic_year_id: selectedYearId
       });
+      const fullClass = data?.find(c => c.id === cls.class_id);
+
+      if (fullClass) {
+        setFormData({
+          subject_id: fullClass.subject_id,
+          co_teacher_id: fullClass.co_teacher_id || '',
+          department: fullClass.department,
+          semester: fullClass.semester,
+          section_name: fullClass.section_name,
+          capacity: fullClass.capacity,
+          schedules: fullClass.schedules.map(s => ({
+            room_id: s.room_id || '',
+            days_of_week: s.days_of_week || '',
+            start_time: s.start_time || '',
+            end_time: s.end_time || ''
+          }))
+        });
+      } else {
+        const subject = subjects.find(s => s.code === cls.subject_code);
+        setFormData({
+          subject_id: subject?.id || '',
+          co_teacher_id: '',
+          department: cls.department,
+          semester: cls.semester,
+          section_name: cls.section_name,
+          capacity: cls.capacity,
+          schedules: cls.schedules && cls.schedules.length > 0
+            ? cls.schedules.map((s: any) => ({
+                room_id: s.room_id || '',
+                days_of_week: s.days_of_week || '',
+                start_time: s.start_time || '',
+                end_time: s.end_time || ''
+              }))
+            : [{
+                room_id: '',
+                days_of_week: '',
+                start_time: '',
+                end_time: ''
+              }]
+        });
+      }
     } else {
       setSelectedClassId(null);
       setFormData({
         subject_id: '',
+        co_teacher_id: '',
         department: 'College',
         semester: '1st Semester',
         section_name: 'A',
-        room_id: '',
-        days_of_week: '',
-        start_time: '',
-        end_time: '',
-        capacity: 40
+        capacity: 40,
+        schedules: [{ room_id: '', days_of_week: '', start_time: '', end_time: '' }]
       });
     }
     setIsAddClassModalOpen(true);
@@ -161,42 +199,62 @@ const TeacherProfiles: React.FC = () => {
     if (!selectedTeacherId || !selectedYearId) return;
 
     setSubmitting(true);
-    
-    let result;
-    if (selectedClassId) {
-      result = await classService.updateClass({
-        class_id: selectedClassId,
-        ...formData,
-        teacher_id: selectedTeacherId,
-        academic_year_id: selectedYearId
-      });
-    } else {
-      result = await classService.createClass({
-        ...formData,
-        teacher_id: selectedTeacherId,
-        academic_year_id: selectedYearId
-      });
-    }
+    setError('');
 
-    if (result.error) {
-      setError(result.error.message);
-    } else {
-      setIsAddClassModalOpen(false);
-      setSelectedClassId(null);
-      setFormData({
-        subject_id: '',
-        department: 'College',
-        semester: '1st Semester',
-        section_name: 'A',
-        room_id: '',
-        days_of_week: '',
-        start_time: '',
-        end_time: '',
-        capacity: 40
-      });
-      fetchTeacherProfile(selectedTeacherId, selectedYearId, selectedDepartment);
+    try {
+      const formattedSchedules = formData.schedules.map(s => ({
+        ...s,
+        room_id: s.room_id || null
+      }));
+
+      let result;
+      if (selectedClassId) {
+        result = await classService.updateClass({
+          class_id: selectedClassId,
+          teacher_id: selectedTeacherId,
+          co_teacher_id: formData.co_teacher_id || null,
+          department: formData.department,
+          semester: formData.semester,
+          academic_year_id: selectedYearId,
+          section_name: formData.section_name,
+          capacity: formData.capacity,
+          schedules: formattedSchedules
+        });
+      } else {
+        result = await classService.createClass({
+          subject_id: formData.subject_id,
+          teacher_id: selectedTeacherId,
+          co_teacher_id: formData.co_teacher_id || null,
+          department: formData.department,
+          semester: formData.semester,
+          academic_year_id: selectedYearId,
+          section_name: formData.section_name,
+          capacity: formData.capacity,
+          schedules: formattedSchedules
+        });
+      }
+
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        setIsAddClassModalOpen(false);
+        setSelectedClassId(null);
+        setFormData({
+          subject_id: '',
+          co_teacher_id: '',
+          department: 'College',
+          semester: '1st Semester',
+          section_name: 'A',
+          capacity: 40,
+          schedules: [{ room_id: '', days_of_week: '', start_time: '', end_time: '' }]
+        });
+        fetchTeacherProfile(selectedTeacherId, selectedYearId, selectedDepartment);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   if (selectedTeacherId) {
@@ -210,7 +268,7 @@ const TeacherProfiles: React.FC = () => {
             <ChevronLeft size={20} />
             <span className="font-medium">Back to Teachers List</span>
           </button>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
               <BookOpen size={18} className="text-gray-400" />
@@ -290,7 +348,7 @@ const TeacherProfiles: React.FC = () => {
                       Add Class
                     </button>
                     <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">
-                      {teacherProfile.schedule.length} Classes
+                      {teacherProfile.classes.length} Classes
                     </span>
                   </div>
                 </div>
@@ -300,15 +358,14 @@ const TeacherProfiles: React.FC = () => {
                       <tr className="bg-gray-50 border-b border-gray-200">
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Subject</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Section/Sem</th>
-                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule</th>
-                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Room</th>
+                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule & Room</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Enrollment</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {teacherProfile.schedule.length > 0 ? (
-                        teacherProfile.schedule.map((cls) => (
+                      {teacherProfile.classes.length > 0 ? (
+                        teacherProfile.classes.map((cls) => (
                           <tr key={cls.class_id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4">
                               <div className="flex flex-col">
@@ -331,22 +388,34 @@ const TeacherProfiles: React.FC = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col text-sm text-gray-600">
-                                <div className="flex items-center gap-1.5">
-                                  <Clock size={14} className="text-gray-400" />
-                                  <span>{cls.days_of_week || 'TBA'}</span>
-                                </div>
-                                <div className="text-xs ml-5">
-                                  {cls.start_time || 'TBA'} - {cls.end_time || 'TBA'}
-                                </div>
-                              </div>
-                            </td>
                             <td className="px-6 py-4 text-sm text-gray-600">
-                              <div className="flex items-center gap-1.5">
-                                <MapPin size={14} className="text-gray-400" />
-                                <span>{cls.room_name || 'TBA'}</span>
-                              </div>
+                              {cls.schedules && cls.schedules.length > 0 ? (
+                                <div className="space-y-2">
+                                  {cls.schedules.map((sched, idx) => (
+                                    <div key={sched.schedule_id || idx} className="flex flex-col border-l-2 border-blue-100 pl-2">
+                                      <div className="flex items-center gap-1.5">
+                                        <Clock size={13} className="text-gray-400" />
+                                        <span className="font-semibold text-gray-700">{sched.days_of_week || 'TBA'}</span>
+                                        <span className="text-xs text-gray-500">
+                                          ({sched.start_time || 'TBA'} - {sched.end_time || 'TBA'})
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
+                                        <MapPin size={12} className="text-gray-400" />
+                                        <span>
+                                          {sched.room_name ? (
+                                            `${sched.room_name}${sched.room_building ? ` (${sched.room_building})` : ''}`
+                                          ) : (
+                                            'TBA'
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 italic">No schedule set</span>
+                              )}
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex flex-col">
@@ -355,8 +424,8 @@ const TeacherProfiles: React.FC = () => {
                                   <span className="font-medium">{cls.enrolled_count}/{cls.capacity}</span>
                                 </div>
                                 <div className="w-16 h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
-                                  <div 
-                                    className="h-full bg-blue-500 rounded-full" 
+                                  <div
+                                    className="h-full bg-blue-500 rounded-full"
                                     style={{ width: `${Math.min(100, (cls.enrolled_count / cls.capacity) * 100)}%` }}
                                   />
                                 </div>
@@ -395,31 +464,58 @@ const TeacherProfiles: React.FC = () => {
 
         {isAddClassModalOpen && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-xl font-bold text-gray-900">{selectedClassId ? 'Edit Class' : 'Add New Class'}</h3>
-              <button
-                onClick={() => setIsAddClassModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <h3 className="text-xl font-bold text-gray-900">{selectedClassId ? 'Edit Class' : 'Add New Class'}</h3>
+                <button
+                  onClick={() => setIsAddClassModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>            <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-sm font-bold text-gray-700">Subject</label>
                     <select
                       required
+                      disabled={!!selectedClassId}
                       value={formData.subject_id}
                       onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Select a subject</option>
                       {subjects.map((sub) => (
                         <option key={sub.id} value={sub.id}>
                           {sub.code} - {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Section Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.section_name}
+                      onChange={(e) => setFormData({ ...formData, section_name: e.target.value })}
+                      placeholder="e.g. A, B, Section 1"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Co-Teacher (Optional)</label>
+                    <select
+                      value={formData.co_teacher_id}
+                      onChange={(e) => setFormData({ ...formData, co_teacher_id: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                    >
+                      <option value="">None</option>
+                      {teachers.filter(t => t.teacher_id !== selectedTeacherId).map((t) => (
+                        <option key={t.teacher_id} value={t.teacher_id}>
+                          {t.first_name} {t.last_name}
                         </option>
                       ))}
                     </select>
@@ -440,18 +536,6 @@ const TeacherProfiles: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Section Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.section_name}
-                      onChange={(e) => setFormData({ ...formData, section_name: e.target.value })}
-                      placeholder="e.g. A, B, Section 1"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">Semester</label>
                     <select
                       required
@@ -462,22 +546,6 @@ const TeacherProfiles: React.FC = () => {
                       <option value="1st Semester">1st Semester</option>
                       <option value="2nd Semester">2nd Semester</option>
                       <option value="Summer">Summer</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Room</label>
-                    <select
-                      value={formData.room_id}
-                      onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    >
-                      <option value="">Select a room (Optional)</option>
-                      {rooms.map((room) => (
-                        <option key={room.id} value={room.id}>
-                          {room.name} {room.building ? `(${room.building})` : ''}
-                        </option>
-                      ))}
                     </select>
                   </div>
 
@@ -493,35 +561,88 @@ const TeacherProfiles: React.FC = () => {
                     />
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-bold text-gray-700">Schedule (Days of Week)</label>
-                    <input
-                      type="text"
-                      value={formData.days_of_week}
-                      onChange={(e) => setFormData({ ...formData, days_of_week: e.target.value })}
-                      placeholder="e.g. MWF, TTh, Monday-Friday"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
+                  {/* Schedules Section */}
+                  <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 md:col-span-2">
+                    <h4 className="font-bold text-gray-900 text-sm">Schedules & Rooms</h4>
+                    <button
+                      type="button"
+                      onClick={addSchedule}
+                      className="flex items-center gap-1 text-xs text-blue-600 font-bold hover:text-blue-700 transition-colors"
+                    >
+                      <Plus size={14} /> Add Schedule
+                    </button>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Start Time</label>
-                    <input
-                      type="time"
-                      value={formData.start_time}
-                      onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
-                  </div>
+                  <div className="space-y-4 md:col-span-2">
+                    {formData.schedules.map((schedule, index) => (
+                      <div key={index} className="flex flex-col md:flex-row gap-4 p-4 bg-gray-50/50 border border-gray-200 rounded-xl relative group">
+                        {/* Remove button */}
+                        {formData.schedules.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeSchedule(index)}
+                            className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1.5 rounded-full hover:bg-red-200 transition-colors shadow-sm"
+                            title="Remove Schedule"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">End Time</label>
-                    <input
-                      type="time"
-                      value={formData.end_time}
-                      onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
+                        <div className="flex-1 space-y-2">
+                          <label className="text-xs font-bold text-gray-700">Days (e.g. M,W,F)</label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="M,W"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={schedule.days_of_week}
+                            onChange={(e) => handleScheduleChange(index, 'days_of_week', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="flex-1 space-y-2">
+                          <label className="text-xs font-bold text-gray-700">Start Time</label>
+                          <input
+                            required
+                            type="time"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={schedule.start_time}
+                            onChange={(e) => handleScheduleChange(index, 'start_time', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="flex-1 space-y-2">
+                          <label className="text-xs font-bold text-gray-700">End Time</label>
+                          <input
+                            required
+                            type="time"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={schedule.end_time}
+                            onChange={(e) => handleScheduleChange(index, 'end_time', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="flex-[1.5] space-y-2">
+                          <label className="text-xs font-bold text-gray-700">Room</label>
+                          <select
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            value={schedule.room_id || ''}
+                            onChange={(e) => handleScheduleChange(index, 'room_id', e.target.value)}
+                          >
+                            <option value="">TBA / No Room</option>
+                            {rooms.map(r => (
+                              <option key={r.id} value={r.id}>{r.name} {r.building ? `(${r.building})` : ''}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+
+                    {formData.schedules.length === 0 && (
+                      <div className="text-center py-8 bg-gray-50/50 border border-dashed border-gray-300 rounded-xl">
+                        <p className="text-sm text-gray-500">No schedules added. Click "Add Schedule" to assign times and rooms.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -571,7 +692,7 @@ const TeacherProfiles: React.FC = () => {
         </div>
       </div>
 
-      {error && <StatusMessage message={error} status={"error"}  />}
+      {error && <StatusMessage message={error} status={"error"} />}
 
       {loading ? (
         <div className="flex justify-center py-12">
@@ -606,13 +727,12 @@ const TeacherProfiles: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                            teacher.active_classes_count > 5 
-                              ? 'bg-red-100 text-red-700' 
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${teacher.active_classes_count > 5
+                              ? 'bg-red-100 text-red-700'
                               : teacher.active_classes_count === 0
-                              ? 'bg-gray-100 text-gray-600'
-                              : 'bg-green-100 text-green-700'
-                          }`}>
+                                ? 'bg-gray-100 text-gray-600'
+                                : 'bg-green-100 text-green-700'
+                            }`}>
                             {teacher.active_classes_count} Classes
                           </span>
                           <span className="text-xs text-gray-400">
