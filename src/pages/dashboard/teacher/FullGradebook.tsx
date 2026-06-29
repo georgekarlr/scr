@@ -264,7 +264,7 @@ const FullGradebook: React.FC = () => {
                     })}
                     <td className="px-6 py-4 text-center bg-indigo-50/30">
                       <span className={`text-sm font-bold text-blue-600`}>
-                        {student.running_average ? student.running_average.toFixed(2) : '--'}
+                        {student.running_average ?? '--'}
                       </span>
                     </td>
                   </tr>

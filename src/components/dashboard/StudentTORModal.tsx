@@ -88,7 +88,6 @@ const StudentTORModal: React.FC<StudentTORModalProps> = ({ isOpen, onClose, torD
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase">Subject Name</th>
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center">Units</th>
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center">Grade</th>
-                        <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center">Remarks</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -103,22 +102,15 @@ const StudentTORModal: React.FC<StudentTORModalProps> = ({ isOpen, onClose, torD
                             <td className="px-4 py-3 text-xs font-medium text-gray-700">{record.subject_name}</td>
                             <td className="px-4 py-3 text-xs font-bold text-gray-900 text-center">{record.units}</td>
                             <td className="px-4 py-3 text-center">
-                              <span className={`text-xs font-black ${record.final_grade && record.final_grade >= 75 ? 'text-green-600' : 'text-red-600'}`}>
-                                {record.final_grade ? record.final_grade.toFixed(2) : '--'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                                record.remarks === 'PASSED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                              }`}>
-                                {record.remarks || '--'}
+                              <span className={`text-xs font-black ${record.final_grade && parseFloat(record.final_grade) >= 75 ? 'text-green-600' : 'text-red-600'}`}>
+                                {record.final_grade || '--'}
                               </span>
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="px-4 py-10 text-center text-gray-400 italic text-sm">
+                          <td colSpan={5} className="px-4 py-10 text-center text-gray-400 italic text-sm">
                             No academic records found for this student.
                           </td>
                         </tr>

@@ -112,7 +112,6 @@ const TeacherProfiles: React.FC = () => {
   const fetchTeacherProfile = async (teacherId: string, yearId: string, department?: string) => {
     setProfileLoading(true);
     const { data, error } = await teacherService.getTeacherProfile(teacherId, yearId, department);
-    console.log("Teacher Profile Data:", data);
     if (error) {
       setError(error.message);
     } else if (data) {
@@ -157,6 +156,7 @@ const TeacherProfiles: React.FC = () => {
         });
       } else {
         const subject = subjects.find(s => s.code === cls.subject_code);
+        const room = rooms.find(r => r.name === cls.room_name);
         setFormData({
           subject_id: subject?.id || '',
           co_teacher_id: '',
@@ -164,19 +164,12 @@ const TeacherProfiles: React.FC = () => {
           semester: cls.semester,
           section_name: cls.section_name,
           capacity: cls.capacity,
-          schedules: cls.schedules && cls.schedules.length > 0
-            ? cls.schedules.map((s: any) => ({
-                room_id: s.room_id || '',
-                days_of_week: s.days_of_week || '',
-                start_time: s.start_time || '',
-                end_time: s.end_time || ''
-              }))
-            : [{
-                room_id: '',
-                days_of_week: '',
-                start_time: '',
-                end_time: ''
-              }]
+          schedules: [{
+            room_id: room?.id || '',
+            days_of_week: cls.days_of_week || '',
+            start_time: cls.start_time || '',
+            end_time: cls.end_time || ''
+          }]
         });
       }
     } else {
@@ -358,14 +351,16 @@ const TeacherProfiles: React.FC = () => {
                       <tr className="bg-gray-50 border-b border-gray-200">
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Subject</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Section/Sem</th>
-                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule & Room</th>
+                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule</th>
+                        <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Room</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Enrollment</th>
                         <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {teacherProfile.classes.length > 0 ? (
-                        teacherProfile.classes.map((cls) => (
+                        teacherProfile.classes.map((cls) => {
+                          return (
                           <tr key={cls.class_id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4">
                               <div className="flex flex-col">
@@ -388,34 +383,44 @@ const TeacherProfiles: React.FC = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {cls.schedules && cls.schedules.length > 0 ? (
-                                <div className="space-y-2">
-                                  {cls.schedules.map((sched, idx) => (
-                                    <div key={sched.schedule_id || idx} className="flex flex-col border-l-2 border-blue-100 pl-2">
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col gap-1.5 text-sm text-gray-600">
+                                {cls.schedules && cls.schedules.length > 0 ? (
+                                  cls.schedules.map((sch, i) => (
+                                    <div key={sch.schedule_id ?? i} className="flex flex-col">
                                       <div className="flex items-center gap-1.5">
-                                        <Clock size={13} className="text-gray-400" />
-                                        <span className="font-semibold text-gray-700">{sched.days_of_week || 'TBA'}</span>
-                                        <span className="text-xs text-gray-500">
-                                          ({sched.start_time || 'TBA'} - {sched.end_time || 'TBA'})
-                                        </span>
+                                        <Clock size={14} className="text-gray-400 shrink-0" />
+                                        <span>{sch.days_of_week || 'TBA'}</span>
                                       </div>
-                                      <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
-                                        <MapPin size={12} className="text-gray-400" />
-                                        <span>
-                                          {sched.room_name ? (
-                                            `${sched.room_name}${sched.room_building ? ` (${sched.room_building})` : ''}`
-                                          ) : (
-                                            'TBA'
-                                          )}
-                                        </span>
+                                      <div className="text-xs ml-5 text-gray-500">
+                                        {sch.start_time || 'TBA'} - {sch.end_time || 'TBA'}
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 italic">No schedule set</span>
-                              )}
+                                  ))
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock size={14} className="text-gray-400" />
+                                    <span>TBA</span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              <div className="flex flex-col gap-1.5">
+                                {cls.schedules && cls.schedules.length > 0 ? (
+                                  cls.schedules.map((sch, i) => (
+                                    <div key={sch.schedule_id ?? i} className="flex items-center gap-1.5">
+                                      <MapPin size={14} className="text-gray-400 shrink-0" />
+                                      <span>{sch.room_name || 'TBA'}</span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <MapPin size={14} className="text-gray-400" />
+                                    <span>TBA</span>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex flex-col">
@@ -441,7 +446,8 @@ const TeacherProfiles: React.FC = () => {
                               </button>
                             </td>
                           </tr>
-                        ))
+                          );
+                        })
                       ) : (
                         <tr>
                           <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">
@@ -728,10 +734,10 @@ const TeacherProfiles: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${teacher.active_classes_count > 5
-                              ? 'bg-red-100 text-red-700'
-                              : teacher.active_classes_count === 0
-                                ? 'bg-gray-100 text-gray-600'
-                                : 'bg-green-100 text-green-700'
+                            ? 'bg-red-100 text-red-700'
+                            : teacher.active_classes_count === 0
+                              ? 'bg-gray-100 text-gray-600'
+                              : 'bg-green-100 text-green-700'
                             }`}>
                             {teacher.active_classes_count} Classes
                           </span>

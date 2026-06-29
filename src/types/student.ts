@@ -55,7 +55,7 @@ export interface StudentReportCard {
   subject_name: string;
   units: number;
   grades_list: ReportCardGradeEntry[];
-  final_average: number;
+  final_average: string | null;
 }
 
 export interface StudentSchedule {
@@ -90,7 +90,6 @@ export interface StudentTOR {
     subject_code: string;
     subject_name: string;
     units: number;
-    final_grade: number | null;
-    remarks: string | null;
+    final_grade: string | null;
   }>;
 }

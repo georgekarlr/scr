@@ -208,9 +208,11 @@ const StudentReportCardModal: React.FC<StudentReportCardModalProps> = ({ isOpen,
                         })}
                         <td className="px-6 py-4 text-center bg-blue-50/30">
                           <span className={`text-sm font-bold ${
-                            item.final_average >= 75 ? 'text-green-600' : 'text-red-600'
+                            item.final_average
+                              ? (isNaN(Number(item.final_average)) ? 'text-orange-600' : Number(item.final_average) >= 75 ? 'text-green-600' : 'text-red-600')
+                              : 'text-gray-400'
                           }`}>
-                            {item.final_average ? item.final_average.toFixed(2) : '--'}
+                            {item.final_average ?? '--'}
                           </span>
                         </td>
                       </tr>

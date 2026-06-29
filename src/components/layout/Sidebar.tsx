@@ -68,6 +68,7 @@ const Sidebar: React.FC = () => {
               <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
               <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
               <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
+              <NavItem to="/dashboard/enroll-by-student" label="Enroll by Student" icon={<GraduationCap size={18} />} />
               <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
             <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
           </>
@@ -80,6 +81,7 @@ const Sidebar: React.FC = () => {
             <NavItem to="/dashboard/sections" label="Sections" icon={<LayoutGrid size={18} />} />
             <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
+            <NavItem to="/dashboard/enroll-by-student" label="Enroll by Student" icon={<GraduationCap size={18} />} />
           </>
         );
       case 'cashier':

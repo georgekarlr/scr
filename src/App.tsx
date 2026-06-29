@@ -24,6 +24,7 @@ import AcademicYearManagement from './pages/dashboard/admin/AcademicYearManageme
 import GradingPeriodManagement from './pages/dashboard/admin/GradingPeriodManagement';
 import RoomManagement from './pages/dashboard/admin/RoomManagement';
 import EnrollmentManagement from './pages/dashboard/admin/EnrollmentManagement';
+import EnrollByStudent from './pages/dashboard/admin/EnrollByStudent';
 import TeachingSchedule from './pages/dashboard/teacher/TeachingSchedule';
 import Gradebook from './pages/dashboard/teacher/Gradebook';
 import FullGradebook from './pages/dashboard/teacher/FullGradebook';
@@ -127,6 +128,7 @@ const App: React.FC = () => {
                       <Route path="directory" element={<div>Staff Directory (Coming Soon)</div>} />
                       <Route path="classes" element={<ClassManagement />} />
                       <Route path="enrollment" element={<EnrollmentManagement />} />
+                      <Route path="enroll-by-student" element={<EnrollByStudent />} />
                       <Route path="fee-items" element={<FeeItems />} />
                       <Route path="ledger" element={<Ledger />} />
                       {/*<Route path="payments" element={<Ledger />} />*/}
