@@ -200,7 +200,7 @@ const MyGrades: React.FC = () => {
                     })}
                     <td className="px-6 py-4 text-center bg-blue-50/30">
                       <span className={`text-sm font-bold  text-blue-600`}>
-                        {item.final_average ? item.final_average.toFixed(2) : '--'}
+                        {item.final_average ?? '--'}
                       </span>
                     </td>
                   </tr>

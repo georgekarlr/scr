@@ -32,23 +32,30 @@ export interface TeacherProfileBasic {
   created_at: string;
 }
 
-export interface TeacherScheduleItem {
+export interface TeacherScheduleDetail {
+  schedule_id: string;
+  room_id: string | null;
+  room_name: string | null;
+  room_building: string | null;
+  days_of_week: string | null;
+  start_time: string | null;
+  end_time: string | null;
+}
+
+export interface TeacherClassItem {
   class_id: string;
   department: string;
   subject_code: string;
   subject_name: string;
   section_name: string;
   semester: string;
-  days_of_week: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  room_name: string | null;
   capacity: number;
   enrolled_count: number;
   is_co_teacher: boolean;
+  schedules: TeacherScheduleDetail[];
 }
 
 export interface TeacherProfileData {
   profile: TeacherProfileBasic;
-  schedule: TeacherScheduleItem[];
+  classes: TeacherClassItem[];
 }

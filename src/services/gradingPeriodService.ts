@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase'
 import { GradingPeriod, GradingPeriodFilters } from '../types/gradingPeriod'
 
 export const gradingPeriodService = {
-  async createGradingPeriod(name: string, department: string, academicYearId: string, semester: string, requiredPaymentPercentage: number = 100, isActive: boolean = true) {
+  async createGradingPeriod(name: string, department: string, academicYearId: string, semester: string, requiredPaymentPercentage: number = 100, weightPercentage: number = 25, isActive: boolean = true) {
     try {
       const { data, error } = await supabase.rpc('create_grading_period', {
         p_name: name,
@@ -10,6 +10,7 @@ export const gradingPeriodService = {
         p_academic_year_id: academicYearId,
         p_semester: semester,
         p_required_payment_percentage: requiredPaymentPercentage,
+        p_weight_percentage: weightPercentage,
         p_is_active: isActive
       })
       if (error) return { data: null, error }
@@ -34,7 +35,7 @@ export const gradingPeriodService = {
     }
   },
 
-  async updateGradingPeriod(id: string, name: string, department: string, academicYearId: string, semester: string, requiredPaymentPercentage: number, isActive: boolean) {
+  async updateGradingPeriod(id: string, name: string, department: string, academicYearId: string, semester: string, requiredPaymentPercentage: number, weightPercentage: number, isActive: boolean) {
     try {
       const { data, error } = await supabase.rpc('update_grading_period', {
         p_period_id: id,
@@ -43,6 +44,7 @@ export const gradingPeriodService = {
         p_academic_year_id: academicYearId,
         p_semester: semester,
         p_required_payment_percentage: requiredPaymentPercentage,
+        p_weight_percentage: weightPercentage,
         p_is_active: isActive
       })
       if (error) return { data: null, error }

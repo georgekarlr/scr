@@ -128,6 +128,7 @@ export const studentService = {
         p_semester: semester
       })
 
+      console.log("Student Schedule Data:", data);
       if (error) {
         console.error('Error fetching student schedule:', error)
         return { data: null, error }
@@ -140,12 +141,14 @@ export const studentService = {
     }
   },
 
-  async generateStudentTOR(studentId: string) {
+  async generateStudentTOR(studentId: string, filterDepartment?: string | null) {
     try {
       const { data, error } = await supabase.rpc('generate_student_tor', {
-        p_student_id: studentId
+        p_student_id: studentId,
+        p_filter_department: filterDepartment ?? null
       })
 
+      console.log("Student TOR Data:", data);
       if (error) {
         console.error('Error generating student TOR:', error)
         return { data: null, error }

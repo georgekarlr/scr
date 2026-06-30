@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {  Search, X, UserCircle, Eye, FileText, ClipboardList, Calendar } from 'lucide-react';
+import {  Search, X, UserCircle, Eye, FileText, ClipboardList, Calendar, Archive } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { UserProfile } from '../../../types/auth';
 import { Student, StudentTOR } from '../../../types/student';
@@ -13,6 +13,7 @@ import ErrorModal from '../../../components/ui/ErrorModal';
 import StudentTORModal from '../../../components/dashboard/StudentTORModal';
 import StudentReportCardModal from '../../../components/dashboard/StudentReportCardModal';
 import StudentScheduleModal from '../../../components/dashboard/StudentScheduleModal';
+import LegacyGradeEncoderModal from '../../../components/dashboard/LegacyGradeEncoderModal';
 
 const StudentProfiles: React.FC = () => {
   const { createUser, profile } = useAuth();
@@ -33,6 +34,7 @@ const StudentProfiles: React.FC = () => {
   const [isTORModalOpen, setIsTORModalOpen] = useState(false);
   const [isReportCardModalOpen, setIsReportCardModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isLegacyGradeModalOpen, setIsLegacyGradeModalOpen] = useState(false);
   const [torData, setTorData] = useState<StudentTOR | null>(null);
   const [torLoading, setTorLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -143,10 +145,10 @@ const StudentProfiles: React.FC = () => {
     setLoading(false);
   };
 
-  const handleViewTOR = async (studentId: string) => {
+  const handleViewTOR = async (studentId: string, filterDepartment?: string | null) => {
     setTorLoading(true);
     setIsTORModalOpen(true);
-    const { data, error } = await studentService.generateStudentTOR(studentId);
+    const { data, error } = await studentService.generateStudentTOR(studentId, filterDepartment);
     if (error) {
       setError(error.message);
       setIsTORModalOpen(false);
@@ -164,6 +166,11 @@ const StudentProfiles: React.FC = () => {
   const handleViewSchedule = (student: Student) => {
     setSelectedStudent(student);
     setIsScheduleModalOpen(true);
+  };
+
+  const handleEncodeLegacyGrade = (student: Student) => {
+    setSelectedStudent(student);
+    setIsLegacyGradeModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -337,9 +344,13 @@ const StudentProfiles: React.FC = () => {
                     student={student} 
                     onEdit={() => handleOpenModal(student)} 
                     onView={() => handleViewStudent(student.student_id)}
-                    onViewTOR={() => handleViewTOR(student.student_id)}
+                    onViewTOR={() => {
+                      setSelectedStudent(student);
+                      handleViewTOR(student.student_id, student.department);
+                    }}
                     onViewReportCard={() => handleViewReportCard(student)}
                     onViewSchedule={() => handleViewSchedule(student)}
+                    onEncodeLegacyGrade={() => handleEncodeLegacyGrade(student)}
                   />
                 ))
               )}
@@ -371,6 +382,15 @@ const StudentProfiles: React.FC = () => {
         isOpen={isScheduleModalOpen}
         onClose={() => {
           setIsScheduleModalOpen(false);
+          setSelectedStudent(null);
+        }}
+        student={selectedStudent}
+      />
+
+      <LegacyGradeEncoderModal
+        isOpen={isLegacyGradeModalOpen}
+        onClose={() => {
+          setIsLegacyGradeModalOpen(false);
           setSelectedStudent(null);
         }}
         student={selectedStudent}
@@ -635,7 +655,8 @@ const StudentRow: React.FC<{
   onViewTOR: () => void;
   onViewReportCard: () => void;
   onViewSchedule: () => void;
-}> = ({ student, onEdit, onView, onViewTOR, onViewReportCard, onViewSchedule }) => (
+  onEncodeLegacyGrade: () => void;
+}> = ({ student, onEdit, onView, onViewTOR, onViewReportCard, onViewSchedule, onEncodeLegacyGrade }) => (
   <tr className="hover:bg-gray-50 transition-colors">
     <td className="px-6 py-4">
       <div className="flex items-center gap-3">
@@ -666,6 +687,13 @@ const StudentRow: React.FC<{
     </td>
     <td className="px-6 py-4 text-right">
       <div className="flex justify-end gap-3">
+        <button 
+          onClick={onEncodeLegacyGrade}
+          className="text-gray-600 hover:text-amber-600 transition-colors"
+          title="Encode Legacy Grade"
+        >
+          <Archive size={18} />
+        </button>
         <button 
           onClick={onViewSchedule}
           className="text-gray-600 hover:text-blue-600 transition-colors"

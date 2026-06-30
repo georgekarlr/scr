@@ -24,6 +24,7 @@ const GradingPeriodManagement: React.FC = () => {
     academic_year_id: '',
     semester: '1st Semester',
     required_payment_percentage: 100,
+    weight_percentage: 25,
     is_active: true
   });
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +68,7 @@ const GradingPeriodManagement: React.FC = () => {
         academic_year_id: period.academic_year_id,
         semester: period.semester,
         required_payment_percentage: period.required_payment_percentage,
+        weight_percentage: period.weight_percentage || 25,
         is_active: period.is_active
       });
     } else {
@@ -78,6 +80,7 @@ const GradingPeriodManagement: React.FC = () => {
         academic_year_id: activeYear?.id || '',
         semester: '1st Semester',
         required_payment_percentage: 100,
+        weight_percentage: 25,
         is_active: true
       });
     }
@@ -98,6 +101,7 @@ const GradingPeriodManagement: React.FC = () => {
         formData.academic_year_id,
         formData.semester,
         formData.required_payment_percentage,
+        formData.weight_percentage,
         formData.is_active
       );
     } else {
@@ -107,6 +111,7 @@ const GradingPeriodManagement: React.FC = () => {
         formData.academic_year_id,
         formData.semester,
         formData.required_payment_percentage,
+        formData.weight_percentage,
         formData.is_active
       );
     }
@@ -214,6 +219,7 @@ const GradingPeriodManagement: React.FC = () => {
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Academic Year</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Semester</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Payment %</th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Weight %</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Actions</th>
               </tr>
@@ -221,13 +227,13 @@ const GradingPeriodManagement: React.FC = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     Loading grading periods...
                   </td>
                 </tr>
               ) : gradingPeriods.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     No grading periods found.
                   </td>
                 </tr>
@@ -254,6 +260,7 @@ const GradingPeriodManagement: React.FC = () => {
                     <td className="px-6 py-4 text-gray-600">{period.academic_year_name}</td>
                     <td className="px-6 py-4 text-gray-600">{period.semester}</td>
                     <td className="px-6 py-4 text-gray-600">{period.required_payment_percentage}%</td>
+                    <td className="px-6 py-4 text-gray-600">{period.weight_percentage}%</td>
                     <td className="px-6 py-4">
                       {period.is_active ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -387,6 +394,23 @@ const GradingPeriodManagement: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, required_payment_percentage: parseFloat(e.target.value) })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   placeholder="e.g., 50.0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Weight Percentage *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.weight_percentage}
+                  onChange={(e) => setFormData({ ...formData, weight_percentage: parseFloat(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  placeholder="e.g., 25.0"
                 />
               </div>
 

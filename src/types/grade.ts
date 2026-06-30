@@ -14,5 +14,5 @@ export interface ClassGradebook {
   last_name: string;
   course_code: string | null;
   grades_list: GradeEntry[];
-  running_average: number | null;
+  running_average: string | null;
 }

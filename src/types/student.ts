@@ -55,12 +55,13 @@ export interface StudentReportCard {
   subject_name: string;
   units: number;
   grades_list: ReportCardGradeEntry[];
-  final_average: number;
+  final_average: string | null;
 }
 
 export interface StudentSchedule {
   enrollment_id: string;
   class_id: string;
+  schedule_id: string | null;
   subject_code: string;
   subject_name: string;
   units: number;
@@ -69,9 +70,9 @@ export interface StudentSchedule {
   teacher_last_name: string;
   room_name: string | null;
   room_building: string | null;
-  days_of_week: string;
-  start_time: string;
-  end_time: string;
+  days_of_week: string | null;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 export interface StudentTOR {
@@ -86,10 +87,14 @@ export interface StudentTOR {
     semester: string;
     year_level_taken: string;
     course_taken: string;
-    subject_code: string;
-    subject_name: string;
-    units: number;
-    final_grade: number | null;
-    remarks: string | null;
+    department: string | null;
+    subjects: Array<{
+      enrollment_id: string;
+      subject_code: string;
+      subject_name: string;
+      units: number;
+      final_grade: string | null;
+      remarks: string | null;
+    }>;
   }>;
 }

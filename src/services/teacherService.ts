@@ -81,11 +81,11 @@ export const teacherService = {
   },
 
   async upsertStudentGrade(
-      enrollmentId: string,
-      gradingPeriodId: string,
-      gradeValue: number | null,
-      gradeCode?: string | null,
-      remarks?: string | null
+    enrollmentId: string,
+    gradingPeriodId: string,
+    gradeValue: number | null,
+    gradeCode?: string | null,
+    remarks?: string | null
   ) {
     try {
       const { data, error } = await supabase.rpc('upsert_student_grade', {
