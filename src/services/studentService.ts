@@ -141,10 +141,11 @@ export const studentService = {
     }
   },
 
-  async generateStudentTOR(studentId: string) {
+  async generateStudentTOR(studentId: string, filterDepartment?: string | null) {
     try {
       const { data, error } = await supabase.rpc('generate_student_tor', {
-        p_student_id: studentId
+        p_student_id: studentId,
+        p_filter_department: filterDepartment ?? null
       })
 
       console.log("Student TOR Data:", data);

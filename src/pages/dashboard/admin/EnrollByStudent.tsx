@@ -500,7 +500,7 @@ const EnrollByStudent: React.FC = () => {
                     )}
                     <button
                       onClick={() => setUnenrollTarget(item)}
-                      className="p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Unenroll student from this class"
                     >
                       <Trash2 className="w-4 h-4" />

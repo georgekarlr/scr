@@ -87,9 +87,14 @@ export interface StudentTOR {
     semester: string;
     year_level_taken: string;
     course_taken: string;
-    subject_code: string;
-    subject_name: string;
-    units: number;
-    final_grade: string | null;
+    department: string | null;
+    subjects: Array<{
+      enrollment_id: string;
+      subject_code: string;
+      subject_name: string;
+      units: number;
+      final_grade: string | null;
+      remarks: string | null;
+    }>;
   }>;
 }

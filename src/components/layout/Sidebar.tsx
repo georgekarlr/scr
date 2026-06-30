@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw, LayoutGrid, Calendar, DoorOpen, UserPlus, Wallet, ReceiptText, CreditCard } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, Settings, Users, BookOpen, ClipboardList, CheckSquare, ListTodo, Inbox, GraduationCap, RefreshCw, LayoutGrid, Calendar, DoorOpen, UserPlus, Wallet, ReceiptText, CreditCard, Archive } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -69,6 +69,7 @@ const Sidebar: React.FC = () => {
               <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
               <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
               <NavItem to="/dashboard/enroll-by-student" label="Enroll by Student" icon={<GraduationCap size={18} />} />
+              <NavItem to="/dashboard/legacy-grades" label="Master Grade Viewer" icon={<Archive size={18} />} />
               <NavItem to="/dashboard/fee-items" label="Fee Items" icon={<Wallet size={18} />} />
             <NavItem to="/dashboard/ledger" label="Ledger" icon={<ReceiptText size={18} />} />
           </>
@@ -82,6 +83,7 @@ const Sidebar: React.FC = () => {
             <NavItem to="/dashboard/classes" label="Classes" icon={<ListTodo size={18} />} />
             <NavItem to="/dashboard/enrollment" label="Enrollment" icon={<UserPlus size={18} />} />
             <NavItem to="/dashboard/enroll-by-student" label="Enroll by Student" icon={<GraduationCap size={18} />} />
+            <NavItem to="/dashboard/legacy-grades" label="Master Grade Viewer" icon={<Archive size={18} />} />
           </>
         );
       case 'cashier':

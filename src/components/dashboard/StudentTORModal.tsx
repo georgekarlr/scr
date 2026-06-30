@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, FileText, Download, Printer } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, FileText, Printer } from 'lucide-react';
 import { StudentTOR } from '../../types/student';
 
 interface StudentTORModalProps {
@@ -9,13 +10,55 @@ interface StudentTORModalProps {
   loading: boolean;
 }
 
-const StudentTORModal: React.FC<StudentTORModalProps> = ({ isOpen, onClose, torData, loading }) => {
+const StudentTORModal: React.FC<StudentTORModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  torData, 
+  loading
+}) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-blue-700 text-white shrink-0">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm tor-print-modal-wrapper">
+      <style>{`
+        @media print {
+          #root {
+            display: none !important;
+          }
+          .tor-print-modal-wrapper {
+            position: static !important;
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+          }
+          .tor-print-modal-card {
+            border: none !important;
+            box-shadow: none !important;
+            max-width: none !important;
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            border-radius: 0 !important;
+            width: 100% !important;
+          }
+          .tor-print-modal-header,
+          .tor-print-modal-footer {
+            display: none !important;
+          }
+          #tor-content {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+            padding: 0 !important;
+          }
+        }
+      `}</style>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col tor-print-modal-card">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-blue-700 text-white shrink-0 tor-print-modal-header print:hidden">
           <div className="flex items-center gap-2">
             <FileText size={24} />
             <h3 className="text-xl font-bold">Transcript of Records</h3>
@@ -74,43 +117,107 @@ const StudentTORModal: React.FC<StudentTORModalProps> = ({ isOpen, onClose, torD
 
               {/* Academic Records */}
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-black">AR</span>
-                  Academic History
-                </h3>
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-black">AR</span>
+                    Academic History
+                  </h3>
+                </div>
                 
                 <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase">Year & Semester</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center w-12">#</th>
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase">Subject Code</th>
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase">Subject Name</th>
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center">Units</th>
                         <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center">Grade</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-gray-500 uppercase text-center">Remarks</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {torData.records.length > 0 ? (
-                        torData.records.map((record, index) => (
-                          <tr key={index} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="px-4 py-3">
-                              <p className="text-xs font-bold text-gray-900">{record.academic_year}</p>
-                              <p className="text-[10px] text-gray-500 uppercase font-medium">{record.semester}</p>
-                            </td>
-                            <td className="px-4 py-3 text-xs font-bold text-blue-700">{record.subject_code}</td>
-                            <td className="px-4 py-3 text-xs font-medium text-gray-700">{record.subject_name}</td>
-                            <td className="px-4 py-3 text-xs font-bold text-gray-900 text-center">{record.units}</td>
-                            <td className="px-4 py-3 text-center">
-                              <span className={`text-xs font-black ${record.final_grade && parseFloat(record.final_grade) >= 75 ? 'text-green-600' : 'text-red-600'}`}>
-                                {record.final_grade || '--'}
-                              </span>
-                            </td>
-                          </tr>
+                        torData.records.map((record, recordIndex) => (
+                          <React.Fragment key={recordIndex}>
+                            {/* Term Header Row */}
+                            <tr className="bg-gray-50/70 border-y border-gray-200">
+                              <td colSpan={6} className="px-4 py-3 font-bold text-xs text-gray-800">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-blue-700 font-extrabold">{record.academic_year}</span>
+                                    <span className="text-gray-400">|</span>
+                                    <span className="text-gray-600 uppercase tracking-wide text-[10px]">{record.semester}</span>
+                                    {record.department && (
+                                      <>
+                                        <span className="text-gray-400">|</span>
+                                        <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                          record.department === 'College'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-purple-100 text-purple-700'
+                                        }`}>
+                                          {record.department}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                  <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                                    Course: <span className="text-gray-700 font-bold">{record.course_taken}</span>
+                                    {record.year_level_taken && (
+                                      <>
+                                        <span className="mx-1.5">|</span>
+                                        Year Level: <span className="text-gray-700 font-bold">{record.year_level_taken}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                            
+                            {/* Subjects for this Term */}
+                            {record.subjects && record.subjects.length > 0 ? (
+                              record.subjects.map((subject, subjectIndex) => (
+                                <tr key={`${recordIndex}-${subjectIndex}`} className="hover:bg-gray-50/50 transition-colors">
+                                  <td className="px-4 py-3 text-xs font-medium text-gray-400 text-center">{subjectIndex + 1}</td>
+                                  <td className="px-4 py-3 text-xs font-bold text-blue-700">{subject.subject_code}</td>
+                                  <td className="px-4 py-3 text-xs font-medium text-gray-700">{subject.subject_name}</td>
+                                  <td className="px-4 py-3 text-xs font-bold text-gray-900 text-center">{subject.units}</td>
+                                  
+                                  {/* Grade Column */}
+                                  <td className="px-4 py-3 text-center">
+                                    <span className={`text-xs font-black ${
+                                      subject.final_grade && !isNaN(parseFloat(subject.final_grade)) && parseFloat(subject.final_grade) >= 75
+                                        ? 'text-green-600'
+                                        : subject.final_grade
+                                        ? 'text-red-600'
+                                        : 'text-gray-400'
+                                    }`}>
+                                      {subject.final_grade || '--'}
+                                    </span>
+                                  </td>
+                                  
+                                  {/* Remarks Column */}
+                                  <td className="px-4 py-3 text-center">
+                                    <span className={`text-[10px] font-bold uppercase ${
+                                      subject.remarks ? 'text-gray-700' : 'text-gray-300'
+                                    }`}>
+                                      {subject.remarks || '--'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={6} className="px-4 py-4 text-center text-gray-400 italic text-xs">
+                                  No subjects enrolled for this term.
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="px-4 py-10 text-center text-gray-400 italic text-sm">
+                          <td colSpan={6} className="px-4 py-10 text-center text-gray-400 italic text-sm">
                             No academic records found for this student.
                           </td>
                         </tr>
@@ -142,7 +249,7 @@ const StudentTORModal: React.FC<StudentTORModalProps> = ({ isOpen, onClose, torD
           )}
         </div>
         
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-gray-50 tor-print-modal-footer print:hidden">
           <button
             onClick={onClose}
             className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-100 transition-colors"
@@ -151,7 +258,8 @@ const StudentTORModal: React.FC<StudentTORModalProps> = ({ isOpen, onClose, torD
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
